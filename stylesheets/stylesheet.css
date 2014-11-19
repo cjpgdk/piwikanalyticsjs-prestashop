@@ -421,3 +421,7 @@ Small Device Styles
     }
 
 }
+.tab-nav > span {
+    display: inline-block;
+    padding: 5px;
+}
