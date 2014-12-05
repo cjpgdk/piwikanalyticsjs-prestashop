@@ -21,14 +21,14 @@ Features
  - Using only JavaScript Appended to your shops footer
  - Option to use proxy script hides [Piwik] url
  - You define how product ids are passed on to [Piwik]
- - Simple Management of your Piwik sites from module admin
+ - Simple Management of your Piwik sites from module admin (>= Prestashop 1.5)
  - Supports Prestashop multi store setups (>= Prestashop 1.5)
 
 Translations
 
  - English (Default)
- - Danish [98%/100%] Prestahop 1.4, 1.5, 1.6
- - Polish [40%/100%] By Michal Durys, @mdurys Prestahop 1.5, 1.6
+ - Danish [98%] Prestahop 1.4, 1.5, 1.6
+ - Polish [40%] By Michal Durys, @mdurys Prestahop 1.5, 1.6
 
 Installation
 --------------
