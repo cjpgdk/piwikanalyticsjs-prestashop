@@ -1142,7 +1142,7 @@ class piwikanalyticsjs extends Module {
             return "";
 
 
-        if (_PS_VERSION_ < '1.5') {
+        if (_PS_VERSION_ < '1.5.6') {
             /* get page name the LAME way :) */
             if (method_exists($this->context->smarty, 'get_template_vars')) { /* smarty_2 */
                 $page_name = $this->context->smarty->get_template_vars('page_name');
@@ -1197,7 +1197,7 @@ class piwikanalyticsjs extends Module {
             $this->context->smarty->assign(PKHelper::CPREFIX . 'CART', FALSE);
         }
 
-        if (_PS_VERSION_ < '1.5')
+        if (_PS_VERSION_ < '1.5.6')
             $this->_hookFooterPS14($params, $page_name);
         else if (_PS_VERSION_ >= '1.5')
             $this->_hookFooter($params);
