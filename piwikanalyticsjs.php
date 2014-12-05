@@ -67,7 +67,7 @@ class piwikanalyticsjs extends Module {
     public function __construct($name = null, $context = null) {
         $this->name = 'piwikanalyticsjs';
         $this->tab = 'analytics_stats';
-        $this->version = '0.7.0-RC1';
+        $this->version = '0.7.0-RC2';
         $this->author = 'CMJ Scripter';
         $this->displayName = 'Piwik Web Analytics';
 
