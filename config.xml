@@ -2,9 +2,9 @@
 <module>
 	<name>piwikanalyticsjs</name>
 	<displayName><![CDATA[Piwik Web Analytics]]></displayName>
-	<version><![CDATA[0.7.0-RC2]]></version>
+	<version><![CDATA[0.7.0]]></version>
 	<description><![CDATA[Piwik Web Analytics Javascript plugin]]></description>
-	<author><![CDATA[CMJ Scripter]]></author>
+	<author><![CDATA[Christian M. Jensen]]></author>
 	<tab><![CDATA[analytics_stats]]></tab>
 	<confirmUninstall><![CDATA[Are you sure you want to delete this plugin ?]]></confirmUninstall>
 	<is_configurable>1</is_configurable>
