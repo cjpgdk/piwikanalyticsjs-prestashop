@@ -1,5 +1,8 @@
 <?php
 
+if (!defined('_PS_VERSION_'))
+    exit;
+
 /*
  * Copyright (C) 2015 Christian Jensen
  *
@@ -31,6 +34,7 @@ if (_PS_VERSION_ < '1.5') {
         require_once dirname(__FILE__) . '/_classes/backward_compatibility/global.php';
     }
 }
+/* Helpers */
 require_once dirname(__FILE__) . '/_classes/MyHelperClass.php';
 require_once dirname(__FILE__) . '/_classes/PKHelper.php';
 
@@ -54,6 +58,14 @@ class piwikmanager extends Module {
         /* Prestashop 1.5 and up implements "$context" */
         if (_PS_VERSION_ >= '1.5')
             parent::__construct($name, ($context instanceof Context ? $context : NULL));
+
+        //* warnings on module list page
+        if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH'))
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('is not ready to roll you need to configure the auth token');
+        if ($this->id && ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0))
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You have not yet set your Piwik Site ID');
+        if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'HOST'))
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('is not ready to roll you need to configure the Piwik server url');
 
         $this->description = $this->l('Piwik Analytics Site Manager & Base classes');
         $this->confirmUninstall = $this->l('Are you sure you want to delete this plugin ?');
@@ -90,6 +102,14 @@ class piwikmanager extends Module {
         $this->piwikSite = PKHelper::getPiwikSite2();
         $this->displayErrors(PKHelper::$errors);
         PKHelper::$errors = PKHelper::$error = "";
+
+        //* warnings on module configure page
+        if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') && !Tools::getIsset(PKHelper::CPREFIX . 'TOKEN_AUTH')) /* avoid the same error message twice */
+            $this->_errors .= $this->displayError($this->l('Piwik auth token is empty'));
+        if ($this->id && ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0) && !Tools::getIsset(PKHelper::CPREFIX . 'SITEID')) /* avoid the same error message twice */
+            $this->_errors .= $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
+        if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'HOST'))
+            $this->_errors .= $this->displayError($this->l('Piwik host cannot be empty'));
 
         $helper = MyHelperClass::GetHelperFormObject($this, $this->name, $this->identifier, Tools::getAdminTokenLite('AdminModules'));
 
