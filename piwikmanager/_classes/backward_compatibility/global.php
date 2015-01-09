@@ -3,20 +3,20 @@
 /*
  * Copyright (C) 2014 Christian Jensen
  *
- * This file is part of PiwikAnalyticsManager for prestashop.
+ * This file is part of piwikmanager for prestashop.
  * 
- * PiwikAnalyticsManager for prestashop is free software: you can redistribute it and/or modify
+ * piwikmanager for prestashop is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
- * PiwikAnalyticsManager for prestashop is distributed in the hope that it will be useful,
+ * piwikmanager for prestashop is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with PiwikAnalyticsManager for prestashop.  If not, see <http://www.gnu.org/licenses/>.
+ * along with piwikmanager for prestashop.  If not, see <http://www.gnu.org/licenses/>.
  *
  *
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop

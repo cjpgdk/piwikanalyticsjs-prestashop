@@ -3,20 +3,20 @@
 /*
  * Copyright (C) 2015 Christian Jensen
  *
- * This file is part of PiwikAnalyticsManager for prestashop.
+ * This file is part of piwikmanager for prestashop.
  * 
- * PiwikAnalyticsManager for prestashop is free software: you can redistribute it and/or modify
+ * piwikmanager for prestashop is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
- * PiwikAnalyticsManager for prestashop is distributed in the hope that it will be useful,
+ * piwikmanager for prestashop is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with PiwikAnalyticsManager for prestashop.  If not, see <http://www.gnu.org/licenses/>.
+ * along with piwikmanager for prestashop.  If not, see <http://www.gnu.org/licenses/>.
  *
  *
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
@@ -26,7 +26,7 @@
 /* Backward compatibility */
 if (_PS_VERSION_ < '1.5') {
     if (version_compare(_PS_VERSION_, '1.4.5.1', '<=')) {
-        include _PS_ROOT_DIR_ . '/modules/piwikanalyticsmanager/_classes/backward_compatibility/global.php';
+        include _PS_ROOT_DIR_ . '/modules/piwikmanager/_classes/backward_compatibility/global.php';
     } else {
         require_once dirname(__FILE__) . '/_classes/backward_compatibility/global.php';
     }
@@ -34,7 +34,7 @@ if (_PS_VERSION_ < '1.5') {
 require_once dirname(__FILE__) . '/_classes/MyHelperClass.php';
 require_once dirname(__FILE__) . '/_classes/PKHelper.php';
 
-class piwikanalyticsmanager extends Module {
+class piwikmanager extends Module {
 
     protected $_errors = "";
     protected $piwikSite = "";
@@ -42,7 +42,7 @@ class piwikanalyticsmanager extends Module {
     protected $currencies = array();
 
     public function __construct($name = null, $context = null) {
-        $this->name = 'piwikanalyticsmanager';
+        $this->name = 'piwikmanager';
         $this->tab = 'administration';
         $this->version = '1b';
         $this->author = 'Christian M. Jensen';
@@ -64,7 +64,7 @@ class piwikanalyticsmanager extends Module {
         /* Backward compatibility */
         if (_PS_VERSION_ < '1.5') {
             if (version_compare(_PS_VERSION_, '1.4.5.1', '<=')) {
-                include _PS_ROOT_DIR_ . '/modules/piwikanalyticsmanager/_classes/backward_compatibility/backward.php';
+                include _PS_ROOT_DIR_ . '/modules/piwikmanager/_classes/backward_compatibility/backward.php';
             } else {
                 require dirname(__FILE__) . '/_classes/backward_compatibility/backward.php';
             }
