@@ -53,7 +53,7 @@ if (!class_exists('HelperFormCore', false)) {
         public $allow_employee_form_lang = null;
 
         public function __construct() {
-            $this->base_folder = dirname(__FILE__) . '/../../views/templates/helpers/form/';
+            $this->base_folder = dirname(__FILE__) . '/templates/form/';
             $this->base_tpl = 'form.tpl';
             parent::__construct();
         }

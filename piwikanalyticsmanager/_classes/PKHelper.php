@@ -3,23 +3,26 @@
 if (!defined('_PS_VERSION_'))
     exit;
 
+if (class_exists('PKHelper', FALSE))
+    return;
+
 /*
- * Copyright (C) 2014 Christian Jensen
+ * Copyright (C) 2014-2015 Christian Jensen
  *
- * This file is part of PiwikAnalyticsJS for prestashop.
+ * This file is part of PiwikAnalyticsManager for prestashop.
  * 
- * PiwikAnalyticsJS for prestashop is free software: you can redistribute it and/or modify
+ * PiwikAnalyticsManager for prestashop is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
- * PiwikAnalyticsJS for prestashop is distributed in the hope that it will be useful,
+ * PiwikAnalyticsManager for prestashop is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with PiwikAnalyticsJS for prestashop.  If not, see <http://www.gnu.org/licenses/>.
+ * along with PiwikAnalyticsManager for prestashop.  If not, see <http://www.gnu.org/licenses/>.
  *
  *
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
@@ -34,11 +37,9 @@ class PKHelper {
             'optional' => array('siteName', 'urls', 'ecommerce', 'siteSearch', 'searchKeywordParameters', 'searchCategoryParameters', 'excludedIps', 'excludedQueryParameters', 'timezone', 'currency', 'group', 'startDate', 'excludedUserAgents', 'keepURLFragments', 'type'),
             'order' => array('idSite', 'siteName', 'urls', 'ecommerce', 'siteSearch', 'searchKeywordParameters', 'searchCategoryParameters', 'excludedIps', 'excludedQueryParameters', 'timezone', 'currency', 'group', 'startDate', 'excludedUserAgents', 'keepURLFragments', 'type'),
         ),
-        'getPiwikSite' => array(
-            'required' => array('idSite'),
-            'optional' => array(''),
-            'order' => array('idSite'),
-        ),
+        'getPiwikSite' => array('required' => array('idSite'), 'optional' => array(''), 'order' => array('idSite'),),
+        'getPiwikSite2' => array('required' => array('idSite'), 'optional' => array(''), 'order' => array('idSite'),),
+        'getSitesGroups' => array('required' => array(), 'optional' => array(), 'order' => array(),),
     );
 
     /**
@@ -56,7 +57,7 @@ class PKHelper {
 
     /**
      * for Prestashop 1.4 translation
-     * @var piwikanalyticsjs 
+     * @var piwikanalyticsjs|piwikanalyticsmanager
      */
     public static $_module = null;
 
@@ -65,6 +66,26 @@ class PKHelper {
      */
     const CPREFIX = "PIWIK_";
 
+    /**
+     * 
+     * @param type $idSite
+     * @param type $siteName
+     * @param array $urls
+     * @param type $ecommerce
+     * @param type $siteSearch
+     * @param type $searchKeywordParameters
+     * @param type $searchCategoryParameters
+     * @param type $excludedIps
+     * @param type $excludedQueryParameters
+     * @param type $timezone
+     * @param type $currency
+     * @param type $group
+     * @param type $startDate
+     * @param type $excludedUserAgents
+     * @param type $keepURLFragments
+     * @param type $type
+     * @return boolean
+     */
     public static function updatePiwikSite($idSite, $siteName = NULL, $urls = NULL, $ecommerce = NULL, $siteSearch = NULL, $searchKeywordParameters = NULL, $searchCategoryParameters = NULL, $excludedIps = NULL, $excludedQueryParameters = NULL, $timezone = NULL, $currency = NULL, $group = NULL, $startDate = NULL, $excludedUserAgents = NULL, $keepURLFragments = NULL, $type = NULL) {
         if (!self::baseTest() || ($idSite <= 0))
             return false;
@@ -72,8 +93,12 @@ class PKHelper {
         $url .= "&method=SitesManager.updateSite&format=JSON";
         if ($siteName !== NULL)
             $url .= "&siteName=" . urlencode($siteName);
-        if ($urls !== NULL)
-            $url .= "&urls=" . urlencode($urls);
+
+        if ($urls !== NULL) {
+            foreach (explode(',', $urls) as $value) {
+                $url .= "&urls[]=" . urlencode(trim($value));
+            }
+        }
         if ($ecommerce !== NULL)
             $url .= "&ecommerce=" . urlencode($ecommerce);
         if ($siteSearch !== NULL)
@@ -101,15 +126,31 @@ class PKHelper {
         if ($type !== NULL)
             $url .= "&type=" . urlencode($type);
         $md5Url = md5($url);
-        /* {"result":"success","message":"ok"} */
-        if ($result = self::getAsJsonDecoded($url))
+        if ($result = self::getAsJsonDecoded($url)) {
+            $url2 = self::getBaseURL($idSite) . "&method=SitesManager.getSiteFromId&format=JSON";
+            unset(self::$_cachedResults[md5($url2)]); // Clear cache for updated site
             return ($result->result == 'success' && $result->message == 'ok' ? TRUE : ($result->result != 'success' ? $result->message : FALSE));
+        } else
+            return FALSE;
+    }
+
+    /**
+     * get all website groups
+     * @return array|boolean
+     */
+    public static function getSitesGroups() {
+        if (!self::baseTest())
+            return FALSE;
+        $url = self::getBaseURL();
+        $url .= "&method=SitesManager.getSitesGroups&format=JSON";
+        if ($result = self::getAsJsonDecoded($url))
+            return $result;
         else
             return FALSE;
     }
 
     /**
-     * get image tracking code for use with or withou proxy script
+     * get image tracking code for use with or without proxy script
      * @return array
      */
     public static function getPiwikImageTrackingCode() {
@@ -140,6 +181,20 @@ class PKHelper {
                 $ret['proxy'] = str_replace(Configuration::get(PKHelper::CPREFIX . 'HOST') . 'piwik.php?', Configuration::get(PKHelper::CPREFIX . 'PROXY_SCRIPT') . '&', $ret['default']);
         }
         return $ret;
+    }
+
+    public static function getPiwikSite2($idSite = 0) {
+        if ($idSite == 0)
+            $idSite = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
+        if ($result = self::getPiwikSite($idSite)) {
+            $url = self::getBaseURL($idSite);
+            $url .= "&method=SitesManager.getSiteUrlsFromId&format=JSON";
+            if ($resultUrls = self::getAsJsonDecoded($url)) {
+                $result[0]->main_url = implode(',', $resultUrls);
+            }
+            return $result;
+        }
+        return false;
     }
 
     /**
@@ -309,9 +364,7 @@ class PKHelper {
             'http' => array(
                 'user_agent' => (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : ''),
                 'method' => "GET",
-                'header' =>
-                "Accept-language: {$lng}\r\n" .
-                $httpauth
+                'header' => "Accept-language: {$lng}\r\n" . $httpauth
             )
         );
 
@@ -340,7 +393,7 @@ class PKHelper {
     private static function l($string, $specific = false) {
         if (_PS_VERSION_ < '1.5')
             return PKHelper::$_module->l($string, ($specific) ? $specific : 'pkhelper');
-        return Translate::getModuleTranslation('piwikanalyticsjs', $string, ($specific) ? $specific : 'pkhelper');
+        return Translate::getModuleTranslation('piwikanalyticsmanager', $string, ($specific) ? $specific : 'pkhelper');
         // the following lines are need for the translation to work properly
         // $this->l('I need Site ID and Auth Token before i can get your image tracking code')
         // $this->l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page')
@@ -348,6 +401,43 @@ class PKHelper {
         // $this->l('Unable to connect to api %s')
         // $this->l('E-commerce is not active for your site in piwik!')
         // $this->l('Site search is not active for your site in piwik!')
+    }
+
+    /**
+     * get websites by group
+     * NOTE: Not tested not in use by this module but here for the future, and may be removed.!
+     * @param string $group
+     * @return array|boolean
+     */
+    public static function getSitesFromGroup($group) {
+        if (!self::baseTest())
+            return FALSE;
+        $url = self::getBaseURL();
+        $url .= "&method=SitesManager.getSitesFromGroup&format=JSON&group=" . urlencode($group);
+        if ($result = self::getAsJsonDecoded($url))
+            return $result;
+        else
+            return FALSE;
+    }
+
+    /**
+     * rename websites group
+     * NOTE: Not tested not in use by this module but here for the future, and may be removed.!
+     * @param string $oldGroupName
+     * @param string $newGroupName
+     * @return array|boolean
+     */
+    public static function renameGroup($oldGroupName, $newGroupName) {
+        if (!self::baseTest())
+            return FALSE;
+        $url = self::getBaseURL();
+        $url .= "&method=SitesManager.getSitesFromGroup&format=JSON"
+                . "&oldGroupName=" . urlencode($oldGroupName)
+                . "&newGroupName=" . urlencode($newGroupName);
+        if ($result = self::getAsJsonDecoded($url))
+            return $result;
+        else
+            return FALSE;
     }
 
 }
