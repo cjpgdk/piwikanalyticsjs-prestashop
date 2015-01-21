@@ -212,6 +212,27 @@ class piwikanalyticsjs extends Module {
             'desc' => sprintf($this->l('the FULL path to proxy script to use, build-in: [%s]'), self::getModuleLink($this->name, 'piwik')),
             'required' => false
         );
+        if (function_exists('curl_version')) {
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'switch',
+                'is_bool' => true,
+                'label' => $this->l('Use cURL'),
+                'name' => PKHelper::CPREFIX . 'USE_CURL',
+                'desc' => $this->l('Whether or not to use cURL in Piwik API and proxy requests?'),
+                'values' => array(
+                    array(
+                        'id' => 'active_on',
+                        'value' => 1,
+                        'label' => $this->l('Enabled')
+                    ),
+                    array(
+                        'id' => 'active_off',
+                        'value' => 0,
+                        'label' => $this->l('Disabled')
+                    )
+                ),
+            );
+        }
         $fields_form[0]['form']['input'][] = array(
             'type' => 'text',
             'label' => $this->l('Piwik site id'),
@@ -893,6 +914,7 @@ class piwikanalyticsjs extends Module {
             PKHelper::CPREFIX . 'PAUTHUSR' => Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR'),
             PKHelper::CPREFIX . 'PAUTHPWD' => Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD'),
             PKHelper::CPREFIX . 'DREPDATE' => Configuration::get(PKHelper::CPREFIX . 'DREPDATE'),
+            PKHelper::CPREFIX . 'USE_CURL' => Configuration::get(PKHelper::CPREFIX . 'USE_CURL'),
             /* stuff thats isset by ajax calls to Piwik API ---(here to avoid not isset warnings..!)--- */
             'PKAdminSiteName' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->name : ''),
             'PKAdminEcommerce' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->ecommerce : ''),
@@ -969,6 +991,8 @@ class piwikanalyticsjs extends Module {
              */
             if (Tools::getIsset(PKHelper::CPREFIX . 'USE_PROXY'))
                 Configuration::updateValue(PKHelper::CPREFIX . 'USE_PROXY', Tools::getValue(PKHelper::CPREFIX . 'USE_PROXY'));
+            if (Tools::getIsset(PKHelper::CPREFIX . 'USE_CURL'))
+                Configuration::updateValue(PKHelper::CPREFIX . 'USE_CURL', Tools::getValue(PKHelper::CPREFIX . 'USE_CURL'));
             if (Tools::getIsset(PKHelper::CPREFIX . 'EXHTML'))
                 Configuration::updateValue(PKHelper::CPREFIX . 'EXHTML', Tools::getValue(PKHelper::CPREFIX . 'EXHTML'), TRUE);
             if (Tools::getIsset(PKHelper::CPREFIX . 'COOKIE_DOMAIN'))
@@ -999,10 +1023,10 @@ class piwikanalyticsjs extends Module {
                 Configuration::updateValue(PKHelper::CPREFIX . "PAUTHUSR", Tools::getValue(PKHelper::CPREFIX . 'PAUTHUSR', ''));
             if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHPWD') && Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD', '') != "")
                 Configuration::updateValue(PKHelper::CPREFIX . "PAUTHPWD", Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD', Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD')));
-            
+
             if (Tools::getIsset(PKHelper::CPREFIX . 'DREPDATE'))
                 Configuration::updateValue(PKHelper::CPREFIX . "DREPDATE", Tools::getValue(PKHelper::CPREFIX . 'DREPDATE', 'day|tody'));
-            
+
             $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
         }
         return $_html;
@@ -1589,13 +1613,13 @@ class piwikanalyticsjs extends Module {
             PKHelper::CPREFIX . 'EXHTML', PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT',
             PKHelper::CPREFIX . 'USRNAME', PKHelper::CPREFIX . 'USRPASSWD',
             PKHelper::CPREFIX . 'PAUTHUSR', PKHelper::CPREFIX . 'PAUTHPWD',
-            PKHelper::CPREFIX . 'DREPDATE'
+            PKHelper::CPREFIX . 'DREPDATE', PKHelper::CPREFIX . 'USE_CURL'
         );
         $defaults = array(
             0, "", 0, "", self::PK_VC_TIMEOUT, self::PK_SC_TIMEOUT, 'EUR', 0,
             '{ID}-{ATTRID}#{REFERENCE}', '{ID}#{REFERENCE}',
             '{ID}#{ATTRID}', Tools::getShopDomain(), '', 0,
-            '', self::PK_RC_TIMEOUT, '', '', '', '', 'day|today'
+            '', self::PK_RC_TIMEOUT, '', '', '', '', 'day|today', 0
         );
         $ret = array();
         if ($form)

@@ -5,9 +5,9 @@ if (!defined('_PS_VERSION_'))
 
 if (class_exists('PKHelper', FALSE))
     return;
-	
+
 /*
- * Copyright (C) 2014 Christian Jensen
+ * Copyright (C) 2014-2015 Christian Jensen
  *
  * This file is part of PiwikAnalyticsJS for prestashop.
  * 
@@ -37,11 +37,9 @@ class PKHelper {
             'optional' => array('siteName', 'urls', 'ecommerce', 'siteSearch', 'searchKeywordParameters', 'searchCategoryParameters', 'excludedIps', 'excludedQueryParameters', 'timezone', 'currency', 'group', 'startDate', 'excludedUserAgents', 'keepURLFragments', 'type'),
             'order' => array('idSite', 'siteName', 'urls', 'ecommerce', 'siteSearch', 'searchKeywordParameters', 'searchCategoryParameters', 'excludedIps', 'excludedQueryParameters', 'timezone', 'currency', 'group', 'startDate', 'excludedUserAgents', 'keepURLFragments', 'type'),
         ),
-        'getPiwikSite' => array(
-            'required' => array('idSite'),
-            'optional' => array(''),
-            'order' => array('idSite'),
-        ),
+        'getPiwikSite' => array('required' => array('idSite'), 'optional' => array(''), 'order' => array('idSite'),),
+        'getPiwikSite2' => array('required' => array('idSite'), 'optional' => array(''), 'order' => array('idSite'),),
+        'getSitesGroups' => array('required' => array(), 'optional' => array(), 'order' => array(),),
     );
 
     /**
@@ -59,7 +57,7 @@ class PKHelper {
 
     /**
      * for Prestashop 1.4 translation
-     * @var piwikanalyticsjs 
+     * @var piwikanalyticsjs
      */
     public static $_module = null;
 
@@ -67,7 +65,28 @@ class PKHelper {
      * prefix to use for configurations values
      */
     const CPREFIX = "PIWIK_";
+    const FAKEUSERAGENT = "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0 (Fake Useragent from CLASS:PKHelper.php)";
 
+    /**
+     * 
+     * @param type $idSite
+     * @param type $siteName
+     * @param array $urls
+     * @param type $ecommerce
+     * @param type $siteSearch
+     * @param type $searchKeywordParameters
+     * @param type $searchCategoryParameters
+     * @param type $excludedIps
+     * @param type $excludedQueryParameters
+     * @param type $timezone
+     * @param type $currency
+     * @param type $group
+     * @param type $startDate
+     * @param type $excludedUserAgents
+     * @param type $keepURLFragments
+     * @param type $type
+     * @return boolean
+     */
     public static function updatePiwikSite($idSite, $siteName = NULL, $urls = NULL, $ecommerce = NULL, $siteSearch = NULL, $searchKeywordParameters = NULL, $searchCategoryParameters = NULL, $excludedIps = NULL, $excludedQueryParameters = NULL, $timezone = NULL, $currency = NULL, $group = NULL, $startDate = NULL, $excludedUserAgents = NULL, $keepURLFragments = NULL, $type = NULL) {
         if (!self::baseTest() || ($idSite <= 0))
             return false;
@@ -75,8 +94,12 @@ class PKHelper {
         $url .= "&method=SitesManager.updateSite&format=JSON";
         if ($siteName !== NULL)
             $url .= "&siteName=" . urlencode($siteName);
-        if ($urls !== NULL)
-            $url .= "&urls=" . urlencode($urls);
+
+        if ($urls !== NULL) {
+            foreach (explode(',', $urls) as $value) {
+                $url .= "&urls[]=" . urlencode(trim($value));
+            }
+        }
         if ($ecommerce !== NULL)
             $url .= "&ecommerce=" . urlencode($ecommerce);
         if ($siteSearch !== NULL)
@@ -104,15 +127,31 @@ class PKHelper {
         if ($type !== NULL)
             $url .= "&type=" . urlencode($type);
         $md5Url = md5($url);
-        /* {"result":"success","message":"ok"} */
-        if ($result = self::getAsJsonDecoded($url))
+        if ($result = self::getAsJsonDecoded($url)) {
+            $url2 = self::getBaseURL($idSite) . "&method=SitesManager.getSiteFromId&format=JSON";
+            unset(self::$_cachedResults[md5($url2)]); // Clear cache for updated site
             return ($result->result == 'success' && $result->message == 'ok' ? TRUE : ($result->result != 'success' ? $result->message : FALSE));
+        } else
+            return FALSE;
+    }
+
+    /**
+     * get all website groups
+     * @return array|boolean
+     */
+    public static function getSitesGroups() {
+        if (!self::baseTest())
+            return FALSE;
+        $url = self::getBaseURL();
+        $url .= "&method=SitesManager.getSitesGroups&format=JSON";
+        if ($result = self::getAsJsonDecoded($url))
+            return $result;
         else
             return FALSE;
     }
 
     /**
-     * get image tracking code for use with or withou proxy script
+     * get image tracking code for use with or without proxy script
      * @return array
      */
     public static function getPiwikImageTrackingCode() {
@@ -143,6 +182,20 @@ class PKHelper {
                 $ret['proxy'] = str_replace(Configuration::get(PKHelper::CPREFIX . 'HOST') . 'piwik.php?', Configuration::get(PKHelper::CPREFIX . 'PROXY_SCRIPT') . '&', $ret['default']);
         }
         return $ret;
+    }
+
+    public static function getPiwikSite2($idSite = 0) {
+        if ($idSite == 0)
+            $idSite = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
+        if ($result = self::getPiwikSite($idSite)) {
+            $url = self::getBaseURL($idSite);
+            $url .= "&method=SitesManager.getSiteUrlsFromId&format=JSON";
+            if ($resultUrls = self::getAsJsonDecoded($url)) {
+                $result[0]->main_url = implode(',', $resultUrls);
+            }
+            return $result;
+        }
+        return false;
     }
 
     /**
@@ -299,42 +352,83 @@ class PKHelper {
      */
     protected static function getAsJsonDecoded($url) {
         static $_error2 = FALSE;
-        $lng = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
-
-        $httpauth = "";
-        $httpauth_usr = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
-        $httpauth_pwd = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
-        if ((!empty($httpauth_usr) && !is_null($httpauth_usr) && $httpauth_usr !== false) && (!empty($httpauth_pwd) && !is_null($httpauth_pwd) && $httpauth_pwd !== false)) {
-            $httpauth = "Authorization: Basic " . base64_encode("$httpauth_usr:$httpauth_pwd") . "\r\n";
-        }
-
-        $options = array(
-            'http' => array(
-                'user_agent' => (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : ''),
-                'method' => "GET",
-                'header' =>
-                "Accept-language: {$lng}\r\n" .
-                $httpauth
-            )
-        );
-
-        $context = stream_context_create($options);
-        $getF = @file_get_contents($url, false, $context);
+        $use_cURL = (bool) Configuration::get(PKHelper::CPREFIX . 'USE_CURL');
+        $getF = self::get_http($url);
         if ($getF !== FALSE) {
             return Tools::jsonDecode($getF);
         }
-        $http_response = "";
-        foreach ($http_response_header as $value) {
-            if (preg_match("/^HTTP\/.*/i", $value)) {
-                $http_response = ':' . $value;
+        if ($use_cURL === FALSE) {
+            $http_response = "";
+            foreach ($http_response_header as $value) {
+                if (preg_match("/^HTTP\/.*/i", $value)) {
+                    $http_response = ':' . $value;
+                }
+            }
+            if (!$_error2) {
+                self::$error = sprintf(self::l('Unable to connect to api %s'), $http_response);
+                self::$errors[] = self::$error;
+                $_error2 = TRUE;
             }
         }
-        if (!$_error2) {
-            self::$error = sprintf(self::l('Unable to connect to api %s'), $http_response);
-            self::$errors[] = self::$error;
-            $_error2 = TRUE;
-        }
         return FALSE;
+    }
+
+    public static function get_http($url) {
+        static $_error2 = FALSE;
+        $lng = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
+
+        $timeout = 5; // should go in module conf
+
+        $httpauth_usr = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
+        $httpauth_pwd = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
+
+        $use_cURL = (bool) Configuration::get(PKHelper::CPREFIX . 'USE_CURL');
+        if ($use_cURL === FALSE) {
+            $httpauth = "";
+            if ((!empty($httpauth_usr) && !is_null($httpauth_usr) && $httpauth_usr !== false) && (!empty($httpauth_pwd) && !is_null($httpauth_pwd) && $httpauth_pwd !== false)) {
+                $httpauth = "Authorization: Basic " . base64_encode("$httpauth_usr:$httpauth_pwd") . "\r\n";
+            }
+            $options = array(
+                'http' => array(
+                    'user_agent' => (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : PKHelper::FAKEUSERAGENT),
+                    'method' => "GET",
+                    'timeout' => $timeout,
+                    'header' => "Accept-language: {$lng}\r\n" . $httpauth
+                )
+            );
+            $context = stream_context_create($options);
+            return @file_get_contents($url, false, $context);
+        } else {
+            try {
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                    'user_agent' => (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : PKHelper::FAKEUSERAGENT),
+                    'header' => "Accept-language: {$lng}\r\n"
+                ));
+                // @TODO make this work, but how to filter out the headers from returned result??
+                //curl_setopt($ch, CURLOPT_HEADER, 1);
+                if ((!empty($httpauth_usr) && !is_null($httpauth_usr) && $httpauth_usr !== false) && (!empty($httpauth_pwd) && !is_null($httpauth_pwd) && $httpauth_pwd !== false))
+                    curl_setopt($ch, CURLOPT_USERPWD, $httpauth_usr . ":" . $httpauth_pwd);
+                curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+                curl_setopt($ch, CURLOPT_HTTPGET, 1); // just to be safe
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+                curl_setopt($ch, CURLOPT_FAILONERROR, true);
+                if (($return = curl_exec($ch)) === false) {
+                    if (!$_error2) {
+                        self::$error = curl_error($ch);
+                        self::$errors[] = self::$error;
+                        $_error2 = TRUE;
+                    }
+                    $return = false;
+                }
+                curl_close($ch);
+                return $return;
+            } catch (Exception $ex) {
+                self::$errors[] = $ex->getMessage();
+                return false;
+            }
+        }
     }
 
     /**
@@ -351,6 +445,43 @@ class PKHelper {
         // $this->l('Unable to connect to api %s')
         // $this->l('E-commerce is not active for your site in piwik!')
         // $this->l('Site search is not active for your site in piwik!')
+    }
+
+    /**
+     * get websites by group
+     * NOTE: Not tested not in use by this module but here for the future, and may be removed.!
+     * @param string $group
+     * @return array|boolean
+     */
+    public static function getSitesFromGroup($group) {
+        if (!self::baseTest())
+            return FALSE;
+        $url = self::getBaseURL();
+        $url .= "&method=SitesManager.getSitesFromGroup&format=JSON&group=" . urlencode($group);
+        if ($result = self::getAsJsonDecoded($url))
+            return $result;
+        else
+            return FALSE;
+    }
+
+    /**
+     * rename websites group
+     * NOTE: Not tested not in use by this module but here for the future, and may be removed.!
+     * @param string $oldGroupName
+     * @param string $newGroupName
+     * @return array|boolean
+     */
+    public static function renameGroup($oldGroupName, $newGroupName) {
+        if (!self::baseTest())
+            return FALSE;
+        $url = self::getBaseURL();
+        $url .= "&method=SitesManager.getSitesFromGroup&format=JSON"
+                . "&oldGroupName=" . urlencode($oldGroupName)
+                . "&newGroupName=" . urlencode($newGroupName);
+        if ($result = self::getAsJsonDecoded($url))
+            return $result;
+        else
+            return FALSE;
     }
 
 }
