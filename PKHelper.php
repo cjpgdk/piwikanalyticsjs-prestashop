@@ -3,6 +3,9 @@
 if (!defined('_PS_VERSION_'))
     exit;
 
+if (class_exists('PKHelper', FALSE))
+    return;
+	
 /*
  * Copyright (C) 2014 Christian Jensen
  *
