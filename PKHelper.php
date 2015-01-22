@@ -373,7 +373,7 @@ class PKHelper {
         return FALSE;
     }
 
-    public static function get_http($url) {
+    public static function get_http($url, $headers = array()) {
         static $_error2 = FALSE;
         $lng = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
 
@@ -393,7 +393,7 @@ class PKHelper {
                     'user_agent' => (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : PKHelper::FAKEUSERAGENT),
                     'method' => "GET",
                     'timeout' => $timeout,
-                    'header' => "Accept-language: {$lng}\r\n" . $httpauth
+                    'header' => (!empty($headers) ? implode('', $headers) : "Accept-language: {$lng}\r\n") . $httpauth
                 )
             );
             $context = stream_context_create($options);
@@ -404,9 +404,10 @@ class PKHelper {
                 curl_setopt($ch, CURLOPT_URL, $url);
                 // @TODO make this work, but how to filter out the headers from returned result??
                 //curl_setopt($ch, CURLOPT_HEADER, 1);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                    "Accept-language: {$lng}\r\n"
-                ));
+                (!empty($headers) ?
+                                curl_setopt($ch, CURLOPT_HTTPHEADER, $headers) :
+                                curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept-language: {$lng}\r\n"))
+                        );
                 curl_setopt($ch, CURLOPT_USERAGENT, (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : PKHelper::FAKEUSERAGENT));
                 if ((!empty($httpauth_usr) && !is_null($httpauth_usr) && $httpauth_usr !== false) && (!empty($httpauth_pwd) && !is_null($httpauth_pwd) && $httpauth_pwd !== false))
                     curl_setopt($ch, CURLOPT_USERPWD, $httpauth_usr . ":" . $httpauth_pwd);
