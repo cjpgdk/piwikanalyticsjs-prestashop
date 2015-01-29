@@ -68,6 +68,46 @@ class PKHelper {
     const FAKEUSERAGENT = "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0 (Fake Useragent from CLASS:PKHelper.php)";
 
     /**
+     * create a log of all events if set to "1", usfull if tracking not working
+     * Log debug == 1
+     * DO NOT log == 0
+     * log will be saved to [PS ROOT]/log/YYYYMMDD_piwik.debug.log
+     */
+    const DEBUGLOG = 1;
+
+    /** @var FileLogger */
+    private static $_debug_logger = NULL;
+
+    /** @var FileLogger */
+    private static $_error_logger = NULL;
+
+    /**
+     * logs message to [PS ROOT]/log/YYYYMMDD_piwik.error.log
+     * @param string $message
+     */
+    public static function ErrorLogger($message) {
+        if (self::$_error_logger == NULL) {
+            self::$_error_logger = new FileLogger(FileLogger::ERROR);
+            self::$_error_logger->setFilename(_PS_ROOT_DIR_ . '/log/' . date('Ymd') . '_piwik.error.log');
+        }
+        self::$_error_logger->logError($message);
+    }
+
+    /**
+     * logs message to [PS ROOT]/log/YYYYMMDD_piwik.debug.log
+     * @param string $message
+     */
+    public static function DebugLogger($message) {
+        if (PKHelper::DEBUGLOG != 1)
+            return;
+        if (self::$_debug_logger == NULL) {
+            self::$_debug_logger = new FileLogger(FileLogger::DEBUG);
+            self::$_debug_logger->setFilename(_PS_ROOT_DIR_ . '/log/' . date('Ymd') . '_piwik.debug.log');
+        }
+        self::$_debug_logger->logDebug($message);
+    }
+
+    /**
      * 
      * @param type $idSite
      * @param type $siteName
@@ -375,6 +415,7 @@ class PKHelper {
 
     public static function get_http($url, $headers = array()) {
         static $_error2 = FALSE;
+        PKHelper::DebugLogger('START: PKHelper::get_http(' . $url . ',' . print_r($headers, true) . ')');
         $lng = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
 
         $timeout = 5; // should go in module conf
@@ -384,6 +425,7 @@ class PKHelper {
 
         $use_cURL = (bool) Configuration::get(PKHelper::CPREFIX . 'USE_CURL');
         if ($use_cURL === FALSE) {
+            PKHelper::DebugLogger('Using \'file_get_contents\' to fetch remote');
             $httpauth = "";
             if ((!empty($httpauth_usr) && !is_null($httpauth_usr) && $httpauth_usr !== false) && (!empty($httpauth_pwd) && !is_null($httpauth_pwd) && $httpauth_pwd !== false)) {
                 $httpauth = "Authorization: Basic " . base64_encode("$httpauth_usr:$httpauth_pwd") . "\r\n";
@@ -397,17 +439,22 @@ class PKHelper {
                 )
             );
             $context = stream_context_create($options);
+            PKHelper::DebugLogger('END: PKHelper::get_http()');
             return @file_get_contents($url, false, $context);
         } else {
+            PKHelper::DebugLogger('Using \'cURL\' to fetch remote');
             try {
                 $ch = curl_init();
+                PKHelper::DebugLogger("\t: \$ch = curl_init()");
                 curl_setopt($ch, CURLOPT_URL, $url);
+                PKHelper::DebugLogger("\t: curl_setopt(\$ch, CURLOPT_URL, $url)");
                 // @TODO make this work, but how to filter out the headers from returned result??
                 //curl_setopt($ch, CURLOPT_HEADER, 1);
                 (!empty($headers) ?
                                 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers) :
                                 curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept-language: {$lng}\r\n"))
                         );
+                PKHelper::DebugLogger("\t: curl_setopt(\$ch, CURLOPT_HTTPHEADER, array(...))");
                 curl_setopt($ch, CURLOPT_USERAGENT, (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : PKHelper::FAKEUSERAGENT));
                 if ((!empty($httpauth_usr) && !is_null($httpauth_usr) && $httpauth_usr !== false) && (!empty($httpauth_pwd) && !is_null($httpauth_pwd) && $httpauth_pwd !== false))
                     curl_setopt($ch, CURLOPT_USERPWD, $httpauth_usr . ":" . $httpauth_pwd);
@@ -424,9 +471,12 @@ class PKHelper {
                     $return = false;
                 }
                 curl_close($ch);
+                PKHelper::DebugLogger('END: PKHelper::get_http()');
                 return $return;
             } catch (Exception $ex) {
                 self::$errors[] = $ex->getMessage();
+                PKHelper::DebugLogger('Exception: ' . $ex->getMessage());
+                PKHelper::DebugLogger('END: PKHelper::get_http()');
                 return false;
             }
         }

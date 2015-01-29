@@ -12,39 +12,31 @@
 // https://github.com/piwik/piwik/tree/master/misc/proxy-hide-piwik-url#piwik-proxy-hide-url
 // -----
 
-require '../../config/config.inc.php';
+/**
+ * This file is modified to function with Prestashop module 
+ * "piwikanalyticsjs and piwikanalytics"
+ * By: Christian Jensen
+ * https://github.com/cmjnisse/piwikanalyticsjs-prestashop
+ * 
+ * this file also serves as a template of how you may create 
+ * your own script and place it elsewhere on your domain
+ * 
+ * Note: that all changes to this file, in this location 
+ * will be overridden when the module is updated.!
+ */
+// get Prestashop config loader
+require dirname(__FILE__) . '/../../config/config.inc.php';
+// get Piwik helper class
+require dirname(__FILE__) . '/PKHelper.php';
 
-// Edit the line below, and replace http://your-piwik-domain.example.org/piwik/
-// with your Piwik URL ending with a slash.
-// This URL will never be revealed to visitors or search engines.
-$PIWIK_URL = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://') . Configuration::get('PIWIK_HOST');
+  // Edit the line below, and replace http://your-piwik-domain.example.org/piwik/
+  // with your Piwik URL ending with a slash.
+  // This URL will never be revealed to visitors or search engines.
+  $PIWIK_URL = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://') . Configuration::get('PIWIK_HOST');
 
-// Edit the line below, and replace xyz by the token_auth for the user "UserTrackingAPI"
-// which you created when you followed instructions above.
-$TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
-
-// GET http auth if set
-$httpauth = "";
-$httpauth_usr = Configuration::get('PIWIK_PAUTHUSR');
-$httpauth_pwd = Configuration::get('PIWIK_PAUTHPWD');
-if ((!empty($httpauth_usr) && !is_null($httpauth_usr) && $httpauth_usr !== false) && (!empty($httpauth_pwd) && !is_null($httpauth_pwd) && $httpauth_pwd !== false)) {
-    $httpauth = "Authorization: Basic " . base64_encode("$httpauth_usr:$httpauth_pwd") . "\r\n";
-}
-
-// Maximum time, in seconds, to wait for the Piwik server to return the 1*1 GIF
-$timeout = 5;
-
-// Create the default http context options
-$http_options = array(
-    'http' => array(
-        'user_agent' => (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : ''),
-        'method' => "GET",
-        'timeout' => $timeout,
-        'header' => sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", $_SERVER['HTTP_ACCEPT_LANGUAGE'])) .
-                    $httpauth,
-    )
-);
-$http_context = stream_context_create($http_options);
+  // Edit the line below, and replace xyz by the token_auth for the user "UserTrackingAPI"
+  // which you created when you followed instructions above.
+  $TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
 
 function sendHeader($header, $replace = true) {
     headers_sent() || header($header, $replace);
@@ -77,13 +69,21 @@ if (empty($_GET)) {
 
     // Returns 304 if not modified since
     if (!empty($modifiedSince) && $modifiedSince < $lastModified) {
-        sendHeader(sprintf("%s 304 Not Modified", $_SERVER['SERVER_PROTOCOL']));
+        sendHeader(sprintf("%s 304 Not Modified", arrayValue($_SERVER, 'SERVER_PROTOCOL', '')));
     } else {
         sendHeader('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
         sendHeader('Content-Type: application/javascript; charset=UTF-8');
-        if ($piwikJs = file_get_contents($PIWIK_URL . 'piwik.js', false, $http_context)) {
+        if ($piwikJs = PKHelper::get_http($PIWIK_URL . 'piwik.js', array(sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", arrayValue($_SERVER, 'HTTP_ACCEPT_LANGUAGE', '')))))) {
             echo $piwikJs;
         } else {
+            // log all erros in prestashop log dir ..... /log/YYYYMMMDD_piwik.log
+            if (!empty(PKHelper::$errors)) {
+                $logger = new FileLogger();
+                $logger->setFilename(_PS_ROOT_DIR_ . '/log/' . date('Ymd') . '_piwik.log');
+                foreach (PKHelper::$errors as $value) {
+                    $logger->logError($value);
+                }
+            }
             sendHeader($_SERVER['SERVER_PROTOCOL'] . '505 Internal server error');
         }
     }
@@ -99,7 +99,7 @@ foreach ($_GET as $key => $value) {
     $url .= urlencode($key) . '=' . urlencode($value) . '&';
 }
 sendHeader("Content-Type: image/gif");
-echo file_get_contents($url, false, $http_context);
+echo PKHelper::get_http($url, array(sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", arrayValue($_SERVER, 'HTTP_ACCEPT_LANGUAGE', '')))));
 
 function getVisitIp() {
     $matchIp = '/^([0-9]{1,3}\.){3}[0-9]{1,3}$/';
