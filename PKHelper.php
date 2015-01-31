@@ -416,7 +416,11 @@ class PKHelper {
     public static function get_http($url, $headers = array()) {
         static $_error2 = FALSE;
         PKHelper::DebugLogger('START: PKHelper::get_http(' . $url . ',' . print_r($headers, true) . ')');
-        $lng = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
+        // class: Context is not loaded when using piwik.php proxy on prestashop 1.4
+        if (class_exists('Context', FALSE))
+            $lng = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
+        else
+            $lng = 'en';
 
         $timeout = 5; // should go in module conf
 
@@ -471,12 +475,12 @@ class PKHelper {
                     $return = false;
                 }
                 curl_close($ch);
-                PKHelper::DebugLogger('END: PKHelper::get_http()');
+                PKHelper::DebugLogger('END: PKHelper::get_http(): OK');
                 return $return;
             } catch (Exception $ex) {
                 self::$errors[] = $ex->getMessage();
                 PKHelper::DebugLogger('Exception: ' . $ex->getMessage());
-                PKHelper::DebugLogger('END: PKHelper::get_http()');
+                PKHelper::DebugLogger('END: PKHelper::get_http(): ERROR');
                 return false;
             }
         }
