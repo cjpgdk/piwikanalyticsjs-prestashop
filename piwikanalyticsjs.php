@@ -1047,6 +1047,16 @@ class piwikanalyticsjs extends Module {
     /* HOOKs */
 
     /**
+     * hook into maintenance page.
+     * @param array $params empty array
+     * @return string
+     * @since 0.8
+     */
+    public function hookdisplayMaintenance($params) {
+        return $this->hookFooter($params);
+    }
+
+    /**
      * PIWIK don't track links on the same site eg. 
      * if product is view in an iframe so we add this and makes sure that it is content only view 
      * @param mixed $param
@@ -1680,7 +1690,7 @@ class piwikanalyticsjs extends Module {
         if (_PS_VERSION_ < '1.5' && _PS_VERSION_ > '1.3') {
             return (parent::install() && $this->registerHook('header') && $this->registerHook('footer') && $this->registerHook('search') && $this->registerHook('extraRight') && $this->registerHook('productfooter') && $this->registerHook('orderConfirmation') && $this->registerHook('AdminStatsModules'));
         } else if (_PS_VERSION_ >= '1.5') {
-            return (parent::install() && $this->registerHook('header') && $this->registerHook('footer') && $this->registerHook('actionSearch') && $this->registerHook('displayRightColumnProduct') && $this->registerHook('orderConfirmation'));
+            return (parent::install() && $this->registerHook('header') && $this->registerHook('footer') && $this->registerHook('actionSearch') && $this->registerHook('displayRightColumnProduct') && $this->registerHook('orderConfirmation') && $this->registerHook('displayMaintenance'));
         }
     }
 
