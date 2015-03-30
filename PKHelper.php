@@ -216,7 +216,8 @@ class PKHelper {
                 return FALSE;
             }
         } else
-            $password = md5($md5Password);
+            $password = md5($password);
+
         $url = self::getBaseURL(0, NULL, NULL, 'API', NULL, '');
         $url .= "&method=UsersManager.getTokenAuth&userLogin={$userLogin}&md5Password={$password}&format=JSON";
         if ($result = self::getAsJsonDecoded($url)) {
@@ -367,6 +368,7 @@ class PKHelper {
     public static function getMyPiwikSites($fetchAliasUrls = false) {
         return self::getSitesWithAdminAccess($fetchAliasUrls);
     }
+
     /**
      * get all Piwik sites the current authentication token has admin access to
      * @param boolean $fetchAliasUrls
@@ -378,7 +380,7 @@ class PKHelper {
         $url = self::getBaseURL();
         $url .= "&method=SitesManager.getSitesWithAdminAccess&format=JSON" . ($fetchAliasUrls ? '&fetchAliasUrls=1' : '');
         $md5Url = md5($url);
-        if (!isset(self::$_cachedResults[$md5Url."2"])) {
+        if (!isset(self::$_cachedResults[$md5Url . "2"])) {
             if ($result = self::getAsJsonDecoded($url))
                 self::$_cachedResults[$md5Url] = $result;
             else
@@ -461,19 +463,6 @@ class PKHelper {
         if ($getF !== FALSE) {
             return Tools::jsonDecode($getF);
         }
-        if ($use_cURL === FALSE) {
-            $http_response = "";
-            foreach ($http_response_header as $value) {
-                if (preg_match("/^HTTP\/.*/i", $value)) {
-                    $http_response = ':' . $value;
-                }
-            }
-            if (!$_error2) {
-                self::$error = sprintf(self::l('Unable to connect to api %s'), $http_response);
-                self::$errors[] = self::$error;
-                $_error2 = TRUE;
-            }
-        }
         return FALSE;
     }
 
@@ -508,7 +497,23 @@ class PKHelper {
             );
             $context = stream_context_create($options);
             PKHelper::DebugLogger('END: PKHelper::get_http()');
-            return @file_get_contents($url, false, $context);
+            $result = @file_get_contents($url, false, $context);
+            if ($result === FALSE) {
+                $http_response = "";
+                if (isset($http_response_header) && is_array($http_response_header)) {
+                    foreach ($http_response_header as $value) {
+                        if (preg_match("/^HTTP\/.*/i", $value)) {
+                            $http_response = ':' . $value;
+                        }
+                    }
+                }
+                if (!$_error2) {
+                    self::$error = sprintf(self::l('Unable to connect to api%s'), " {$http_response}");
+                    self::$errors[] = self::$error;
+                    $_error2 = TRUE;
+                }
+            }
+            return $result;
         } else {
             PKHelper::DebugLogger('Using \'cURL\' to fetch remote');
             try {
