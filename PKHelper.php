@@ -40,6 +40,13 @@ class PKHelper {
         'getPiwikSite' => array('required' => array('idSite'), 'optional' => array(''), 'order' => array('idSite'),),
         'getPiwikSite2' => array('required' => array('idSite'), 'optional' => array(''), 'order' => array('idSite'),),
         'getSitesGroups' => array('required' => array(), 'optional' => array(), 'order' => array(),),
+        'getSitesWithViewAccess' => array('required' => array(), 'optional' => array(), 'order' => array(),),
+        'getSitesWithAdminAccess' => array('required' => array(), 'optional' => array('fetchAliasUrls'), 'order' => array('fetchAliasUrls'),),
+        'getTokenAuth' => array(
+            'required' => array('userLogin'),
+            'optional' => array('password', 'md5Password'),
+            'order' => array('userLogin', 'password', 'md5Password'),
+        ),
     );
 
     /**
@@ -191,6 +198,38 @@ class PKHelper {
     }
 
     /**
+     * get users token auth from Piwik
+     * NOTE: password is required either an md5 encoded password or a normal string
+     * @param string $userLogin the user name
+     * @param string $password password as clear text string
+     * @param string $md5Password md5 encoded password
+     * @return string|boolean
+     */
+    public static function getTokenAuth($userLogin, $password = NULL, $md5Password = NULL) {
+        /* if (!self::baseTest())
+          return FALSE; */
+        if ($password === null || empty($password)) {
+            $password = $md5Password;
+            if ($md5Password === NULL || empty($md5Password)) {
+                self::$error = self::l('A password is required for method PKHelper::getTokenAuth()!');
+                self::$errors[] = self::$error;
+                return FALSE;
+            }
+        } else
+            $password = md5($md5Password);
+        $url = self::getBaseURL(0, NULL, NULL, 'API', NULL, '');
+        $url .= "&method=UsersManager.getTokenAuth&userLogin={$userLogin}&md5Password={$password}&format=JSON";
+        if ($result = self::getAsJsonDecoded($url)) {
+            if (isset($result->result)) {
+                self::$error = $result->message;
+                self::$errors[] = self::$error;
+            }
+            return isset($result->value) ? $result->value : FALSE;
+        } else
+            return FALSE;
+    }
+
+    /**
      * get image tracking code for use with or without proxy script
      * @return array
      */
@@ -222,20 +261,6 @@ class PKHelper {
                 $ret['proxy'] = str_replace(Configuration::get(PKHelper::CPREFIX . 'HOST') . 'piwik.php?', Configuration::get(PKHelper::CPREFIX . 'PROXY_SCRIPT') . '&', $ret['default']);
         }
         return $ret;
-    }
-
-    public static function getPiwikSite2($idSite = 0) {
-        if ($idSite == 0)
-            $idSite = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
-        if ($result = self::getPiwikSite($idSite)) {
-            $url = self::getBaseURL($idSite);
-            $url .= "&method=SitesManager.getSiteUrlsFromId&format=JSON";
-            if ($resultUrls = self::getAsJsonDecoded($url)) {
-                $result[0]->main_url = implode(',', $resultUrls);
-            }
-            return $result;
-        }
-        return false;
     }
 
     /**
@@ -285,6 +310,20 @@ class PKHelper {
         return false;
     }
 
+    public static function getPiwikSite2($idSite = 0) {
+        if ($idSite == 0)
+            $idSite = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
+        if ($result = self::getPiwikSite($idSite)) {
+            $url = self::getBaseURL($idSite);
+            $url .= "&method=SitesManager.getSiteUrlsFromId&format=JSON";
+            if ($resultUrls = self::getAsJsonDecoded($url)) {
+                $result[0]->main_url = implode(',', $resultUrls);
+            }
+            return $result;
+        }
+        return false;
+    }
+
     /**
      * get all supported time zones from piwik
      * @return array
@@ -304,17 +343,42 @@ class PKHelper {
         return self::$_cachedResults[$md5Url];
     }
 
+    public static function getSitesWithViewAccess() {
+        if (!self::baseTest())
+            return array();
+        $url = self::getBaseURL();
+        $url .= "&method=SitesManager.getSitesWithViewAccess&format=JSON";
+        $md5Url = md5($url);
+        if (!isset(self::$_cachedResults[$md5Url])) {
+            if ($result = self::getAsJsonDecoded($url))
+                self::$_cachedResults[$md5Url] = $result;
+            else
+                self::$_cachedResults[$md5Url] = array();
+        }
+        return self::$_cachedResults[$md5Url];
+    }
+
     /**
+     * Alias of PKHelper::getSitesWithAdminAccess()
      * get all Piwik sites the current authentication token has admin access to
+     * @param boolean $fetchAliasUrls
      * @return stdClass[]
      */
     public static function getMyPiwikSites($fetchAliasUrls = false) {
+        return self::getSitesWithAdminAccess($fetchAliasUrls);
+    }
+    /**
+     * get all Piwik sites the current authentication token has admin access to
+     * @param boolean $fetchAliasUrls
+     * @return stdClass[]
+     */
+    public static function getSitesWithAdminAccess($fetchAliasUrls = false) {
         if (!self::baseTest())
             return array();
         $url = self::getBaseURL();
         $url .= "&method=SitesManager.getSitesWithAdminAccess&format=JSON" . ($fetchAliasUrls ? '&fetchAliasUrls=1' : '');
         $md5Url = md5($url);
-        if (!isset(self::$_cachedResults[$md5Url])) {
+        if (!isset(self::$_cachedResults[$md5Url."2"])) {
             if ($result = self::getAsJsonDecoded($url))
                 self::$_cachedResults[$md5Url] = $result;
             else
@@ -500,6 +564,7 @@ class PKHelper {
         // $this->l('Unable to connect to api %s')
         // $this->l('E-commerce is not active for your site in piwik!')
         // $this->l('Site search is not active for your site in piwik!')
+        // $this->l('A password is required for method PKHelper::getTokenAuth()!')
     }
 
     /**
