@@ -843,7 +843,13 @@ class piwikanalyticsjs extends Module {
             }
         }
         $helper->fields_value = $this->getFormFields();
-        return $this->_errors . $_html . $helper->generateForm($fields_form);
+        $this->smarty->assign(array(
+            'psl_CPREFIX' => PKHelper::CPREFIX,
+            'psl_currentIndex' => $helper->currentIndex,
+            'psl_token' => $helper->token
+        ));
+        return $this->_errors . $_html . $helper->generateForm($fields_form)
+                . $this->display(__FILE__, 'views/templates/admin/piwik_site_lookup.tpl');
     }
 
     private function __pkapicall() {
@@ -866,12 +872,18 @@ class piwikanalyticsjs extends Module {
             }
             $result = call_user_func_array(array('PKHelper', $apiMethod), $order);
             if ($result === FALSE) {
-                die(Tools::jsonEncode(array('error' => TRUE, 'message' => $this->l('Unknown error occurred'))));
+                $lastError = "";
+                if (!empty(PKHelper::$errors))
+                    $lastError = "\n" . PKHelper::$error;
+                die(Tools::jsonEncode(array('error' => TRUE, 'message' => sprintf($this->l('Unknown error occurred%s'), $lastError))));
             } else {
                 if (is_array($result) && isset($result[0])) {
                     $message = $result;
+                } else if (is_object($result)) {
+                    $message = $result;
                 } else
                     $message = (is_string($result) && !is_bool($result) ? $result : (is_array($result) ? implode(', ', $result) : TRUE));
+
                 if (is_bool($message)) {
                     die(Tools::jsonEncode(array('error' => FALSE, 'message' => $this->l('Successfully Updated'))));
                 } else {
