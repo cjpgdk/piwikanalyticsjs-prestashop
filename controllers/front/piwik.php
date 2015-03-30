@@ -55,6 +55,7 @@ class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
         // 1) PIWIK.JS PROXY: No _GET parameter, we serve the JS file
         if (
                 (count($_GET) == 3 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc')) ||
+                (count($_GET) == 4 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc') && Tools::getIsset('id_lang')) ||
                 (count($_GET) == 5 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc') && Tools::getIsset('id_lang') && Tools::getIsset('isolang'))
         ) {
             PKHelper::DebugLogger('Got piwik.js request with _GET count of : ' . count($_GET) . "\n" . str_repeat('==', 50) . "\n" . print_r($_GET, true) . "\n" . str_repeat('==', 50));
