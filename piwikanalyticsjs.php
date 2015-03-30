@@ -1257,7 +1257,29 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     private function _hookFooter($params) {
+        $is404 = false;
+        if (!empty($this->context->controller->errors)) {
+            foreach ($this->context->controller->errors as $key => $value) {
+                if ($value == Tools::displayError('Product not found')) {
+                    $is404 = true;
+                    $this->context->smarty->assign(array("PK404" => $is404));
+                }
+                if ($value == Tools::displayError('This product is no longer available.')) {
+                    $is404 = true;
+                    $this->context->smarty->assign(array("PK404" => $is404));
+                }
+            }
+        }
+        // Tools::displayError('You do not have access to this product.')
 
+        if (
+                (get_class($this->context->controller) == 'PageNotFoundController') ||
+                (isset($this->context->controller->php_self) && ($this->context->controller->php_self == '404')) ||
+                (isset($this->context->controller->page_name) && ($this->context->controller->page_name == 'pagenotfound'))
+        ) {
+            $is404 = true;
+        }
+        $this->context->smarty->assign(array("PK404" => $is404));
         /* product tracking */
         if (get_class($this->context->controller) == 'ProductController') {
             $products = array(array('product' => $this->context->controller->getProduct(), 'categorys' => NULL));
