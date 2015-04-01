@@ -1,5 +1,11 @@
-[Piwik] module for [PrestaShop]
+[Piwik] module for [PrestaShop 1.4]
 =========
+
+this is the final release for PrestaShop 1.4 it has beantested on
+
+Prestashop version
+
+1.4.0.2, 1.4.0.3, 1.4.0.4 and 1.4.11.0
 
 [Piwik] Web Analytics is (my opinion) the ultimate open source alternative to Google Analytics. And it is continuously growing, it's every thing you need to analyze the traffic on your website or ecommerce solution (and it's **free**)
 
@@ -18,17 +24,12 @@ This module adds piwik tracking code to your webshop
 Features
 
  - Piwik dashboard integrated into stats area in admin
- - Using only JavaScript Appended to your shops footer
+ - Using only JavaScript appended to your shops footer
  - Option to use proxy script hides [Piwik] url
- - You define how product ids are passed on to [Piwik]
- - Simple Management of your Piwik sites from module admin (>= Prestashop 1.5)
- - Supports Prestashop multi store setups (>= Prestashop 1.5)
 
 Translations
 
  - English (Default)
- - Danish [98%] Prestahop 1.4, 1.5, 1.6
- - Polish [40%] By Michal Durys, @mdurys Prestahop 1.5, 1.6
 
 Installation
 --------------
