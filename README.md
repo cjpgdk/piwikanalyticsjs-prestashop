@@ -1,4 +1,4 @@
-[Piwik] module for [PrestaShop 1.4]
+[Piwik] module for [PrestaShop] 1.4
 =========
 
 this is the final release for PrestaShop 1.4 it's been tested on
@@ -33,6 +33,25 @@ Translations
 Installation
 --------------
 to install the module from [PrestaShop modules] page without using ftp you need to download the zip file called _"piwikanalyticsjs_prestashop-1.4.zip"_ this is a packaged version of the module that can be uploaded from module admin in [PrestaShop] by clicking on "Add new module/Upload module", always look for latest release under [releases]
+
+after installation of this module make sure the following settings are set correctly
+
+1
+
+    Back Office => Preferences => Performance
+        under "CCC (Combine, Compress and Cache)"
+        - option "Compress inline JavaScript in HTML"
+          must be set to "Keep inline JavaScript in HTML as original"
+ 
+ 2
+
+    404 error pages are tracked in the same way prestashop module "pagesnotfound"
+    do it this means that all 404 http errors must be redirected to 404.php using
+    a .htaccess file like this
+    # Catch 404 errors
+    ErrorDocument 404 /shop-folder/404.php
+    this rule is generated in Back Office => Tools => Generators
+
 
 read more view images see the following link
 http://cmjnisse.github.io/piwikanalyticsjs-prestashop
