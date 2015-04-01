@@ -1,11 +1,9 @@
 [Piwik] module for [PrestaShop 1.4]
 =========
 
-this is the final release for PrestaShop 1.4 it has beantested on
+this is the final release for PrestaShop 1.4 it's been tested on
 
-Prestashop version
-
-1.4.0.2, 1.4.0.3, 1.4.0.4 and 1.4.11.0
+Prestashop versions 1.4.0.2, 1.4.0.3, 1.4.0.4 and 1.4.11.0 before release
 
 [Piwik] Web Analytics is (my opinion) the ultimate open source alternative to Google Analytics. And it is continuously growing, it's every thing you need to analyze the traffic on your website or ecommerce solution (and it's **free**)
 
@@ -20,6 +18,7 @@ This module adds piwik tracking code to your webshop
  - Orders completed
  - Searches
  - Customers vs Guests - plese read [how user id is tracked]
+ - 404 Page not found tracking
 
 Features
 
@@ -33,20 +32,14 @@ Translations
 
 Installation
 --------------
-to install the module from [PrestaShop modules] page without using ftp you need to download the zip file called _"piwikanalyticsjs.zip"_ this is a packaged version of the module that can be uploaded from module admin in [PrestaShop] by clicking on "Add new module/Upload module", always look for latest release under [releases]
+to install the module from [PrestaShop modules] page without using ftp you need to download the zip file called _"piwikanalyticsjs_prestashop-1.4.zip"_ this is a packaged version of the module that can be uploaded from module admin in [PrestaShop] by clicking on "Add new module/Upload module", always look for latest release under [releases]
 
 read more view images see the following link
 http://cmjnisse.github.io/piwikanalyticsjs-prestashop
 
-Bugs, New features
+Bugs
 --------------
-can only be fixed or added if they are reported, feel free use the issue system here at GitHub in case you don't like to use Github you are also welcome to report them by mail to "piwikanalyticsjs [AT] cmjscripter.net" (Text Only), note that if your mail gets flagged as spam i will not receive them.
-
-before you report ANY issues please read this [wiki page first].
-
-if your are reporting issues in the master branch DON'T unless you propose a way to fix the issue, the master branch is for development only.
-
-if you are posting an issue in the issue tracker here at GitHub please don't post in a closed topic unless the issue is the same or directly related to that issue, always create a new issue if you are unsure, also include the full version number of PrestaShop and Piwik you are using
+This is the final release/update for prestashop 1.4 of this module, so only bugs will be fixed, for new features please consider upgrading your shop to a newer version of Prestashop
 
 License
 ----
