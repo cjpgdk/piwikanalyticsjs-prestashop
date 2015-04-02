@@ -40,7 +40,6 @@
     htmls000 += "</label><br/>";
     htmls000 += "</p><div id=\"PiwikLookupLoginFormHttpAuthSettingsWraper\" style=\"display:none;\">";
     
-    htmls000 += "<form id=\"PiwikLookupLoginForm\" action=\"POST\" onsubmit=\"return PiwikLookupLogin();\"><p>";
     htmls000 += "<label for=\"PiwikLookupLoginFormHttpAuthUsername\" style=\"width: 100%; text-align: left;\">{l s='HTTP Authorization Username:' mod='piwikanalyticsjs'}</label>";
     htmls000 += "<input id=\"PiwikLookupLoginFormHttpAuthUsername\" type=\"TEXT\" style=\"height: 25px; width: 386px;\"/>";
     htmls000 += "</p><p>";
@@ -80,8 +79,14 @@
                 http_username = $('#PiwikLookupLoginFormHttpAuthUsername').val(),
                 http_password = $('#PiwikLookupLoginFormHttpAuthPassword').val(),
                 authtoken = '', piwikhost = '';
-        $('#PIWIK_PAUTHUSR').val(username);
-        $('#PIWIK_PIWIK_PAUTHPWD').val(password);
+        
+        if(http_username === "" || http_username === false)
+            http_username = $('#PIWIK_PAUTHUSR').val();
+        if(http_password === "" || http_password === false)
+            http_password = $('#PIWIK_PAUTHPWD').val();
+        $('#PIWIK_PAUTHUSR').val(http_username);
+        $('#PIWIK_PAUTHPWD').val(http_password);
+        
         if ($('#PIWIK_HOST').val().trim() === ''){
             piwikhost = prompt('{l s='Please enter your piwik host' mod='piwikanalyticsjs'}', 'piwik.example.com/piwik2/');
             $('#PIWIK_HOST').val(piwikhost);
@@ -102,6 +107,7 @@
                 'password': password,
                 'httpUser': http_username,
                 'httpPasswd': http_password,
+                'piwikhost': piwikhost
             },
             success: function(data) {
                 if (data.error === true){

@@ -74,6 +74,10 @@ class PKHelper {
     const CPREFIX = "PIWIK_";
     const FAKEUSERAGENT = "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0 (Fake Useragent from CLASS:PKHelper.php)";
 
+    public static $httpAuthUsername = "";
+    public static $httpAuthPassword = "";
+    public static $piwikHost = "";
+    
     /**
      * create a log of all events if set to "1", usfull if tracking not working
      * Log debug == 1
@@ -217,6 +221,11 @@ class PKHelper {
             }
         } else
             $password = md5($password);
+        
+        /*
+                'httpUser': http_username,
+                'httpPasswd': http_password,
+         */
 
         $url = self::getBaseURL(0, NULL, NULL, 'API', NULL, '');
         $url .= "&method=UsersManager.getTokenAuth&userLogin={$userLogin}&md5Password={$password}&format=JSON";
@@ -421,14 +430,21 @@ class PKHelper {
     protected static function getBaseURL($idSite = NULL, $pkHost = NULL, $https = NULL, $pkModule = 'API', $isoCode = NULL, $tokenAuth = NULL) {
         if ($https === NULL)
             $https = (bool) Configuration::get(PKHelper::CPREFIX . 'CRHTTPS');
+        
+        
+        if (self::$piwikHost == "" || self::$piwikHost === false) 
+            self::$piwikHost = Configuration::get(PKHelper::CPREFIX . 'HOST');
+        
         if ($pkHost === NULL)
-            $pkHost = Configuration::get(PKHelper::CPREFIX . 'HOST');
+            $pkHost = self::$piwikHost;
         if ($isoCode === NULL)
             $isoCode = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
         if ($idSite === NULL)
             $idSite = Configuration::get(PKHelper::CPREFIX . 'SITEID');
         if ($tokenAuth === NULL)
             $tokenAuth = Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH');
+        
+        
         return ($https ? 'https' : 'http') . "://{$pkHost}index.php?module={$pkModule}&language={$isoCode}&idSite={$idSite}&token_auth={$tokenAuth}";
     }
 
@@ -459,6 +475,7 @@ class PKHelper {
     protected static function getAsJsonDecoded($url) {
         static $_error2 = FALSE;
         $use_cURL = (bool) Configuration::get(PKHelper::CPREFIX . 'USE_CURL');
+        
         $getF = self::get_http($url);
         if ($getF !== FALSE) {
             return Tools::jsonDecode($getF);
@@ -477,8 +494,13 @@ class PKHelper {
 
         $timeout = 5; // should go in module conf
 
-        $httpauth_usr = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
-        $httpauth_pwd = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
+        if (self::$httpAuthUsername == "" || self::$httpAuthUsername === false)
+            self::$httpAuthUsername = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
+        if (self::$httpAuthPassword == "" || self::$httpAuthPassword === false) 
+            self::$httpAuthPassword = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
+        
+        $httpauth_usr = self::$httpAuthUsername;
+        $httpauth_pwd = self::$httpAuthPassword;
 
         $use_cURL = (bool) Configuration::get(PKHelper::CPREFIX . 'USE_CURL');
         if ($use_cURL === FALSE) {
@@ -496,7 +518,7 @@ class PKHelper {
                 )
             );
             $context = stream_context_create($options);
-            PKHelper::DebugLogger('END: PKHelper::get_http()');
+            PKHelper::DebugLogger('Calling: '. $url . (!empty($httpauth) ? "\n\t- With Http auth":""));
             $result = @file_get_contents($url, false, $context);
             if ($result === FALSE) {
                 $http_response = "";
@@ -507,12 +529,19 @@ class PKHelper {
                         }
                     }
                 }
+                PKHelper::DebugLogger('request returned ERROR: http response: '. $http_response);
+                if(isset($http_response_header))
+                    PKHelper::DebugLogger('$http_response_header: '. print_r($http_response_header, true));
                 if (!$_error2) {
                     self::$error = sprintf(self::l('Unable to connect to api%s'), " {$http_response}");
                     self::$errors[] = self::$error;
                     $_error2 = TRUE;
+                    PKHelper::DebugLogger('Last error message: '. self::$error);
                 }
+            } else {
+                PKHelper::DebugLogger('request returned OK');
             }
+            PKHelper::DebugLogger('END: PKHelper::get_http(): OK');
             return $result;
         } else {
             PKHelper::DebugLogger('Using \'cURL\' to fetch remote');

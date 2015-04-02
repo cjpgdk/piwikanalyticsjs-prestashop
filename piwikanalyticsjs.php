@@ -92,13 +92,13 @@ class piwikanalyticsjs extends Module {
             $this->__pkapicall();
             die();
         }
-        
-        if (_PS_VERSION_ <= '1.5.0.1'){
+
+        if (_PS_VERSION_ <= '1.5.0.1') {
             $this->context->controller->addJquery(_PS_JQUERY_VERSION_);
-            $this->context->controller->addJs($this->_path .'js/jquery.alerts.js');
-            $this->context->controller->addCss($this->_path .'js/jquery.alerts.css');
+            $this->context->controller->addJs($this->_path . 'js/jquery.alerts.js');
+            $this->context->controller->addCss($this->_path . 'js/jquery.alerts.css');
         }
-        
+
         $_html = "";
         $_html .= $this->processFormsUpdate();
         if (Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') !== false)
@@ -845,6 +845,7 @@ class piwikanalyticsjs extends Module {
             $order = PKHelper::$acp[$apiMethod]['order'];
             foreach ($required as $requiredOption) {
                 if (!Tools::getIsset($requiredOption)) {
+                    PKHelper::DebugLogger("__pkapicall():\n\t- Required parameter \"".$requiredOption.'" is missing');
                     die(Tools::jsonEncode(array('error' => true, 'message' => sprintf($this->l('Required parameter "%s" is missing'), $requiredOption))));
                 }
             }
@@ -855,6 +856,15 @@ class piwikanalyticsjs extends Module {
                     $value = NULL;
                 }
             }
+
+            if (Tools::getIsset('httpUser'))
+                PKHelper::$httpAuthUsername = Tools::getValue('httpUser');
+            if (Tools::getIsset('httpPasswd'))
+                PKHelper::$httpAuthPassword = Tools::getValue('httpPasswd');
+            if (Tools::getIsset('piwikhost'))
+                PKHelper::$piwikHost = Tools::getValue('piwikhost');
+            
+            PKHelper::DebugLogger("__pkapicall():\n\t- Call PKHelper::".$apiMethod);
             $result = call_user_func_array(array('PKHelper', $apiMethod), $order);
             if ($result === FALSE) {
                 $lastError = "";
@@ -862,6 +872,7 @@ class piwikanalyticsjs extends Module {
                     $lastError = "\n" . PKHelper::$error;
                 die(Tools::jsonEncode(array('error' => TRUE, 'message' => sprintf($this->l('Unknown error occurred%s'), $lastError))));
             } else {
+                PKHelper::DebugLogger("__pkapicall():\n\t- Al good");
                 if (is_array($result) && isset($result[0])) {
                     $message = $result;
                 } else if (is_object($result)) {
