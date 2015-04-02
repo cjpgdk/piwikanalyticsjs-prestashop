@@ -3,8 +3,8 @@
 if (!defined('_PS_VERSION_'))
     exit;
 
-/*
- * Copyright (C) 2014 Christian Jensen
+/**
+ * Copyright (C) 2015 Christian Jensen
  *
  * This file is part of PiwikAnalyticsJS for prestashop.
  * 
@@ -22,24 +22,9 @@ if (!defined('_PS_VERSION_'))
  * along with PiwikAnalyticsJS for prestashop.  If not, see <http://www.gnu.org/licenses/>.
  *
  *
+ * @author Christian M. Jensen
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- */
-
-
-/* Backward compatibility */
-if (_PS_VERSION_ < '1.5') {
-    if (version_compare(_PS_VERSION_, '1.4.5.1', '<=')) {
-        include _PS_ROOT_DIR_ . '/modules/piwikanalyticsjs/backward_compatibility/global.php';
-    } else {
-        require_once dirname(__FILE__) . '/backward_compatibility/global.php';
-    }
-}
-
-/**
- * Description of piwikanalyticsjs
- *
- * @author Christian
  */
 class piwikanalyticsjs extends Module {
 
@@ -73,16 +58,9 @@ class piwikanalyticsjs extends Module {
 
         $this->bootstrap = true;
 
-
-        if (_PS_VERSION_ < '1.5' && _PS_VERSION_ > '1.3')
-            parent::__construct($name);
-        /* Prestashop 1.5 and up implements "$context" */
-        if (_PS_VERSION_ >= '1.5')
-            parent::__construct($name, ($context instanceof Context ? $context : NULL));
+        parent::__construct($name, ($context instanceof Context ? $context : NULL));
 
         require_once dirname(__FILE__) . '/PKHelper.php';
-        if (_PS_VERSION_ < '1.5')
-            PKHelper::$_module = & $this;
 
         //* warnings on module list page
         if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH'))
@@ -95,17 +73,13 @@ class piwikanalyticsjs extends Module {
         $this->description = $this->l('Piwik Web Analytics Javascript plugin');
         $this->confirmUninstall = $this->l('Are you sure you want to delete this plugin ?');
 
-
-        /* Backward compatibility */
-        if (_PS_VERSION_ < '1.5') {
-            if (version_compare(_PS_VERSION_, '1.4.5.1', '<=')) {
-                include _PS_ROOT_DIR_ . '/modules/piwikanalyticsjs/backward_compatibility/backward.php';
-            } else {
-                require dirname(__FILE__) . '/backward_compatibility/backward.php';
-            }
-        }
         self::$_isOrder = FALSE;
         $this->_errors = PKHelper::$errors = PKHelper::$error = "";
+
+        if ($this->id) {
+            if (_PS_VERSION_ <= '1.5.0.1')
+                PKHelper::$_module = & $this;
+        }
     }
 
     /**
@@ -114,15 +88,23 @@ class piwikanalyticsjs extends Module {
      * @return string
      */
     public function getContent() {
-        if (_PS_VERSION_ < '1.5')
-            global $currentIndex;
         if (Tools::getIsset('pkapicall')) {
             $this->__pkapicall();
             die();
         }
+        
+        if (_PS_VERSION_ <= '1.5.0.1'){
+            $this->context->controller->addJquery(_PS_JQUERY_VERSION_);
+            $this->context->controller->addJs($this->_path .'js/jquery.alerts.js');
+            $this->context->controller->addCss($this->_path .'js/jquery.alerts.css');
+        }
+        
         $_html = "";
         $_html .= $this->processFormsUpdate();
-        $this->piwikSite = PKHelper::getPiwikSite();
+        if (Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') !== false)
+            $this->piwikSite = PKHelper::getPiwikSite();
+        else
+            $this->piwikSite = false;
         $this->displayErrors(PKHelper::$errors);
         PKHelper::$errors = PKHelper::$error = "";
         $this->__setCurrencies();
@@ -143,7 +125,7 @@ class piwikanalyticsjs extends Module {
             $languages[$languages_key]['is_default'] = ($languages_value['id_lang'] == (int) Configuration::get('PS_LANG_DEFAULT') ? true : false);
         }
         $helper = new HelperForm();
-        if (_PS_VERSION_ >= '1.5' && _PS_VERSION_ < '1.6')
+        if (_PS_VERSION_ < '1.6')
             $helper->base_folder = _PS_MODULE_DIR_ . 'piwikanalyticsjs/views/templates/helpers/form/';
 
         $helper->languages = $languages;
@@ -152,10 +134,7 @@ class piwikanalyticsjs extends Module {
         $helper->identifier = $this->identifier;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
 
-        if (_PS_VERSION_ < '1.5')
-            $helper->currentIndex = $currentIndex . '&configure=' . $this->name;
-        else
-            $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
+        $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
         $helper->default_form_language = (int) Configuration::get('PS_LANG_DEFAULT');
         $helper->allow_employee_form_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         $helper->show_toolbar = true;
@@ -165,7 +144,7 @@ class piwikanalyticsjs extends Module {
 
         $fields_form[0]['form']['legend'] = array(
             'title' => $this->displayName,
-            'image' => (_PS_VERSION_ < '1.5' ? $this->_path . 'logo.gif' : $this->_path . 'logo.png')
+            'image' => $this->_path . 'logo.png'
         );
 
         if ($this->piwikSite !== FALSE) {
@@ -291,7 +270,14 @@ class piwikanalyticsjs extends Module {
                 )
             ),
         );
-        $image_tracking = PKHelper::getPiwikImageTrackingCode();
+
+        if (Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') !== false)
+            $image_tracking = PKHelper::getPiwikImageTrackingCode();
+        else
+            $image_tracking = array(
+                'default' => $this->l('I need Site ID and Auth Token before i can get your image tracking code'),
+                'proxy' => $this->l('I need Site ID and Auth Token before i can get your image tracking code')
+            );
         $this->displayErrors(PKHelper::$errors);
         PKHelper::$errors = PKHelper::$error = "";
         $fields_form[0]['form']['input'][] = array(
@@ -369,7 +355,7 @@ class piwikanalyticsjs extends Module {
         $fields_form[1]['form'] = array(
             'legend' => array(
                 'title' => $this->displayName . ' ' . $this->l('Advanced'),
-                'image' => (_PS_VERSION_ < '1.5' ? $this->_path . 'logo.gif' : $this->_path . 'logo.png')
+                'image' => $this->_path . 'logo.png'
             ),
             'input' => array(
                 array(
@@ -484,165 +470,165 @@ class piwikanalyticsjs extends Module {
         );
 
         if ($this->piwikSite !== FALSE) {
-            if ((_PS_VERSION_ >= '1.5')) {
-                $tmp = PKHelper::getMyPiwikSites(TRUE);
-                $this->displayErrors(PKHelper::$errors);
-                PKHelper::$errors = PKHelper::$error = "";
-                $pksite_default = array('value' => 0, 'label' => $this->l('Choose Piwik site'));
-                $pksites = array();
-                foreach ($tmp as $pksid) {
-                    $pksites[] = array(
-                        'pkid' => $pksid->idsite,
-                        'name' => "{$pksid->name} #{$pksid->idsite}",
+
+            $tmp = PKHelper::getMyPiwikSites(TRUE);
+            $this->displayErrors(PKHelper::$errors);
+            PKHelper::$errors = PKHelper::$error = "";
+            $pksite_default = array('value' => 0, 'label' => $this->l('Choose Piwik site'));
+            $pksites = array();
+            foreach ($tmp as $pksid) {
+                $pksites[] = array(
+                    'pkid' => $pksid->idsite,
+                    'name' => "{$pksid->name} #{$pksid->idsite}",
+                );
+            }
+            unset($tmp, $pksid);
+
+            $pktimezone_default = array('value' => 0, 'label' => $this->l('Choose Timezone'));
+            $pktimezones = array();
+            $tmp = PKHelper::getTimezonesList();
+            $this->displayErrors(PKHelper::$errors);
+            PKHelper::$errors = PKHelper::$error = "";
+            foreach ($tmp as $key => $pktz) {
+                if (!isset($pktimezones[$key])) {
+                    $pktimezones[$key] = array(
+                        'name' => $this->l($key),
+                        'query' => array(),
                     );
                 }
-                unset($tmp, $pksid);
-
-                $pktimezone_default = array('value' => 0, 'label' => $this->l('Choose Timezone'));
-                $pktimezones = array();
-                $tmp = PKHelper::getTimezonesList();
-                $this->displayErrors(PKHelper::$errors);
-                PKHelper::$errors = PKHelper::$error = "";
-                foreach ($tmp as $key => $pktz) {
-                    if (!isset($pktimezones[$key])) {
-                        $pktimezones[$key] = array(
-                            'name' => $this->l($key),
-                            'query' => array(),
-                        );
-                    }
-                    foreach ($pktz as $pktzK => $pktzV) {
-                        $pktimezones[$key]['query'][] = array(
-                            'tzId' => $pktzK,
-                            'tzName' => $pktzV,
-                        );
-                    }
+                foreach ($pktz as $pktzK => $pktzV) {
+                    $pktimezones[$key]['query'][] = array(
+                        'tzId' => $pktzK,
+                        'tzName' => $pktzV,
+                    );
                 }
-                unset($tmp, $pktz, $pktzV, $pktzK);
-                $fields_form[2]['form'] = array(
-                    'legend' => array(
-                        'title' => $this->displayName . ' ' . $this->l('Advanced') . ' - ' . $this->l('Edit your Piwik site'),
-                        'image' => (_PS_VERSION_ < '1.5' ? $this->_path . 'logo.gif' : $this->_path . 'logo.png')
+            }
+            unset($tmp, $pktz, $pktzV, $pktzK);
+            $fields_form[2]['form'] = array(
+                'legend' => array(
+                    'title' => $this->displayName . ' ' . $this->l('Advanced') . ' - ' . $this->l('Edit your Piwik site'),
+                    'image' => $this->_path . 'logo.png'
+                ),
+                'input' => array(
+                    array(
+                        'type' => 'select',
+                        'label' => $this->l('Piwik Site'),
+                        'name' => 'SPKSID',
+                        'desc' => sprintf($this->l('Based on your settings in Piwik your default site is %s'), $this->piwikSite[0]->idsite),
+                        'options' => array(
+                            'default' => $pksite_default,
+                            'query' => $pksites,
+                            'id' => 'pkid',
+                            'name' => 'name'
+                        ),
+                        'onchange' => 'return ChangePKSiteEdit(this.value)',
                     ),
-                    'input' => array(
-                        array(
-                            'type' => 'select',
-                            'label' => $this->l('Piwik Site'),
-                            'name' => 'SPKSID',
-                            'desc' => sprintf($this->l('Based on your settings in Piwik your default site is %s'), $this->piwikSite[0]->idsite),
-                            'options' => array(
-                                'default' => $pksite_default,
-                                'query' => $pksites,
-                                'id' => 'pkid',
-                                'name' => 'name'
-                            ),
-                            'onchange' => 'return ChangePKSiteEdit(this.value)',
-                        ),
-                        array(
-                            'type' => 'html',
-                            'name' => $this->l('In this section you can modify your settings in piwik just so you don\'t have to login to Piwik to do this') . "<br>"
-                            . "<strong>" . $this->l('Currently selected name') . "</strong>: <i id='wnamedsting'>{$this->piwikSite[0]->name}</i><br>"
-                            . "<input type=\"hidden\" name=\"PKAdminIdSite\" id=\"PKAdminIdSite\" value=\"{$this->piwikSite[0]->idsite}\" />"
-                        ),
-                        array(
-                            'type' => 'text',
-                            'label' => $this->l('Piwik Site Name'),
-                            'name' => 'PKAdminSiteName',
-                            'desc' => $this->l('Name of this site in Piwik'),
-                        ),
+                    array(
+                        'type' => 'html',
+                        'name' => $this->l('In this section you can modify your settings in piwik just so you don\'t have to login to Piwik to do this') . "<br>"
+                        . "<strong>" . $this->l('Currently selected name') . "</strong>: <i id='wnamedsting'>{$this->piwikSite[0]->name}</i><br>"
+                        . "<input type=\"hidden\" name=\"PKAdminIdSite\" id=\"PKAdminIdSite\" value=\"{$this->piwikSite[0]->idsite}\" />"
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Piwik Site Name'),
+                        'name' => 'PKAdminSiteName',
+                        'desc' => $this->l('Name of this site in Piwik'),
+                    ),
 //                    array(
 //                        'type' => 'text',
 //                        'label' => $this->l('Site urls'),
 //                        'name' => 'PKAdminSiteUrls',
 //                    ),
-                        array(
-                            'type' => 'switch',
-                            'is_bool' => true,
-                            'label' => $this->l('Ecommerce'),
-                            'name' => 'PKAdminEcommerce',
-                            'desc' => $this->l('Is this site an ecommerce site?'),
-                            'values' => array(
-                                array(
-                                    'id' => 'active_on',
-                                    'value' => 1,
-                                    'label' => $this->l('Yes')
-                                ),
-                                array(
-                                    'id' => 'active_off',
-                                    'value' => 0,
-                                    'label' => $this->l('No')
-                                )
+                    array(
+                        'type' => 'switch',
+                        'is_bool' => true,
+                        'label' => $this->l('Ecommerce'),
+                        'name' => 'PKAdminEcommerce',
+                        'desc' => $this->l('Is this site an ecommerce site?'),
+                        'values' => array(
+                            array(
+                                'id' => 'active_on',
+                                'value' => 1,
+                                'label' => $this->l('Yes')
                             ),
+                            array(
+                                'id' => 'active_off',
+                                'value' => 0,
+                                'label' => $this->l('No')
+                            )
                         ),
-                        array(
-                            'type' => 'switch',
-                            'is_bool' => true,
-                            'label' => $this->l('Site Search'),
-                            'name' => 'PKAdminSiteSearch',
-                            'values' => array(
-                                array(
-                                    'id' => 'active_on',
-                                    'value' => 1,
-                                    'label' => $this->l('Yes')
-                                ),
-                                array(
-                                    'id' => 'active_off',
-                                    'value' => 0,
-                                    'label' => $this->l('No')
-                                )
+                    ),
+                    array(
+                        'type' => 'switch',
+                        'is_bool' => true,
+                        'label' => $this->l('Site Search'),
+                        'name' => 'PKAdminSiteSearch',
+                        'values' => array(
+                            array(
+                                'id' => 'active_on',
+                                'value' => 1,
+                                'label' => $this->l('Yes')
                             ),
+                            array(
+                                'id' => 'active_off',
+                                'value' => 0,
+                                'label' => $this->l('No')
+                            )
                         ),
-                        array(
-                            'type' => 'text',
-                            'label' => $this->l('Search Keyword Parameters'),
-                            'name' => 'PKAdminSearchKeywordParameters',
-                        ),
-                        array(
-                            'type' => 'text',
-                            'label' => $this->l('Search Category Parameters'),
-                            'name' => 'PKAdminSearchCategoryParameters',
-                        ),
-                        array(
-                            'type' => 'text',
-                            'label' => $this->l('Excluded ip addresses'),
-                            'name' => 'PKAdminExcludedIps',
-                            'desc' => $this->l('ip addresses excluded from tracking, separated by comma ","'),
-                        ),
-                        array(
-                            'type' => 'text',
-                            'label' => $this->l('Excluded Query Parameters'),
-                            'name' => 'PKAdminExcludedQueryParameters',
-                            'desc' => $this->l('please read: http://piwik.org/faq/how-to/faq_81/'),
-                        ),
-                        array(
-                            'type' => 'select',
-                            'label' => $this->l('Timezone'),
-                            'name' => 'PKAdminTimezone',
-                            'desc' => sprintf($this->l('Based on your settings in Piwik your default timezone is %s'), $this->piwikSite[0]->timezone),
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Search Keyword Parameters'),
+                        'name' => 'PKAdminSearchKeywordParameters',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Search Category Parameters'),
+                        'name' => 'PKAdminSearchCategoryParameters',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Excluded ip addresses'),
+                        'name' => 'PKAdminExcludedIps',
+                        'desc' => $this->l('ip addresses excluded from tracking, separated by comma ","'),
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Excluded Query Parameters'),
+                        'name' => 'PKAdminExcludedQueryParameters',
+                        'desc' => $this->l('please read: http://piwik.org/faq/how-to/faq_81/'),
+                    ),
+                    array(
+                        'type' => 'select',
+                        'label' => $this->l('Timezone'),
+                        'name' => 'PKAdminTimezone',
+                        'desc' => sprintf($this->l('Based on your settings in Piwik your default timezone is %s'), $this->piwikSite[0]->timezone),
+                        'options' => array(
+                            'default' => $pktimezone_default,
+                            'optiongroup' => array(
+                                'label' => 'name',
+                                'query' => $pktimezones,
+                            ),
                             'options' => array(
-                                'default' => $pktimezone_default,
-                                'optiongroup' => array(
-                                    'label' => 'name',
-                                    'query' => $pktimezones,
-                                ),
-                                'options' => array(
-                                    'id' => 'tzId',
-                                    'name' => 'tzName',
-                                    'query' => 'query',
-                                ),
+                                'id' => 'tzId',
+                                'name' => 'tzName',
+                                'query' => 'query',
                             ),
                         ),
-                        array(
-                            'type' => 'select',
-                            'label' => $this->l('Currency'),
-                            'name' => 'PKAdminCurrency',
-                            'desc' => sprintf($this->l('Based on your settings in Piwik your default currency is %s'), $this->piwikSite[0]->currency),
-                            'options' => array(
-                                'default' => $this->default_currency,
-                                'query' => $this->currencies,
-                                'id' => 'iso_code',
-                                'name' => 'name'
-                            ),
+                    ),
+                    array(
+                        'type' => 'select',
+                        'label' => $this->l('Currency'),
+                        'name' => 'PKAdminCurrency',
+                        'desc' => sprintf($this->l('Based on your settings in Piwik your default currency is %s'), $this->piwikSite[0]->currency),
+                        'options' => array(
+                            'default' => $this->default_currency,
+                            'query' => $this->currencies,
+                            'id' => 'iso_code',
+                            'name' => 'name'
                         ),
+                    ),
 //                    array(
 //                        'type' => 'text',
 //                        'label' => $this->l('Website group'),
@@ -654,196 +640,195 @@ class piwikanalyticsjs extends Module {
 //                        'label' => $this->l('Website start date'),
 //                        'name' => 'PKAdminStartDate',
 //                    ),
-                        array(
-                            'type' => 'textarea',
-                            'label' => $this->l('Excluded User Agents'),
-                            'name' => 'PKAdminExcludedUserAgents',
-                            'rows' => 10,
-                            'cols' => 50,
-                            'desc' => $this->l('please read: http://piwik.org/faq/how-to/faq_17483/'),
-                        ),
-                        array(
-                            'type' => 'switch',
-                            'is_bool' => true,
-                            'label' => $this->l('Keep URL Fragments'),
-                            'name' => 'PKAdminKeepURLFragments',
-                            'values' => array(
-                                array(
-                                    'id' => 'active_on',
-                                    'value' => 1,
-                                    'label' => $this->l('Yes')
-                                ),
-                                array(
-                                    'id' => 'active_off',
-                                    'value' => 0,
-                                    'label' => $this->l('No')
-                                )
+                    array(
+                        'type' => 'textarea',
+                        'label' => $this->l('Excluded User Agents'),
+                        'name' => 'PKAdminExcludedUserAgents',
+                        'rows' => 10,
+                        'cols' => 50,
+                        'desc' => $this->l('please read: http://piwik.org/faq/how-to/faq_17483/'),
+                    ),
+                    array(
+                        'type' => 'switch',
+                        'is_bool' => true,
+                        'label' => $this->l('Keep URL Fragments'),
+                        'name' => 'PKAdminKeepURLFragments',
+                        'values' => array(
+                            array(
+                                'id' => 'active_on',
+                                'value' => 1,
+                                'label' => $this->l('Yes')
                             ),
+                            array(
+                                'id' => 'active_off',
+                                'value' => 0,
+                                'label' => $this->l('No')
+                            )
                         ),
+                    ),
 //                    array(
 //                        'type' => 'text',
 //                        'label' => $this->l('Site Type'),
 //                        'name' => 'PKAdminSiteType',
 //                    ),
-                        array(
-                            'type' => 'html',
-                            'name' => "<button onclick=\"return submitPiwikSiteAPIUpdate()\" id=\"submitUpdatePiwikAdmSite\" class=\"btn btn-default pull-left\" name=\"submitUpdatePiwikAdmSite\" value=\"1\" type=\"button\"><i class=\"process-icon-save\"></i>" . $this->l('Save') . "</button>"
-                            . "<script type=\"text/javascript\">"
-                            . "function submitPiwikSiteAPIUpdate(){\n"
-                            . "    var idSite = $('#PKAdminIdSite').val();\n"
-                            . "    var siteName = $('#PKAdminSiteName').val();\n"
-                            . "    /*var urls = $('#PKAdminSiteUrls').val();*/\n"
-                            . "    var ecommerce = $('input[name=PKAdminEcommerce]:checked').val();\n"
-                            . "    var siteSearch = $('input[name=PKAdminSiteSearch]:checked').val();\n"
-                            . "    var searchKeywordParameters = $('#PKAdminSearchKeywordParameters').val();\n"
-                            . "    var searchCategoryParameters = $('#PKAdminSearchCategoryParameters').val();\n"
-                            . "    var excludedIps = $('#PKAdminExcludedIps').val();\n"
-                            . "    var excludedQueryParameters = $('#PKAdminExcludedQueryParameters').val();\n"
-                            . "    var timezone = $('#PKAdminTimezone').val();\n"
-                            . "    var currency = $('#PKAdminCurrency').val();\n"
-                            . "    /*var group = $('#PKAdminGroup').val();*/\n"
-                            . "    /*var startDate = $('#PKAdminStartDate').val();*/\n"
-                            . "    var excludedUserAgents = $('#PKAdminExcludedUserAgents').val();\n"
-                            . "    var keepURLFragments = $('input[name=PKAdminKeepURLFragments]:checked').val();\n"
-                            . "    /*var type = $('#PKAdminSiteType').val();*/\n"
-                            . "    \n"
-                            . "    $.ajax({\n"
-                            . "        type: 'POST',\n"
-                            . "        url: '" . $helper->currentIndex . "&token=" . $helper->token . "',\n"
-                            . "        dataType: 'json',\n"
-                            . "        data: {\n"
-                            . "            'pkapicall': 'updatePiwikSite',\n"
-                            . "            'ajax': 1,\n"
-                            . "            'idSite': idSite,\n"
-                            . "            'siteName': siteName,\n"
-                            . "            'ecommerce': ecommerce,\n"
-                            . "            'siteSearch': siteSearch,\n"
-                            . "            'searchKeywordParameters': searchKeywordParameters,\n"
-                            . "            'searchCategoryParameters': searchCategoryParameters,\n"
-                            . "            'excludedIps': excludedIps,\n"
-                            . "            'excludedQueryParameters': excludedQueryParameters,\n"
-                            . "            'timezone': timezone,\n"
-                            . "            'currency': currency,\n"
-                            . "            'keepURLFragments': keepURLFragments,\n"
-                            /* . "            'group': group,\n" */
-                            . "            'excludedUserAgents': excludedUserAgents,\n"
-                            . "        },\n"
-                            . "        beforeSend: function(){\n"
-                            . "            showLoadingStuff();\n"
-                            . "        },\n"
-                            . "        success: function(data) {\n"
-                            . "                jAlert(data.message);\n"
-                            . "        },\n"
-                            . "        error: function(XMLHttpRequest, textStatus, errorThrown){\n"
-                            . "            jAlert(\"Error while saving Piwik Data\\n\\ntextStatus: '\" + textStatus + \"'\\nerrorThrown: '\" + errorThrown + \"'\\nresponseText:\\n\" + XMLHttpRequest.responseText);\n"
-                            . "        },\n"
-                            . "        complete: function(){\n"
-                            . "            hideLoadingStuff();\n"
-                            . "        }\n"
-                            . "    });\n"
-                            . "    \n"
-                            . "    return false;\n"
-                            . "}\n"
-                            . "\n"
-                            . ( (_PS_VERSION_ >= '1.5') ?
-                                    "function hideLoadingStuff() { $('#ajax_running').hide('fast'); clearTimeout(ajax_running_timeout); $.fancybox.helpers.overlay.close(); $.fancybox.hideLoading(); }\n"
-                                    . "function showLoadingStuff() { showAjaxOverlay(); $.fancybox.helpers.overlay.open({parent: $('body')}); $.fancybox.showLoading(); }\n" :
-                                    "function hideLoadingStuff() {  }\n"
-                                    . "function showLoadingStuff() {  }\n"
-                            )
-                            . "\n"
-                            . "function ChangePKSiteEdit(id){\n"
-                            . "    $.ajax({\n"
-                            . "        type: 'POST',\n"
-                            . "        url: '" . $helper->currentIndex . "&token=" . $helper->token . "',\n"
-                            . "        dataType: 'json',\n"
-                            . "        data: {\n"
-                            . "            'pkapicall': 'getPiwikSite',\n"
-                            . "            'idSite': id,\n"
-                            . "        },\n"
-                            . "        beforeSend: function(){\n"
-                            . "            showLoadingStuff();\n"
-                            . "        },\n"
-                            . "        success: function(data) {\n"
-                            /* . "            $('#SPKSID').val(data.message[0].idSite);\n" */
-                            . "            $('#PKAdminIdSite').val(data.message[0].idsite);\n"
-                            . "            $('#PKAdminSiteName').val(data.message[0].name);\n"
-                            . "            $('#wnamedsting').text(data.message[0].name);\n"
-                            . "            /*$('#PKAdminSiteUrls').val(data.message[0].main_url);*/\n"
-                            . ( (_PS_VERSION_ >= '1.6') ?
-                                    "            if(data.message[0].ecommerce===1){\n"
-                                    . "                $('#PKAdminEcommerce_on').prop('checked', true);\n"
-                                    . "                $('#PKAdminEcommerce_off').prop('checked', false);\n"
-                                    . "            } else {\n"
-                                    . "                $('#PKAdminEcommerce_off').prop('checked', true);\n"
-                                    . "                $('#PKAdminEcommerce_on').prop('checked', false);\n"
-                                    . "            }\n"
-                                    . "            if(data.message[0].sitesearch===1){\n"
-                                    . "                $('#PKAdminSiteSearch_on').prop('checked', true);\n"
-                                    . "                $('#PKAdminSiteSearch_off').prop('checked', false);\n"
-                                    . "            } else {\n"
-                                    . "                $('#PKAdminSiteSearch_off').prop('checked', true);\n"
-                                    . "                $('#PKAdminSiteSearch_on').prop('checked', false);\n"
-                                    . "            }\n" :
-                                    "            if(data.message[0].ecommerce===1){\n"
-                                    . "                $('input[id=active_on][name=PKAdminEcommerce]').prop('checked', true);\n"
-                                    . "                $('input[id=active_off][name=PKAdminEcommerce]').prop('checked', false);\n"
-                                    . "            } else {\n"
-                                    . "                $('input[id=active_off][name=PKAdminEcommerce]').prop('checked', true);\n"
-                                    . "                $('input[id=active_on][name=PKAdminEcommerce]').prop('checked', false);\n"
-                                    . "            }\n"
-                                    . "            if(data.message[0].sitesearch===1){\n"
-                                    . "                $('input[id=active_on][name=PKAdminSiteSearch]').prop('checked', true);\n"
-                                    . "                $('input[id=active_off][name=PKAdminSiteSearch]').prop('checked', false);\n"
-                                    . "            } else {\n"
-                                    . "                $('input[id=active_off][name=PKAdminSiteSearch]').prop('checked', true);\n"
-                                    . "                $('input[id=active_on][name=PKAdminSiteSearch]').prop('checked', false);\n"
-                                    . "            }\n"
-                            )
-                            . "            $('#PKAdminSearchKeywordParameters').val(data.message[0].sitesearch_keyword_parameters);\n"
-                            . "            $('#PKAdminSearchCategoryParameters').val(data.message[0].sitesearch_category_parameters);\n"
-                            . "            $('#PKAdminExcludedIps').val(data.message[0].excluded_ips);\n"
-                            . "            $('#PKAdminExcludedQueryParameters').val(data.message[0].excluded_parameters);\n"
-                            . "            $('#PKAdminTimezone').val(data.message[0].timezone);\n"
-                            . "            $('#PKAdminCurrency').val(data.message[0].currency);\n"
-                            . "            /*$('#PKAdminGroup').val(data.message[0].group);*/\n"
-                            . "            /*$('#PKAdminStartDate').val(data.message[0].ts_created);*/\n"
-                            . "            $('#PKAdminExcludedUserAgents').val(data.message[0].excluded_user_agents);\n"
-                            . ( (_PS_VERSION_ >= '1.6') ?
-                                    "            if(data.message[0].keep_url_fragment===1){\n"
-                                    . "                $('#PKAdminKeepURLFragments_on').prop('checked', true);\n"
-                                    . "                $('#PKAdminKeepURLFragments_off').prop('checked', false);\n"
-                                    . "            } else {\n"
-                                    . "                $('#PKAdminKeepURLFragments_off').prop('checked', true);\n"
-                                    . "                $('#PKAdminKeepURLFragments_on').prop('checked', false);\n"
-                                    . "            }\n" :
-                                    "            if(data.message[0].keep_url_fragment===1){\n"
-                                    . "                $('input[id=active_on][name=PKAdminKeepURLFragments]').prop('checked', true);\n"
-                                    . "                $('input[id=active_off][name=PKAdminKeepURLFragments]').prop('checked', false);\n"
-                                    . "            } else {\n"
-                                    . "                $('input[id=active_off][name=PKAdminKeepURLFragments]').prop('checked', true);\n"
-                                    . "                $('input[id=active_on][name=PKAdminKeepURLFragments]').prop('checked', false);\n"
-                                    . "            }\n"
-                            )
-                            . "            /*$('#PKAdminSiteType').val(data.message[0].type);*/\n"
-                            . "        },\n"
-                            . "        error: function(XMLHttpRequest, textStatus, errorThrown){\n"
-                            . "            jAlert(\"Error while saving Piwik Data\\n\\ntextStatus: '\" + textStatus + \"'\\nerrorThrown: '\" + errorThrown + \"'\\nresponseText:\\n\" + XMLHttpRequest.responseText);\n"
-                            . "        },\n"
-                            . "        complete: function(){\n"
-                            . "            hideLoadingStuff();\n"
-                            . "        }\n"
-                            . "    });\n"
-                            . "    \n"
-                            . "}\n"
-                            . "</script>",
-                        ),
+                    array(
+                        'type' => 'html',
+                        'name' => "<button onclick=\"return submitPiwikSiteAPIUpdate()\" id=\"submitUpdatePiwikAdmSite\" class=\"btn btn-default pull-left\" name=\"submitUpdatePiwikAdmSite\" value=\"1\" type=\"button\"><i class=\"process-icon-save\"></i>" . $this->l('Save') . "</button>"
+                        . "<script type=\"text/javascript\">"
+                        . "function submitPiwikSiteAPIUpdate(){\n"
+                        . "    var idSite = $('#PKAdminIdSite').val();\n"
+                        . "    var siteName = $('#PKAdminSiteName').val();\n"
+                        . "    /*var urls = $('#PKAdminSiteUrls').val();*/\n"
+                        . "    var ecommerce = $('input[name=PKAdminEcommerce]:checked').val();\n"
+                        . "    var siteSearch = $('input[name=PKAdminSiteSearch]:checked').val();\n"
+                        . "    var searchKeywordParameters = $('#PKAdminSearchKeywordParameters').val();\n"
+                        . "    var searchCategoryParameters = $('#PKAdminSearchCategoryParameters').val();\n"
+                        . "    var excludedIps = $('#PKAdminExcludedIps').val();\n"
+                        . "    var excludedQueryParameters = $('#PKAdminExcludedQueryParameters').val();\n"
+                        . "    var timezone = $('#PKAdminTimezone').val();\n"
+                        . "    var currency = $('#PKAdminCurrency').val();\n"
+                        . "    /*var group = $('#PKAdminGroup').val();*/\n"
+                        . "    /*var startDate = $('#PKAdminStartDate').val();*/\n"
+                        . "    var excludedUserAgents = $('#PKAdminExcludedUserAgents').val();\n"
+                        . "    var keepURLFragments = $('input[name=PKAdminKeepURLFragments]:checked').val();\n"
+                        . "    /*var type = $('#PKAdminSiteType').val();*/\n"
+                        . "    \n"
+                        . "    $.ajax({\n"
+                        . "        type: 'POST',\n"
+                        . "        url: '" . $helper->currentIndex . "&token=" . $helper->token . "',\n"
+                        . "        dataType: 'json',\n"
+                        . "        data: {\n"
+                        . "            'pkapicall': 'updatePiwikSite',\n"
+                        . "            'ajax': 1,\n"
+                        . "            'idSite': idSite,\n"
+                        . "            'siteName': siteName,\n"
+                        . "            'ecommerce': ecommerce,\n"
+                        . "            'siteSearch': siteSearch,\n"
+                        . "            'searchKeywordParameters': searchKeywordParameters,\n"
+                        . "            'searchCategoryParameters': searchCategoryParameters,\n"
+                        . "            'excludedIps': excludedIps,\n"
+                        . "            'excludedQueryParameters': excludedQueryParameters,\n"
+                        . "            'timezone': timezone,\n"
+                        . "            'currency': currency,\n"
+                        . "            'keepURLFragments': keepURLFragments,\n"
+                        /* . "            'group': group,\n" */
+                        . "            'excludedUserAgents': excludedUserAgents,\n"
+                        . "        },\n"
+                        . "        beforeSend: function(){\n"
+                        . "            showLoadingStuff();\n"
+                        . "        },\n"
+                        . "        success: function(data) {\n"
+                        . "                jAlert(data.message);\n"
+                        . "        },\n"
+                        . "        error: function(XMLHttpRequest, textStatus, errorThrown){\n"
+                        . "            jAlert(\"Error while saving Piwik Data\\n\\ntextStatus: '\" + textStatus + \"'\\nerrorThrown: '\" + errorThrown + \"'\\nresponseText:\\n\" + XMLHttpRequest.responseText);\n"
+                        . "        },\n"
+                        . "        complete: function(){\n"
+                        . "            hideLoadingStuff();\n"
+                        . "        }\n"
+                        . "    });\n"
+                        . "    \n"
+                        . "    return false;\n"
+                        . "}\n"
+                        . "\n"
+                        . ( (_PS_VERSION_ >= '1.5') ?
+                                "function hideLoadingStuff() { $('#ajax_running').hide('fast'); clearTimeout(ajax_running_timeout); $.fancybox.helpers.overlay.close(); $.fancybox.hideLoading(); }\n"
+                                . "function showLoadingStuff() { showAjaxOverlay(); $.fancybox.helpers.overlay.open({parent: $('body')}); $.fancybox.showLoading(); }\n" :
+                                "function hideLoadingStuff() {  }\n"
+                                . "function showLoadingStuff() {  }\n"
+                        )
+                        . "\n"
+                        . "function ChangePKSiteEdit(id){\n"
+                        . "    $.ajax({\n"
+                        . "        type: 'POST',\n"
+                        . "        url: '" . $helper->currentIndex . "&token=" . $helper->token . "',\n"
+                        . "        dataType: 'json',\n"
+                        . "        data: {\n"
+                        . "            'pkapicall': 'getPiwikSite',\n"
+                        . "            'idSite': id,\n"
+                        . "        },\n"
+                        . "        beforeSend: function(){\n"
+                        . "            showLoadingStuff();\n"
+                        . "        },\n"
+                        . "        success: function(data) {\n"
+                        /* . "            $('#SPKSID').val(data.message[0].idSite);\n" */
+                        . "            $('#PKAdminIdSite').val(data.message[0].idsite);\n"
+                        . "            $('#PKAdminSiteName').val(data.message[0].name);\n"
+                        . "            $('#wnamedsting').text(data.message[0].name);\n"
+                        . "            /*$('#PKAdminSiteUrls').val(data.message[0].main_url);*/\n"
+                        . ( (_PS_VERSION_ >= '1.6') ?
+                                "            if(data.message[0].ecommerce===1){\n"
+                                . "                $('#PKAdminEcommerce_on').prop('checked', true);\n"
+                                . "                $('#PKAdminEcommerce_off').prop('checked', false);\n"
+                                . "            } else {\n"
+                                . "                $('#PKAdminEcommerce_off').prop('checked', true);\n"
+                                . "                $('#PKAdminEcommerce_on').prop('checked', false);\n"
+                                . "            }\n"
+                                . "            if(data.message[0].sitesearch===1){\n"
+                                . "                $('#PKAdminSiteSearch_on').prop('checked', true);\n"
+                                . "                $('#PKAdminSiteSearch_off').prop('checked', false);\n"
+                                . "            } else {\n"
+                                . "                $('#PKAdminSiteSearch_off').prop('checked', true);\n"
+                                . "                $('#PKAdminSiteSearch_on').prop('checked', false);\n"
+                                . "            }\n" :
+                                "            if(data.message[0].ecommerce===1){\n"
+                                . "                $('input[id=active_on][name=PKAdminEcommerce]').prop('checked', true);\n"
+                                . "                $('input[id=active_off][name=PKAdminEcommerce]').prop('checked', false);\n"
+                                . "            } else {\n"
+                                . "                $('input[id=active_off][name=PKAdminEcommerce]').prop('checked', true);\n"
+                                . "                $('input[id=active_on][name=PKAdminEcommerce]').prop('checked', false);\n"
+                                . "            }\n"
+                                . "            if(data.message[0].sitesearch===1){\n"
+                                . "                $('input[id=active_on][name=PKAdminSiteSearch]').prop('checked', true);\n"
+                                . "                $('input[id=active_off][name=PKAdminSiteSearch]').prop('checked', false);\n"
+                                . "            } else {\n"
+                                . "                $('input[id=active_off][name=PKAdminSiteSearch]').prop('checked', true);\n"
+                                . "                $('input[id=active_on][name=PKAdminSiteSearch]').prop('checked', false);\n"
+                                . "            }\n"
+                        )
+                        . "            $('#PKAdminSearchKeywordParameters').val(data.message[0].sitesearch_keyword_parameters);\n"
+                        . "            $('#PKAdminSearchCategoryParameters').val(data.message[0].sitesearch_category_parameters);\n"
+                        . "            $('#PKAdminExcludedIps').val(data.message[0].excluded_ips);\n"
+                        . "            $('#PKAdminExcludedQueryParameters').val(data.message[0].excluded_parameters);\n"
+                        . "            $('#PKAdminTimezone').val(data.message[0].timezone);\n"
+                        . "            $('#PKAdminCurrency').val(data.message[0].currency);\n"
+                        . "            /*$('#PKAdminGroup').val(data.message[0].group);*/\n"
+                        . "            /*$('#PKAdminStartDate').val(data.message[0].ts_created);*/\n"
+                        . "            $('#PKAdminExcludedUserAgents').val(data.message[0].excluded_user_agents);\n"
+                        . ( (_PS_VERSION_ >= '1.6') ?
+                                "            if(data.message[0].keep_url_fragment===1){\n"
+                                . "                $('#PKAdminKeepURLFragments_on').prop('checked', true);\n"
+                                . "                $('#PKAdminKeepURLFragments_off').prop('checked', false);\n"
+                                . "            } else {\n"
+                                . "                $('#PKAdminKeepURLFragments_off').prop('checked', true);\n"
+                                . "                $('#PKAdminKeepURLFragments_on').prop('checked', false);\n"
+                                . "            }\n" :
+                                "            if(data.message[0].keep_url_fragment===1){\n"
+                                . "                $('input[id=active_on][name=PKAdminKeepURLFragments]').prop('checked', true);\n"
+                                . "                $('input[id=active_off][name=PKAdminKeepURLFragments]').prop('checked', false);\n"
+                                . "            } else {\n"
+                                . "                $('input[id=active_off][name=PKAdminKeepURLFragments]').prop('checked', true);\n"
+                                . "                $('input[id=active_on][name=PKAdminKeepURLFragments]').prop('checked', false);\n"
+                                . "            }\n"
+                        )
+                        . "            /*$('#PKAdminSiteType').val(data.message[0].type);*/\n"
+                        . "        },\n"
+                        . "        error: function(XMLHttpRequest, textStatus, errorThrown){\n"
+                        . "            jAlert(\"Error while saving Piwik Data\\n\\ntextStatus: '\" + textStatus + \"'\\nerrorThrown: '\" + errorThrown + \"'\\nresponseText:\\n\" + XMLHttpRequest.responseText);\n"
+                        . "        },\n"
+                        . "        complete: function(){\n"
+                        . "            hideLoadingStuff();\n"
+                        . "        }\n"
+                        . "    });\n"
+                        . "    \n"
+                        . "}\n"
+                        . "</script>",
                     ),
-                );
-            }
+                ),
+            );
         }
         $helper->fields_value = $this->getFormFields();
-        $this->smarty->assign(array(
+        $this->context->smarty->assign(array(
             'psl_CPREFIX' => PKHelper::CPREFIX,
             'psl_currentIndex' => $helper->currentIndex,
             'psl_token' => $helper->token
@@ -1434,49 +1419,6 @@ class piwikanalyticsjs extends Module {
         return $html;
     }
 
-    /*
-     * 
-     * your may add code here if you have some sort af advanched theme that uses iframes for products view
-     * if you got iframes for displaying products pages the product will not be tracked by piwik unless you added some code for it.!
-     * 
-     * hookExtraRight
-     * hookProductfooter
-     */
-
-    /**
-     * Extra Right hook on products page!
-     * @param mixed $params
-     * @return string
-     * @since 0.4
-     */
-    public function hookExtraRight($params) {
-        if ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0)
-            return "";
-        // $params['cookie'] (OBJECT)
-        // $params['cart'] (OBJECT)
-        return "";
-        // this should be sufficient as long as you add some sort of content only settings
-        // return $this->hookFooter($param);
-    }
-
-    /**
-     * Footer hook on products page!
-     * @param mixed $params
-     * @return string
-     * @since 0.4
-     */
-    public function hookProductfooter($params) {
-        if ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0)
-            return "";
-        // $params[product] (OBJECT)
-        // $params['category'] (OBJECT)
-        // $params['cookie'] (OBJECT)
-        // $params['cart'] (OBJECT)
-        return "";
-        // this should be sufficient as long as you add some sort of content only settings
-        // return $this->hookFooter($param);
-    }
-
     /* HELPERS */
 
     private function parseProductSku($id, $attrid = FALSE, $ref = FALSE) {
@@ -1567,10 +1509,7 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     public static function getModuleLink($module, $controller = 'default') {
-        if (_PS_VERSION_ < '1.5')
-            return Tools::getShopDomainSsl(true, true) . _MODULE_DIR_ . $module . '/' . $controller . '.php';
-        else
-            return Context::getContext()->link->getModuleLink($module, $controller);
+        return Context::getContext()->link->getModuleLink($module, $controller);
     }
 
     private function __setConfigDefault() {
@@ -1684,36 +1623,30 @@ class piwikanalyticsjs extends Module {
      * @return boolean false on install error
      */
     public function install() {
-
-        if (_PS_VERSION_ < '1.5' && _PS_VERSION_ > '1.3') {
-            /* use tab in default stats page
-              $AdminParentStats = Tab::getIdFromClassName('AdminStats');
-              $tab->id_parent = (is_int($AdminParentStats) ? $AdminParentStats : -1);
-             */
-        } else if (_PS_VERSION_ >= '1.5') {
-            /* create complete new page tab */
-            $tab = new TabCore();
-            foreach (Language::getLanguages(false) as $lang) {
-                $tab->name[(int) $lang['id_lang']] = 'Piwik Analytics';
-            }
-            $tab->module = 'piwikanalyticsjs';
-            $tab->active = TRUE;
-            $tab->class_name = 'PiwikAnalytics';
-            $AdminParentStats = Tab::getInstanceFromClassName('AdminParentStats');
-            $tab->id_parent = ($AdminParentStats instanceof Tab ? $AdminParentStats->id : -1);
-            if ($tab->add())
-                Configuration::updateValue(PKHelper::CPREFIX . 'TAPID', (int) $tab->id);
+        /* create complete new page tab */
+        $tab = new Tab();
+        foreach (Language::getLanguages(false) as $lang) {
+            $tab->name[(int) $lang['id_lang']] = 'Piwik Analytics';
         }
+        $tab->module = 'piwikanalyticsjs';
+        $tab->active = TRUE;
+        $tab->class_name = 'PiwikAnalytics';
+        if (method_exists('Tab', 'getInstanceFromClassName')) {
+            $AdminParentStats = Tab::getInstanceFromClassName('AdminParentStats');
+        } else if (method_exists('Tab', 'getIdFromClassName')) {
+            $tmpId = Tab::getIdFromClassName('AdminParentStats');
+            if ($tmpId != null && $tmpId > 0)
+                $AdminParentStats = new Tab($tmpId);
+        }
+        $tab->id_parent = (isset($AdminParentStats) && $AdminParentStats instanceof Tab ? $AdminParentStats->id : -1);
+        if ($tab->add())
+            Configuration::updateValue(PKHelper::CPREFIX . 'TAPID', (int) $tab->id);
 
         /* default values */
         foreach ($this->getConfigFields(FALSE) as $key => $value) {
             Configuration::updateValue($key, $value);
         }
-        if (_PS_VERSION_ < '1.5' && _PS_VERSION_ > '1.3') {
-            return (parent::install() && $this->registerHook('header') && $this->registerHook('footer') && $this->registerHook('search') && $this->registerHook('extraRight') && $this->registerHook('productfooter') && $this->registerHook('orderConfirmation') && $this->registerHook('AdminStatsModules'));
-        } else if (_PS_VERSION_ >= '1.5') {
-            return (parent::install() && $this->registerHook('header') && $this->registerHook('footer') && $this->registerHook('actionSearch') && $this->registerHook('displayRightColumnProduct') && $this->registerHook('orderConfirmation') && $this->registerHook('displayMaintenance'));
-        }
+        return (parent::install() && $this->registerHook('header') && $this->registerHook('footer') && $this->registerHook('actionSearch') && $this->registerHook('displayRightColumnProduct') && $this->registerHook('orderConfirmation') && $this->registerHook('displayMaintenance'));
     }
 
     /**
@@ -1726,12 +1659,9 @@ class piwikanalyticsjs extends Module {
                 Configuration::deleteByName($key);
             }
             try {
-                if (_PS_VERSION_ < '1.5' && _PS_VERSION_ > '1.3') {
-                    
-                } else if (_PS_VERSION_ >= '1.5') {
-                    $tab = Tab::getInstanceFromClassName('PiwikAnalytics');
-                    $tab->delete();
-                }
+
+                $tab = Tab::getInstanceFromClassName('PiwikAnalytics');
+                $tab->delete();
             } catch (Exception $ex) {
                 
             }

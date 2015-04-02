@@ -33,6 +33,22 @@
     htmls000 += "<label for=\"PiwikLookupLoginFormPassword\" style=\"width: 100%; text-align: left;\">{l s='Password:' mod='piwikanalyticsjs'}</label>";
     htmls000 += "<input id=\"PiwikLookupLoginFormPassword\" type=\"PASSWORD\" style=\"height: 25px; width: 386px;\"/>";
     htmls000 += "</p><p>";
+    
+    htmls000 += "<label for=\"PiwikLookupLoginFormHttpAuthSettings\" style=\"width: 100%; text-align: left;\">";
+    htmls000 += "<input id=\"PiwikLookupLoginFormHttpAuthSettings\" type=\"CHECKBOX\" onclick='if(this.checked) { $(\"#PiwikLookupLoginFormHttpAuthSettingsWraper\").show(); } else { $(\"#PiwikLookupLoginFormHttpAuthSettingsWraper\").hide(); }'/>";
+    htmls000 += "{l s='HTTP Basic Authorization?' mod='piwikanalyticsjs'}";
+    htmls000 += "</label><br/>";
+    htmls000 += "</p><div id=\"PiwikLookupLoginFormHttpAuthSettingsWraper\" style=\"display:none;\">";
+    
+    htmls000 += "<form id=\"PiwikLookupLoginForm\" action=\"POST\" onsubmit=\"return PiwikLookupLogin();\"><p>";
+    htmls000 += "<label for=\"PiwikLookupLoginFormHttpAuthUsername\" style=\"width: 100%; text-align: left;\">{l s='HTTP Authorization Username:' mod='piwikanalyticsjs'}</label>";
+    htmls000 += "<input id=\"PiwikLookupLoginFormHttpAuthUsername\" type=\"TEXT\" style=\"height: 25px; width: 386px;\"/>";
+    htmls000 += "</p><p>";
+    htmls000 += "<label for=\"PiwikLookupLoginFormHttpAuthPassword\" style=\"width: 100%; text-align: left;\">{l s='HTTP Authorization Password:' mod='piwikanalyticsjs'}</label>";
+    htmls000 += "<input id=\"PiwikLookupLoginFormHttpAuthPassword\" type=\"PASSWORD\" style=\"height: 25px; width: 386px;\"/>";
+    htmls000 += "</p><p>";
+
+    htmls000 += "</div><p>";
     htmls000 += "<input type=\"SUBMIT\" value=\"{l s='Login' mod='piwikanalyticsjs'}\" />";
     htmls000 += "</p></form></div>";
     var htmls001 = '<a id="LookupSITEID" onclick="return PiwikLookup();" style="font-weight: bold; font-style: italic; color: rgb(88, 90, 105); font-size: 110%;" href="#">{l s="Fetch from Piwik" mod='piwikanalyticsjs'}</a>';
@@ -61,9 +77,13 @@
     function PiwikLookupLogin(){
         var username = $('#PiwikLookupLoginFormUsername').val(),
                 password = $('#PiwikLookupLoginFormPassword').val(),
+                http_username = $('#PiwikLookupLoginFormHttpAuthUsername').val(),
+                http_password = $('#PiwikLookupLoginFormHttpAuthPassword').val(),
                 authtoken = '', piwikhost = '';
+        $('#PIWIK_PAUTHUSR').val(username);
+        $('#PIWIK_PIWIK_PAUTHPWD').val(password);
         if ($('#PIWIK_HOST').val().trim() === ''){
-            piwikhost = prompt('{l s='Please enter your piwik host' mod='piwikanalyticsjs'}', 'http://piwik.example.com/piwik2/');
+            piwikhost = prompt('{l s='Please enter your piwik host' mod='piwikanalyticsjs'}', 'piwik.example.com/piwik2/');
             $('#PIWIK_HOST').val(piwikhost);
         } else{
             piwikhost = $('#PIWIK_HOST').val();
@@ -72,11 +92,16 @@
         $.ajax({
             type: 'POST',
             url: '{$psl_currentIndex}&token={$psl_token}',
+            /*
+             url: 'http://' + piwikhost + 'index.php?module=API&method=UsersManager.getTokenAuth&userLogin='+username+'&md5Password='+password+'&format=JSON'
+             */
             dataType: 'json',
             data: {
                 'pkapicall': 'getTokenAuth',
                 'userLogin': username,
                 'password': password,
+                'httpUser': http_username,
+                'httpPasswd': http_password,
             },
             success: function(data) {
                 if (data.error === true){
@@ -129,7 +154,7 @@
 <style type="text/css">
     .PiwikLookupModalDialog { position:fixed;font-family:Arial,Helvetica,sans-serif;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.8);z-index:99999;opacity:0;-webkit-transition:opacity 400ms ease-in;-moz-transition:opacity 400ms ease-in;transition:opacity 400ms ease-in;pointer-events:none } 
     {* .PiwikLookupModalDialog:target { opacity:1;pointer-events:auto } *}
-    .PiwikLookupModalDialog>div { width:400px;position:relative;margin:10% auto;padding:5px 20px 13px 20px;border-radius:10px;background:#fff;background:-moz-linear-gradient(#fff,#999);background:-webkit-linear-gradient(#fff,#999);background:-o-linear-gradient(#fff,#999)}
+    .PiwikLookupModalDialog>div { width:400px;position:relative;margin:35px auto;padding:5px 20px 13px 20px;border-radius:10px;background:#fff;background:-moz-linear-gradient(#fff,#DDD);background:-webkit-linear-gradient(#fff,#DDD);background:-o-linear-gradient(#fff,#DDD)}
     .PiwikLookupClose { background:#606061;color:#fff;line-height:25px;position:absolute;right:0px;text-align:center;top:0px;width:24px;text-decoration:none;font-weight:bold;-webkit-border-radius:8px;-moz-border-radius:8px;border-radius:8px;-moz-box-shadow:1px 1px 3px #000;-webkit-box-shadow:1px 1px 3px #000;box-shadow:1px 1px 3px #000 }
     .PiwikLookupClose:hover { background:#00d9ff }
 </style>

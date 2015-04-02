@@ -559,7 +559,7 @@ class PKHelper {
      * @see Module::l
      */
     private static function l($string, $specific = false) {
-        if (_PS_VERSION_ < '1.5')
+        if (_PS_VERSION_ <= '1.5.0.1')
             return PKHelper::$_module->l($string, ($specific) ? $specific : 'pkhelper');
         return Translate::getModuleTranslation('piwikanalyticsjs', $string, ($specific) ? $specific : 'pkhelper');
         // the following lines are need for the translation to work properly
