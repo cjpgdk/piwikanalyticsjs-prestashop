@@ -60,10 +60,17 @@
             $('#' + idPKToken).parent().find("sup").after(htmls002);
         }
         $('#PiwikLookupModal').html(htmls000);
+        
     });
     var _upPopO = false;
     function PiwikLookup(){
         $('#PiwikLookupModal').html(htmls000);
+        {*
+                 $('#PIWIK_PAUTHPWD').clone().attr('type','text').insertAfter('#PIWIK_PAUTHPWD').prev().remove();
+        $('form').find('input:password').each(function() {
+            $("<input type='text' id='Testing_"+$(this).attr('id')+"' />").attr({ name: this.name, value: this.value }).insertBefore(this);
+        }).remove();
+        *}
         if(_upPopO){
             _upPopO = false;
             $('#PiwikLookupModal').css( { opacity:0, 'pointer-events':'none' } );
@@ -84,8 +91,12 @@
             http_username = $('#PIWIK_PAUTHUSR').val();
         if(http_password === "" || http_password === false)
             http_password = $('#PIWIK_PAUTHPWD').val();
+        {* Http auth *}
         $('#PIWIK_PAUTHUSR').val(http_username);
         $('#PIWIK_PAUTHPWD').val(http_password);
+        {* Piwik login *}
+        $('#PIWIK_USRNAME').val(username);
+        $('#PIWIK_USRPASSWD').val(password);
         
         if ($('#PIWIK_HOST').val().trim() === ''){
             piwikhost = prompt('{l s='Please enter your piwik host' mod='piwikanalyticsjs'}', 'piwik.example.com/piwik2/');
@@ -153,6 +164,7 @@
     function PiwikLookupSetSiteId(id){
         $('#PIWIK_SITEID').val(id);
         PiwikLookup();
+        $('#_form_submit_btn').click();
     }
     
 </script>

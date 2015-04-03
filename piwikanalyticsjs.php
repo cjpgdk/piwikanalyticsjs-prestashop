@@ -97,6 +97,7 @@ class piwikanalyticsjs extends Module {
             $this->context->controller->addJquery(_PS_JQUERY_VERSION_);
             $this->context->controller->addJs($this->_path . 'js/jquery.alerts.js');
             $this->context->controller->addCss($this->_path . 'js/jquery.alerts.css');
+            $this->context->controller->addJqueryPlugin('fancybox', _PS_JS_DIR_.'jquery/plugins/');
         }
 
         $_html = "";
@@ -336,14 +337,16 @@ class piwikanalyticsjs extends Module {
             'label' => $this->l('Piwik User name'),
             'name' => PKHelper::CPREFIX . 'USRNAME',
             'desc' => $this->l('You can store your Username for Piwik here to make it easy to open your piwik interface from your stats page with automatic login'),
-            'required' => false
+            'required' => false,
+            'autocomplete' => false,
         );
         $fields_form[0]['form']['input'][] = array(
             'type' => 'password',
             'label' => $this->l('Piwik User password'),
             'name' => PKHelper::CPREFIX . 'USRPASSWD',
             'desc' => $this->l('You can store your Password for Piwik here to make it easy to open your piwik interface from your stats page with automatic login'),
-            'required' => false
+            'required' => false,
+            'autocomplete' => false,
         );
 
         $fields_form[0]['form']['submit'] = array(
@@ -454,6 +457,7 @@ class piwikanalyticsjs extends Module {
                     'label' => $this->l('Proxy Script Username'),
                     'name' => PKHelper::CPREFIX . 'PAUTHUSR',
                     'required' => false,
+                    'autocomplete' => false,
                     'desc' => $this->l('this field along with password can be used if your piwik installation is protected by HTTP Basic Authorization'),
                 ),
                 array(
@@ -461,6 +465,7 @@ class piwikanalyticsjs extends Module {
                     'label' => $this->l('Proxy Script Password'),
                     'name' => PKHelper::CPREFIX . 'PAUTHPWD',
                     'required' => false,
+                    'autocomplete' => false,
                     'desc' => $this->l('this field along with username can be used if your piwik installation is protected by HTTP Basic Authorization'),
                 ),
             ),
@@ -671,169 +676,27 @@ class piwikanalyticsjs extends Module {
 //                        'label' => $this->l('Site Type'),
 //                        'name' => 'PKAdminSiteType',
 //                    ),
-                    array(
-                        'type' => 'html',
-                        'name' => "<button onclick=\"return submitPiwikSiteAPIUpdate()\" id=\"submitUpdatePiwikAdmSite\" class=\"btn btn-default pull-left\" name=\"submitUpdatePiwikAdmSite\" value=\"1\" type=\"button\"><i class=\"process-icon-save\"></i>" . $this->l('Save') . "</button>"
-                        . "<script type=\"text/javascript\">"
-                        . "function submitPiwikSiteAPIUpdate(){\n"
-                        . "    var idSite = $('#PKAdminIdSite').val();\n"
-                        . "    var siteName = $('#PKAdminSiteName').val();\n"
-                        . "    /*var urls = $('#PKAdminSiteUrls').val();*/\n"
-                        . "    var ecommerce = $('input[name=PKAdminEcommerce]:checked').val();\n"
-                        . "    var siteSearch = $('input[name=PKAdminSiteSearch]:checked').val();\n"
-                        . "    var searchKeywordParameters = $('#PKAdminSearchKeywordParameters').val();\n"
-                        . "    var searchCategoryParameters = $('#PKAdminSearchCategoryParameters').val();\n"
-                        . "    var excludedIps = $('#PKAdminExcludedIps').val();\n"
-                        . "    var excludedQueryParameters = $('#PKAdminExcludedQueryParameters').val();\n"
-                        . "    var timezone = $('#PKAdminTimezone').val();\n"
-                        . "    var currency = $('#PKAdminCurrency').val();\n"
-                        . "    /*var group = $('#PKAdminGroup').val();*/\n"
-                        . "    /*var startDate = $('#PKAdminStartDate').val();*/\n"
-                        . "    var excludedUserAgents = $('#PKAdminExcludedUserAgents').val();\n"
-                        . "    var keepURLFragments = $('input[name=PKAdminKeepURLFragments]:checked').val();\n"
-                        . "    /*var type = $('#PKAdminSiteType').val();*/\n"
-                        . "    \n"
-                        . "    $.ajax({\n"
-                        . "        type: 'POST',\n"
-                        . "        url: '" . $helper->currentIndex . "&token=" . $helper->token . "',\n"
-                        . "        dataType: 'json',\n"
-                        . "        data: {\n"
-                        . "            'pkapicall': 'updatePiwikSite',\n"
-                        . "            'ajax': 1,\n"
-                        . "            'idSite': idSite,\n"
-                        . "            'siteName': siteName,\n"
-                        . "            'ecommerce': ecommerce,\n"
-                        . "            'siteSearch': siteSearch,\n"
-                        . "            'searchKeywordParameters': searchKeywordParameters,\n"
-                        . "            'searchCategoryParameters': searchCategoryParameters,\n"
-                        . "            'excludedIps': excludedIps,\n"
-                        . "            'excludedQueryParameters': excludedQueryParameters,\n"
-                        . "            'timezone': timezone,\n"
-                        . "            'currency': currency,\n"
-                        . "            'keepURLFragments': keepURLFragments,\n"
-                        /* . "            'group': group,\n" */
-                        . "            'excludedUserAgents': excludedUserAgents,\n"
-                        . "        },\n"
-                        . "        beforeSend: function(){\n"
-                        . "            showLoadingStuff();\n"
-                        . "        },\n"
-                        . "        success: function(data) {\n"
-                        . "                jAlert(data.message);\n"
-                        . "        },\n"
-                        . "        error: function(XMLHttpRequest, textStatus, errorThrown){\n"
-                        . "            jAlert(\"Error while saving Piwik Data\\n\\ntextStatus: '\" + textStatus + \"'\\nerrorThrown: '\" + errorThrown + \"'\\nresponseText:\\n\" + XMLHttpRequest.responseText);\n"
-                        . "        },\n"
-                        . "        complete: function(){\n"
-                        . "            hideLoadingStuff();\n"
-                        . "        }\n"
-                        . "    });\n"
-                        . "    \n"
-                        . "    return false;\n"
-                        . "}\n"
-                        . "\n"
-                        . ( (_PS_VERSION_ >= '1.5') ?
-                                "function hideLoadingStuff() { $('#ajax_running').hide('fast'); clearTimeout(ajax_running_timeout); $.fancybox.helpers.overlay.close(); $.fancybox.hideLoading(); }\n"
-                                . "function showLoadingStuff() { showAjaxOverlay(); $.fancybox.helpers.overlay.open({parent: $('body')}); $.fancybox.showLoading(); }\n" :
-                                "function hideLoadingStuff() {  }\n"
-                                . "function showLoadingStuff() {  }\n"
-                        )
-                        . "\n"
-                        . "function ChangePKSiteEdit(id){\n"
-                        . "    $.ajax({\n"
-                        . "        type: 'POST',\n"
-                        . "        url: '" . $helper->currentIndex . "&token=" . $helper->token . "',\n"
-                        . "        dataType: 'json',\n"
-                        . "        data: {\n"
-                        . "            'pkapicall': 'getPiwikSite',\n"
-                        . "            'idSite': id,\n"
-                        . "        },\n"
-                        . "        beforeSend: function(){\n"
-                        . "            showLoadingStuff();\n"
-                        . "        },\n"
-                        . "        success: function(data) {\n"
-                        /* . "            $('#SPKSID').val(data.message[0].idSite);\n" */
-                        . "            $('#PKAdminIdSite').val(data.message[0].idsite);\n"
-                        . "            $('#PKAdminSiteName').val(data.message[0].name);\n"
-                        . "            $('#wnamedsting').text(data.message[0].name);\n"
-                        . "            /*$('#PKAdminSiteUrls').val(data.message[0].main_url);*/\n"
-                        . ( (_PS_VERSION_ >= '1.6') ?
-                                "            if(data.message[0].ecommerce===1){\n"
-                                . "                $('#PKAdminEcommerce_on').prop('checked', true);\n"
-                                . "                $('#PKAdminEcommerce_off').prop('checked', false);\n"
-                                . "            } else {\n"
-                                . "                $('#PKAdminEcommerce_off').prop('checked', true);\n"
-                                . "                $('#PKAdminEcommerce_on').prop('checked', false);\n"
-                                . "            }\n"
-                                . "            if(data.message[0].sitesearch===1){\n"
-                                . "                $('#PKAdminSiteSearch_on').prop('checked', true);\n"
-                                . "                $('#PKAdminSiteSearch_off').prop('checked', false);\n"
-                                . "            } else {\n"
-                                . "                $('#PKAdminSiteSearch_off').prop('checked', true);\n"
-                                . "                $('#PKAdminSiteSearch_on').prop('checked', false);\n"
-                                . "            }\n" :
-                                "            if(data.message[0].ecommerce===1){\n"
-                                . "                $('input[id=active_on][name=PKAdminEcommerce]').prop('checked', true);\n"
-                                . "                $('input[id=active_off][name=PKAdminEcommerce]').prop('checked', false);\n"
-                                . "            } else {\n"
-                                . "                $('input[id=active_off][name=PKAdminEcommerce]').prop('checked', true);\n"
-                                . "                $('input[id=active_on][name=PKAdminEcommerce]').prop('checked', false);\n"
-                                . "            }\n"
-                                . "            if(data.message[0].sitesearch===1){\n"
-                                . "                $('input[id=active_on][name=PKAdminSiteSearch]').prop('checked', true);\n"
-                                . "                $('input[id=active_off][name=PKAdminSiteSearch]').prop('checked', false);\n"
-                                . "            } else {\n"
-                                . "                $('input[id=active_off][name=PKAdminSiteSearch]').prop('checked', true);\n"
-                                . "                $('input[id=active_on][name=PKAdminSiteSearch]').prop('checked', false);\n"
-                                . "            }\n"
-                        )
-                        . "            $('#PKAdminSearchKeywordParameters').val(data.message[0].sitesearch_keyword_parameters);\n"
-                        . "            $('#PKAdminSearchCategoryParameters').val(data.message[0].sitesearch_category_parameters);\n"
-                        . "            $('#PKAdminExcludedIps').val(data.message[0].excluded_ips);\n"
-                        . "            $('#PKAdminExcludedQueryParameters').val(data.message[0].excluded_parameters);\n"
-                        . "            $('#PKAdminTimezone').val(data.message[0].timezone);\n"
-                        . "            $('#PKAdminCurrency').val(data.message[0].currency);\n"
-                        . "            /*$('#PKAdminGroup').val(data.message[0].group);*/\n"
-                        . "            /*$('#PKAdminStartDate').val(data.message[0].ts_created);*/\n"
-                        . "            $('#PKAdminExcludedUserAgents').val(data.message[0].excluded_user_agents);\n"
-                        . ( (_PS_VERSION_ >= '1.6') ?
-                                "            if(data.message[0].keep_url_fragment===1){\n"
-                                . "                $('#PKAdminKeepURLFragments_on').prop('checked', true);\n"
-                                . "                $('#PKAdminKeepURLFragments_off').prop('checked', false);\n"
-                                . "            } else {\n"
-                                . "                $('#PKAdminKeepURLFragments_off').prop('checked', true);\n"
-                                . "                $('#PKAdminKeepURLFragments_on').prop('checked', false);\n"
-                                . "            }\n" :
-                                "            if(data.message[0].keep_url_fragment===1){\n"
-                                . "                $('input[id=active_on][name=PKAdminKeepURLFragments]').prop('checked', true);\n"
-                                . "                $('input[id=active_off][name=PKAdminKeepURLFragments]').prop('checked', false);\n"
-                                . "            } else {\n"
-                                . "                $('input[id=active_off][name=PKAdminKeepURLFragments]').prop('checked', true);\n"
-                                . "                $('input[id=active_on][name=PKAdminKeepURLFragments]').prop('checked', false);\n"
-                                . "            }\n"
-                        )
-                        . "            /*$('#PKAdminSiteType').val(data.message[0].type);*/\n"
-                        . "        },\n"
-                        . "        error: function(XMLHttpRequest, textStatus, errorThrown){\n"
-                        . "            jAlert(\"Error while saving Piwik Data\\n\\ntextStatus: '\" + textStatus + \"'\\nerrorThrown: '\" + errorThrown + \"'\\nresponseText:\\n\" + XMLHttpRequest.responseText);\n"
-                        . "        },\n"
-                        . "        complete: function(){\n"
-                        . "            hideLoadingStuff();\n"
-                        . "        }\n"
-                        . "    });\n"
-                        . "    \n"
-                        . "}\n"
-                        . "</script>",
-                    ),
+                                array('type'=>'html', 'name'=>"
+<button onclick=\"return submitPiwikSiteAPIUpdate()\" 
+        id=\"submitUpdatePiwikAdmSite\" class=\"btn btn-default pull-left\" 
+        name=\"submitUpdatePiwikAdmSite\" value=\"1\" type=\"button\">
+    <i class=\"process-icon-save\"></i>{$this->l('Save')}</button>"),
                 ),
             );
         }
         $helper->fields_value = $this->getFormFields();
         $this->context->smarty->assign(array(
+            'psversion' => _PS_VERSION_,
+            /* piwik_site_lookup */
             'psl_CPREFIX' => PKHelper::CPREFIX,
             'psl_currentIndex' => $helper->currentIndex,
-            'psl_token' => $helper->token
+            'psl_token' => $helper->token,
+            /* piwik_site_manager */
+            'psm_currentIndex' => $helper->currentIndex,
+            'psm_token' => $helper->token,
         ));
         return $this->_errors . $_html . $helper->generateForm($fields_form)
+                . $this->display(__FILE__, 'views/templates/admin/piwik_site_manager.tpl')
                 . $this->display(__FILE__, 'views/templates/admin/piwik_site_lookup.tpl');
     }
 
@@ -845,7 +708,7 @@ class piwikanalyticsjs extends Module {
             $order = PKHelper::$acp[$apiMethod]['order'];
             foreach ($required as $requiredOption) {
                 if (!Tools::getIsset($requiredOption)) {
-                    PKHelper::DebugLogger("__pkapicall():\n\t- Required parameter \"".$requiredOption.'" is missing');
+                    PKHelper::DebugLogger("__pkapicall():\n\t- Required parameter \"" . $requiredOption . '" is missing');
                     die(Tools::jsonEncode(array('error' => true, 'message' => sprintf($this->l('Required parameter "%s" is missing'), $requiredOption))));
                 }
             }
@@ -863,8 +726,8 @@ class piwikanalyticsjs extends Module {
                 PKHelper::$httpAuthPassword = Tools::getValue('httpPasswd');
             if (Tools::getIsset('piwikhost'))
                 PKHelper::$piwikHost = Tools::getValue('piwikhost');
-            
-            PKHelper::DebugLogger("__pkapicall():\n\t- Call PKHelper::".$apiMethod);
+
+            PKHelper::DebugLogger("__pkapicall():\n\t- Call PKHelper::" . $apiMethod);
             $result = call_user_func_array(array('PKHelper', $apiMethod), $order);
             if ($result === FALSE) {
                 $lastError = "";
@@ -1670,9 +1533,16 @@ class piwikanalyticsjs extends Module {
                 Configuration::deleteByName($key);
             }
             try {
-
-                $tab = Tab::getInstanceFromClassName('PiwikAnalytics');
-                $tab->delete();
+                if (method_exists('Tab', 'getInstanceFromClassName')) {
+                    $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics');
+                } else if (method_exists('Tab', 'getIdFromClassName')) {
+                    $tmpId = Tab::getIdFromClassName('PiwikAnalytics');
+                    if ($tmpId != null && $tmpId > 0)
+                        $AdminParentStats = new Tab($tmpId);
+                }
+                if (isset($AdminParentStats) && $AdminParentStats instanceof Tab) {
+                    $AdminParentStats->delete();
+                }
             } catch (Exception $ex) {
                 
             }

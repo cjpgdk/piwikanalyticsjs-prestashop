@@ -118,6 +118,7 @@
                                                                 {elseif $input.type == 'password'}
 									<input type="password"
 											name="{$input.name}"
+											id="{$input.name}"
 											{if isset($input.size)}size="{$input.size}"{/if}
 											class="{if isset($input.class)}{$input.class}{/if}"
 											value=""
