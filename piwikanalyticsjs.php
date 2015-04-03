@@ -97,7 +97,7 @@ class piwikanalyticsjs extends Module {
             $this->context->controller->addJquery(_PS_JQUERY_VERSION_);
             $this->context->controller->addJs($this->_path . 'js/jquery.alerts.js');
             $this->context->controller->addCss($this->_path . 'js/jquery.alerts.css');
-            $this->context->controller->addJqueryPlugin('fancybox', _PS_JS_DIR_.'jquery/plugins/');
+            $this->context->controller->addJqueryPlugin('fancybox', _PS_JS_DIR_ . 'jquery/plugins/');
         }
 
         $_html = "";
@@ -676,7 +676,7 @@ class piwikanalyticsjs extends Module {
 //                        'label' => $this->l('Site Type'),
 //                        'name' => 'PKAdminSiteType',
 //                    ),
-                                array('type'=>'html', 'name'=>"
+                    array('type' => 'html', 'name' => "
 <button onclick=\"return submitPiwikSiteAPIUpdate()\" 
         id=\"submitUpdatePiwikAdmSite\" class=\"btn btn-default pull-left\" 
         name=\"submitUpdatePiwikAdmSite\" value=\"1\" type=\"button\">
@@ -1101,6 +1101,7 @@ class piwikanalyticsjs extends Module {
         } else {
             $this->context->smarty->assign(PKHelper::CPREFIX . 'CART', FALSE);
         }
+        
 
         if (_PS_VERSION_ < '1.5.6')
             $this->_hookFooterPS14($params, $page_name);
@@ -1119,18 +1120,12 @@ class piwikanalyticsjs extends Module {
         $is404 = false;
         if (!empty($this->context->controller->errors)) {
             foreach ($this->context->controller->errors as $key => $value) {
-                if ($value == Tools::displayError('Product not found')) {
+                if ($value == Tools::displayError('Product not found'))
                     $is404 = true;
-                    $this->context->smarty->assign(array("PK404" => $is404));
-                }
-                if ($value == Tools::displayError('This product is no longer available.')) {
+                if ($value == Tools::displayError('This product is no longer available.'))
                     $is404 = true;
-                    $this->context->smarty->assign(array("PK404" => $is404));
-                }
             }
         }
-        // Tools::displayError('You do not have access to this product.')
-
         if (
                 (get_class($this->context->controller) == 'PageNotFoundController') ||
                 (isset($this->context->controller->php_self) && ($this->context->controller->php_self == '404')) ||
@@ -1138,6 +1133,7 @@ class piwikanalyticsjs extends Module {
         ) {
             $is404 = true;
         }
+        
         $this->context->smarty->assign(array("PK404" => $is404));
         /* product tracking */
         if (get_class($this->context->controller) == 'ProductController') {
@@ -1504,13 +1500,25 @@ class piwikanalyticsjs extends Module {
         }
         $tab->module = 'piwikanalyticsjs';
         $tab->active = TRUE;
-        $tab->class_name = 'PiwikAnalytics';
-        if (method_exists('Tab', 'getInstanceFromClassName')) {
-            $AdminParentStats = Tab::getInstanceFromClassName('AdminParentStats');
-        } else if (method_exists('Tab', 'getIdFromClassName')) {
-            $tmpId = Tab::getIdFromClassName('AdminParentStats');
-            if ($tmpId != null && $tmpId > 0)
-                $AdminParentStats = new Tab($tmpId);
+        
+        if (_PS_VERSION_ <= '1.5.0.1') {
+            $tab->class_name = 'AdminPiwikAnalytics';
+            if (method_exists('Tab', 'getInstanceFromClassName')) {
+                $AdminParentStats = Tab::getInstanceFromClassName('AdminStats');
+            } else if (method_exists('Tab', 'getIdFromClassName')) {
+                $tmpId = Tab::getIdFromClassName('AdminStats');
+                if ($tmpId != null && $tmpId > 0)
+                    $AdminParentStats = new Tab($tmpId);
+            }
+        } else {
+            $tab->class_name = 'PiwikAnalytics';
+            if (method_exists('Tab', 'getInstanceFromClassName')) {
+                $AdminParentStats = Tab::getInstanceFromClassName('AdminParentStats');
+            } else if (method_exists('Tab', 'getIdFromClassName')) {
+                $tmpId = Tab::getIdFromClassName('AdminParentStats');
+                if ($tmpId != null && $tmpId > 0)
+                    $AdminParentStats = new Tab($tmpId);
+            }
         }
         $tab->id_parent = (isset($AdminParentStats) && $AdminParentStats instanceof Tab ? $AdminParentStats->id : -1);
         if ($tab->add())
@@ -1534,9 +1542,16 @@ class piwikanalyticsjs extends Module {
             }
             try {
                 if (method_exists('Tab', 'getInstanceFromClassName')) {
-                    $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics');
+                    if (_PS_VERSION_ <= '1.5.0.1')
+                        $AdminParentStats = Tab::getInstanceFromClassName('AdminPiwikAnalytics');
+                    else
+                        $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics');
                 } else if (method_exists('Tab', 'getIdFromClassName')) {
-                    $tmpId = Tab::getIdFromClassName('PiwikAnalytics');
+                    if (_PS_VERSION_ <= '1.5.0.1')
+                        $tmpId = Tab::getIdFromClassName('AdminPiwikAnalytics');
+                    else
+                        $tmpId = Tab::getIdFromClassName('PiwikAnalytics');
+                    
                     if ($tmpId != null && $tmpId > 0)
                         $AdminParentStats = new Tab($tmpId);
                 }

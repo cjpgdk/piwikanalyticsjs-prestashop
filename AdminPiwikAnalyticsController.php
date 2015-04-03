@@ -3,7 +3,6 @@
 if (!defined('_PS_VERSION_'))
     exit;
 
-
 /**
  * Copyright (C) 2015 Christian Jensen
  *
@@ -26,31 +25,38 @@ if (!defined('_PS_VERSION_'))
  * @author Christian M. Jensen
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ * 
+ * 
+ * Used for Prestashop version
+ *  - 1.5.0.1
  */
-class PiwikAnalyticsController extends ModuleAdminController {
+class AdminPiwikAnalyticsController extends AdminController {
 
-    public function init() {
-        parent::init();
-
-        $this->bootstrap = true;
+    public function __construct() {
+        parent::__construct();
         $this->action = 'view';
-        $this->display = 'view';
-        $this->show_page_header_toolbar = true;
-        $this->tpl_folder = _PS_MODULE_DIR_ . $this->module->name . '/views/templates/admin/PiwikAnalytics/';
+        $this->display = 'content';
+        $this->template = 'content.tpl';
+        $this->tpl_folder = _PS_ROOT_DIR_ . '/modules/piwikanalyticsjs/views/templates/admin/';
     }
 
-    public function initContent() {
-        if ($this->ajax)
-            return;
+    public function initToolbar() {
+        /* remove toolbar */
+    }
 
-        $this->initTabModuleList();
-        $this->addToolBarModulesListButton();
-        $this->toolbar_title = $this->l('Stats', 'PiwikAnalytics');
+    public function init() {
+        if (Tools::getValue('ajax'))
+            $this->ajax = '1';
 
-        if (_PS_VERSION_ < '1.6')
-            $this->bootstrap = false;
-        else
-            $this->initPageHeaderToolbar();
+        /* Server Params */
+        $protocol_link = (Configuration::get('PS_SSL_ENABLED')) ? 'https://' : 'http://';
+        $protocol_content = (isset($useSSL) && $useSSL && Configuration::get('PS_SSL_ENABLED')) ? 'https://' : 'http://';
+        $this->context->link = new Link($protocol_link, $protocol_content);
+
+        $this->timerStart = microtime(true);
+
+        
+
         $http = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://');
         $PIWIK_HOST = Configuration::get('PIWIK_HOST');
         $PIWIK_SITEID = (int) Configuration::get('PIWIK_SITEID');
@@ -73,8 +79,7 @@ class PiwikAnalyticsController extends ModuleAdminController {
                 'target' => true
             );
         }
-        if ($this->display == 'view') {
-
+        
             // Some controllers use the view action without an object
             if ($this->className)
                 $this->loadObject(true);
@@ -124,7 +129,6 @@ EOF;
                         . '&date=' . $date
                         . '" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>';
             }
-        }
 
         $this->context->smarty->assign(array(
             'content' => $this->content,
