@@ -1101,22 +1101,6 @@ class piwikanalyticsjs extends Module {
         } else {
             $this->context->smarty->assign(PKHelper::CPREFIX . 'CART', FALSE);
         }
-        
-
-        if (_PS_VERSION_ < '1.5.6')
-            $this->_hookFooterPS14($params, $page_name);
-        else if (_PS_VERSION_ >= '1.5')
-            $this->_hookFooter($params);
-
-        return $this->display(__FILE__, 'views/templates/hook/jstracking.tpl');
-    }
-
-    /**
-     * add Prestashop !LATEST! specific settings
-     * @param mixed $params
-     * @since 0.4
-     */
-    private function _hookFooter($params) {
         $is404 = false;
         if (!empty($this->context->controller->errors)) {
             foreach ($this->context->controller->errors as $key => $value) {
@@ -1135,6 +1119,22 @@ class piwikanalyticsjs extends Module {
         }
         
         $this->context->smarty->assign(array("PK404" => $is404));
+        
+
+        if (_PS_VERSION_ < '1.5.6')
+            $this->_hookFooterPS14($params, $page_name);
+        else if (_PS_VERSION_ >= '1.5')
+            $this->_hookFooter($params);
+
+        return $this->display(__FILE__, 'views/templates/hook/jstracking.tpl');
+    }
+
+    /**
+     * add Prestashop !LATEST! specific settings
+     * @param mixed $params
+     * @since 0.4
+     */
+    private function _hookFooter($params) {
         /* product tracking */
         if (get_class($this->context->controller) == 'ProductController') {
             $products = array(array('product' => $this->context->controller->getProduct(), 'categorys' => NULL));

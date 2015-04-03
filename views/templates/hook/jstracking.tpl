@@ -79,7 +79,7 @@
     {if isset($PIWIK_SITE_SEARCH) && !isset($PIWIK_PRODUCTS)}
         {$PIWIK_SITE_SEARCH}
     {else}
-        {if $PK404 eq true}
+        {if isset($PK404) && $PK404 eq true}
         _paq.push(['setDocumentTitle',  '404/URL = ' +  encodeURIComponent(document.location.pathname+document.location.search) + '/From = ' + encodeURIComponent(document.referrer)]);
         {/if}
         _paq.push(['trackPageView']);
