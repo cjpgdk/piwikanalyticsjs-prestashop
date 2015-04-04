@@ -77,7 +77,7 @@ class piwikanalyticsjs extends Module {
         $this->_errors = PKHelper::$errors = PKHelper::$error = "";
 
         if ($this->id) {
-            if (_PS_VERSION_ <= '1.5.0.2')
+            if (_PS_VERSION_ <= '1.5.0.3')
                 PKHelper::$_module = & $this;
         }
     }
@@ -93,7 +93,7 @@ class piwikanalyticsjs extends Module {
             die();
         }
 
-        if (_PS_VERSION_ <= '1.5.0.2') {
+        if (_PS_VERSION_ <= '1.5.0.3') {
             $this->context->controller->addJquery(_PS_JQUERY_VERSION_);
             $this->context->controller->addJs($this->_path . 'js/jquery.alerts.js');
             $this->context->controller->addCss($this->_path . 'js/jquery.alerts.css');
@@ -1197,7 +1197,7 @@ class piwikanalyticsjs extends Module {
         }
 
         if (strtolower($page_name) == "product" && isset($_GET['id_product']) && Validate::isUnsignedInt($_GET['id_product'])) {
-            $product = new Product($_GET['id_product'], false, (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) ? $_GET['id_lang'] : NULL));
+            $product = new Product($_GET['id_product'], false, (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) ? $_GET['id_lang'] : (isset($this->context->cookie->id_lang) ? $this->context->cookie->id_lang : NULL)));
             if (!Validate::isLoadedObject($product))
                 return;
             $product_categorys = $this->get_category_names_by_product($product->id, FALSE);
@@ -1223,7 +1223,7 @@ class piwikanalyticsjs extends Module {
         }
         /* category tracking */
         if (strtolower($page_name) == "category" && isset($_GET['id_category']) && Validate::isUnsignedInt($_GET['id_category'])) {
-            $category = new Category($_GET['id_category'], (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) ? $_GET['id_lang'] : NULL));
+            $category = new Category($_GET['id_category'], (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) ? $_GET['id_lang'] : (isset($this->context->cookie->id_lang) ? $this->context->cookie->id_lang : NULL)));
             $this->context->smarty->assign(array(
                 PKHelper::CPREFIX . 'category' => array('NAME' => $category->name),
             ));
@@ -1331,7 +1331,7 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     public static function getModuleLink($module, $controller = 'default') {
-        if (_PS_VERSION_ <= '1.5.0.2')
+        if (_PS_VERSION_ <= '1.5.0.3')
             return Tools::getShopDomainSsl(true, true) . _MODULE_DIR_ . $module . '/' . $controller . '.php';
         else
             return Context::getContext()->link->getModuleLink($module, $controller);
@@ -1456,7 +1456,7 @@ class piwikanalyticsjs extends Module {
         $tab->module = 'piwikanalyticsjs';
         $tab->active = TRUE;
 
-        if (_PS_VERSION_ <= '1.5.0.2') {
+        if (_PS_VERSION_ <= '1.5.0.3') {
             $tab->class_name = 'AdminPiwikAnalytics';
             if (method_exists('Tab', 'getInstanceFromClassName')) {
                 $AdminParentStats = Tab::getInstanceFromClassName('AdminStats');
@@ -1475,13 +1475,12 @@ class piwikanalyticsjs extends Module {
                     $AdminParentStats = new Tab($tmpId);
             }
         }
-        
+
         $tab->id_parent = (isset($AdminParentStats) && ($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? $AdminParentStats->id : -1);
         if ($tab->add())
             Configuration::updateValue(PKHelper::CPREFIX . 'TAPID', (int) $tab->id);
         else {
-            $this->_errors[] = sprintf($this->l('Unable to create new tab "Piwik Analytics", Please forward tthe following info to the developer %s'), 
-                    "<br/>"
+            $this->_errors[] = sprintf($this->l('Unable to create new tab "Piwik Analytics", Please forward tthe following info to the developer %s'), "<br/>"
                     . (isset($AdminParentStats) ? "isset(\$AdminParentStats): True" : "isset(\$AdminParentStats): False")
                     . "<br/>"
                     . "Type of \$AdminParentStats: " . gettype($AdminParentStats)
@@ -1490,11 +1489,11 @@ class piwikanalyticsjs extends Module {
                     . "<br/>"
                     . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats instanceof Tab: True" : "\$AdminParentStats instanceof Tab: False")
                     . "<br/>"
-                    . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->id: ".$AdminParentStats->id : "\$AdminParentStats->id: ?0?")
-                     . "<br/>"
-                    . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->name: ".$AdminParentStats->name : "\$AdminParentStats->name: ?0?")
+                    . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->id: " . $AdminParentStats->id : "\$AdminParentStats->id: ?0?")
                     . "<br/>"
-                    . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->class_name: ".$AdminParentStats->class_name : "\$AdminParentStats->class_name: ?0?")
+                    . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->name: " . $AdminParentStats->name : "\$AdminParentStats->name: ?0?")
+                    . "<br/>"
+                    . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->class_name: " . $AdminParentStats->class_name : "\$AdminParentStats->class_name: ?0?")
                     . "<br/>"
                     . "Prestashop version: " . _PS_VERSION_
                     . "<br/>"
@@ -1521,12 +1520,12 @@ class piwikanalyticsjs extends Module {
             }
             try {
                 if (method_exists('Tab', 'getInstanceFromClassName')) {
-                    if (_PS_VERSION_ <= '1.5.0.2')
+                    if (_PS_VERSION_ <= '1.5.0.3')
                         $AdminParentStats = Tab::getInstanceFromClassName('AdminPiwikAnalytics');
                     else
                         $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics');
                 } else if (method_exists('Tab', 'getIdFromClassName')) {
-                    if (_PS_VERSION_ <= '1.5.0.2')
+                    if (_PS_VERSION_ <= '1.5.0.3')
                         $tmpId = Tab::getIdFromClassName('AdminPiwikAnalytics');
                     else
                         $tmpId = Tab::getIdFromClassName('PiwikAnalytics');
