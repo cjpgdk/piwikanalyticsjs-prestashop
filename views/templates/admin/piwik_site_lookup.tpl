@@ -65,12 +65,6 @@
     var _upPopO = false;
     function PiwikLookup(){
         $('#PiwikLookupModal').html(htmls000);
-        {*
-                 $('#PIWIK_PAUTHPWD').clone().attr('type','text').insertAfter('#PIWIK_PAUTHPWD').prev().remove();
-        $('form').find('input:password').each(function() {
-            $("<input type='text' id='Testing_"+$(this).attr('id')+"' />").attr({ name: this.name, value: this.value }).insertBefore(this);
-        }).remove();
-        *}
         if(_upPopO){
             _upPopO = false;
             $('#PiwikLookupModal').css( { opacity:0, 'pointer-events':'none' } );
@@ -99,7 +93,7 @@
         $('#PIWIK_USRPASSWD').val(password);
         
         if ($('#PIWIK_HOST').val().trim() === ''){
-            piwikhost = prompt('{l s='Please enter your piwik host' mod='piwikanalyticsjs'}', 'piwik.example.com/piwik2/');
+            piwikhost = prompt('{l s='Please enter piwik host' mod='piwikanalyticsjs'}', 'piwik.example.com/piwik2/');
             $('#PIWIK_HOST').val(piwikhost);
         } else{
             piwikhost = $('#PIWIK_HOST').val();

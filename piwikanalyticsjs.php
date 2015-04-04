@@ -66,7 +66,7 @@ class piwikanalyticsjs extends Module {
         if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH'))
             $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('is not ready to roll you need to configure the auth token');
         if ($this->id && ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0))
-            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You have not yet set your Piwik Site ID');
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You have not yet set Piwik Site ID');
         if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'HOST'))
             $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('is not ready to roll you need to configure the Piwik server url');
 
@@ -154,6 +154,12 @@ class piwikanalyticsjs extends Module {
                 'name' => $this->l('Based on the settings you provided this is the info i get from Piwik!') . "<br>"
                 . "<strong>" . $this->l('Name') . "</strong>: <i>{$this->piwikSite[0]->name}</i><br>"
                 . "<strong>" . $this->l('Main Url') . "</strong>: <i>{$this->piwikSite[0]->main_url}</i><br>"
+                . "<a onclick='return PiwikLookup();' title='{$this->l('Click here to open piwik site lookup wizard')}'>{$this->l('Configuration Wizard')}</a>"
+            );
+        }  else {
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'html',
+                'name' => "<a onclick='return PiwikLookup();' title='{$this->l('Click here to open piwik site lookup wizard')}'>{$this->l('Configuration Wizard')}</a>"
             );
         }
 
@@ -162,7 +168,7 @@ class piwikanalyticsjs extends Module {
             'label' => $this->l('Piwik Host'),
             'name' => PKHelper::CPREFIX . 'HOST',
             'desc' => $this->l('Example: www.example.com/piwik/ (without protocol and with / at the end!)'),
-            'hint' => $this->l('The host where your piwik is installed.!'),
+            'hint' => $this->l('The host where piwik is installed.!'),
             'required' => true
         );
         $fields_form[0]['form']['input'][] = array(
@@ -218,14 +224,14 @@ class piwikanalyticsjs extends Module {
             'label' => $this->l('Piwik site id'),
             'name' => PKHelper::CPREFIX . 'SITEID',
             'desc' => $this->l('Example: 10'),
-            'hint' => $this->l('You can find your piwik site id by loggin to your piwik installation.'),
+            'hint' => $this->l('You can find piwik site id by loggin to piwik installation.'),
             'required' => true
         );
         $fields_form[0]['form']['input'][] = array(
             'type' => 'text',
             'label' => $this->l('Piwik token auth'),
             'name' => PKHelper::CPREFIX . 'TOKEN_AUTH',
-            'desc' => $this->l('You can find your piwik token by loggin to your piwik installation. under API'),
+            'desc' => $this->l('You can find piwik token by loggin to piwik installation. under API'),
             'required' => true
         );
         $fields_form[0]['form']['input'][] = array(
@@ -336,7 +342,7 @@ class piwikanalyticsjs extends Module {
             'type' => 'text',
             'label' => $this->l('Piwik User name'),
             'name' => PKHelper::CPREFIX . 'USRNAME',
-            'desc' => $this->l('You can store your Username for Piwik here to make it easy to open your piwik interface from your stats page with automatic login'),
+            'desc' => $this->l('You can store your Username for Piwik here to make it easy to open piwik interface from your stats page with automatic login'),
             'required' => false,
             'autocomplete' => false,
         );
@@ -344,7 +350,7 @@ class piwikanalyticsjs extends Module {
             'type' => 'password',
             'label' => $this->l('Piwik User password'),
             'name' => PKHelper::CPREFIX . 'USRPASSWD',
-            'desc' => $this->l('You can store your Password for Piwik here to make it easy to open your piwik interface from your stats page with automatic login'),
+            'desc' => $this->l('You can store your Password for Piwik here to make it easy to open piwik interface from your stats page with automatic login'),
             'required' => false,
             'autocomplete' => false,
         );
@@ -370,7 +376,7 @@ class piwikanalyticsjs extends Module {
                     'is_bool' => true, //retro compat 1.5
                     'label' => $this->l('Use HTTPS'),
                     'name' => PKHelper::CPREFIX . 'CRHTTPS',
-                    'hint' => $this->l('ONLY enable this feature if your piwik installation is accessible via https'),
+                    'hint' => $this->l('ONLY enable this feature if piwik installation is accessible via https'),
                     'desc' => $this->l('use Hypertext Transfer Protocol Secure (HTTPS) in all requests from code to piwik, this only affects how requests are sent from proxy script to piwik, your visitors will still use the protocol they visit your shop with'),
                     'values' => array(
                         array(
@@ -450,7 +456,7 @@ class piwikanalyticsjs extends Module {
                 ),
                 array(
                     'type' => 'html',
-                    'name' => "<strong>{$this->l('Piwik Proxy Script Authorization? if your piwik is installed behind HTTP Basic Authorization (Both password and username must be filled before the values will be used)')}</strong>"
+                    'name' => "<strong>{$this->l('Piwik Proxy Script Authorization? if piwik is installed behind HTTP Basic Authorization (Both password and username must be filled before the values will be used)')}</strong>"
                 ),
                 array(
                     'type' => 'text',
@@ -458,7 +464,7 @@ class piwikanalyticsjs extends Module {
                     'name' => PKHelper::CPREFIX . 'PAUTHUSR',
                     'required' => false,
                     'autocomplete' => false,
-                    'desc' => $this->l('this field along with password can be used if your piwik installation is protected by HTTP Basic Authorization'),
+                    'desc' => $this->l('this field along with password can be used if piwik installation is protected by HTTP Basic Authorization'),
                 ),
                 array(
                     'type' => 'password',
@@ -466,7 +472,7 @@ class piwikanalyticsjs extends Module {
                     'name' => PKHelper::CPREFIX . 'PAUTHPWD',
                     'required' => false,
                     'autocomplete' => false,
-                    'desc' => $this->l('this field along with username can be used if your piwik installation is protected by HTTP Basic Authorization'),
+                    'desc' => $this->l('this field along with username can be used if piwik installation is protected by HTTP Basic Authorization'),
                 ),
             ),
             'submit' => array(
@@ -511,7 +517,7 @@ class piwikanalyticsjs extends Module {
             unset($tmp, $pktz, $pktzV, $pktzK);
             $fields_form[2]['form'] = array(
                 'legend' => array(
-                    'title' => $this->displayName . ' ' . $this->l('Advanced') . ' - ' . $this->l('Edit your Piwik site'),
+                    'title' => $this->displayName . ' ' . $this->l('Advanced') . ' - ' . $this->l('Edit Piwik site'),
                     'image' => $this->_path . 'logo.png'
                 ),
                 'input' => array(
@@ -1101,6 +1107,7 @@ class piwikanalyticsjs extends Module {
         } else {
             $this->context->smarty->assign(PKHelper::CPREFIX . 'CART', FALSE);
         }
+
         $is404 = false;
         if (!empty($this->context->controller->errors)) {
             foreach ($this->context->controller->errors as $key => $value) {
@@ -1111,15 +1118,14 @@ class piwikanalyticsjs extends Module {
             }
         }
         if (
-                (get_class($this->context->controller) == 'PageNotFoundController') ||
+                (strtolower(get_class($this->context->controller)) == 'pagenotfoundcontroller') ||
                 (isset($this->context->controller->php_self) && ($this->context->controller->php_self == '404')) ||
-                (isset($this->context->controller->page_name) && ($this->context->controller->page_name == 'pagenotfound'))
+                (isset($this->context->controller->page_name) && (strtolower($this->context->controller->page_name) == 'pagenotfound'))
         ) {
             $is404 = true;
         }
-        
+
         $this->context->smarty->assign(array("PK404" => $is404));
-        
 
         if (_PS_VERSION_ < '1.5.6')
             $this->_hookFooterPS14($params, $page_name);
@@ -1235,60 +1241,6 @@ class piwikanalyticsjs extends Module {
         $this->hookactionSearch($params);
     }
 
-    /**
-     * hook into admin stats page on prestashop version 1.4
-     * @param array $params
-     * @return string
-     * @since 0.5
-     */
-    public function hookAdminStatsModules($params) {
-        $http = ((bool) Configuration::get(PKHelper::CPREFIX . 'CRHTTPS') ? 'https://' : 'http://');
-        $PIWIK_HOST = Configuration::get(PKHelper::CPREFIX . 'HOST');
-        $PIWIK_SITEID = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
-        $PIWIK_TOKEN_AUTH = Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH');
-        if ((empty($PIWIK_HOST) || $PIWIK_HOST === FALSE) ||
-                ($PIWIK_SITEID <= 0 || $PIWIK_SITEID === FALSE) ||
-                (empty($PIWIK_TOKEN_AUTH) || $PIWIK_TOKEN_AUTH === FALSE))
-            return "<h3>{$this->l("You need to set 'Piwik host url', 'Piwik token auth' and 'Piwik site id', and save them before the dashboard can be shown here")}</h3>";
-        $lng = new Language($params['cookie']->id_lang);
-
-        $user = Configuration::get(PKHelper::CPREFIX . 'USRNAME');
-        $passwd = Configuration::get(PKHelper::CPREFIX . 'USRPASSWD');
-        if ((!empty($user) && $user !== FALSE) && (!empty($passwd) && $passwd !== FALSE))
-            $PKUILINK = $http . $PIWIK_HOST . 'index.php?module=Login&action=logme&login=' . $user . '&password=' . md5($passwd) . '&idSite=' . $PIWIK_SITEID;
-        else
-            $PKUILINK = $http . $PIWIK_HOST . 'index.php';
-
-        $DREPDATE = Configuration::get(PKHelper::CPREFIX . 'DREPDATE');
-        if ($DREPDATE !== FALSE && (strpos($DREPDATE, '|') !== FALSE)) {
-            list($period, $date) = explode('|', $DREPDATE);
-        } else {
-            $period = "day";
-            $date = "today";
-        }
-
-        $html = '<script type="text/javascript">function WidgetizeiframeDashboardLoaded() {var w = $(\'#content\').width();var h = $(\'body\').height();$(\'#WidgetizeiframeDashboard\').width(\'100%\');$(\'#WidgetizeiframeDashboard\').height(h);}</script>'
-                . '<fieldset class="width3">'
-                . '<legend><img src="../modules/' . $this->name . '/logo.gif" /> ' . $this->displayName . ''
-                . ' | <a target="_blank" href="' . $PKUILINK . '">' . $this->l('Piwik') . '</a>'
-                . ' | <a target="_blank" href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki">' . $this->l('Help') . '</a>'
-                . '</legend>'
-                . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
-                . 'src="' . $http . $PIWIK_HOST . 'index.php'
-                . '?module=Widgetize'
-                . '&action=iframe'
-                . '&moduleToWidgetize=Dashboard'
-                . '&actionToWidgetize=index'
-                . '&idSite=' . $PIWIK_SITEID
-                . '&period=' . $period
-                . '&language=' . $lng->iso_code
-                . '&token_auth=' . $PIWIK_TOKEN_AUTH
-                . '&date=' . $date
-                . '" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>'
-                . '</fieldset>';
-        return $html;
-    }
-
     /* HELPERS */
 
     private function parseProductSku($id, $attrid = FALSE, $ref = FALSE) {
@@ -1379,7 +1331,10 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     public static function getModuleLink($module, $controller = 'default') {
-        return Context::getContext()->link->getModuleLink($module, $controller);
+        if (_PS_VERSION_ <= '1.5.0.1')
+            return Tools::getShopDomainSsl(true, true) . _MODULE_DIR_ . $module . '/' . $controller . '.php';
+        else
+            return Context::getContext()->link->getModuleLink($module, $controller);
     }
 
     private function __setConfigDefault() {
@@ -1500,7 +1455,7 @@ class piwikanalyticsjs extends Module {
         }
         $tab->module = 'piwikanalyticsjs';
         $tab->active = TRUE;
-        
+
         if (_PS_VERSION_ <= '1.5.0.1') {
             $tab->class_name = 'AdminPiwikAnalytics';
             if (method_exists('Tab', 'getInstanceFromClassName')) {
@@ -1551,7 +1506,7 @@ class piwikanalyticsjs extends Module {
                         $tmpId = Tab::getIdFromClassName('AdminPiwikAnalytics');
                     else
                         $tmpId = Tab::getIdFromClassName('PiwikAnalytics');
-                    
+
                     if ($tmpId != null && $tmpId > 0)
                         $AdminParentStats = new Tab($tmpId);
                 }
