@@ -77,7 +77,7 @@ class piwikanalyticsjs extends Module {
         $this->_errors = PKHelper::$errors = PKHelper::$error = "";
 
         if ($this->id) {
-            if (_PS_VERSION_ <= '1.5.0.1')
+            if (_PS_VERSION_ <= '1.5.0.2')
                 PKHelper::$_module = & $this;
         }
     }
@@ -93,7 +93,7 @@ class piwikanalyticsjs extends Module {
             die();
         }
 
-        if (_PS_VERSION_ <= '1.5.0.1') {
+        if (_PS_VERSION_ <= '1.5.0.2') {
             $this->context->controller->addJquery(_PS_JQUERY_VERSION_);
             $this->context->controller->addJs($this->_path . 'js/jquery.alerts.js');
             $this->context->controller->addCss($this->_path . 'js/jquery.alerts.css');
@@ -154,12 +154,12 @@ class piwikanalyticsjs extends Module {
                 'name' => $this->l('Based on the settings you provided this is the info i get from Piwik!') . "<br>"
                 . "<strong>" . $this->l('Name') . "</strong>: <i>{$this->piwikSite[0]->name}</i><br>"
                 . "<strong>" . $this->l('Main Url') . "</strong>: <i>{$this->piwikSite[0]->main_url}</i><br>"
-                . "<a onclick='return PiwikLookup();' title='{$this->l('Click here to open piwik site lookup wizard')}'>{$this->l('Configuration Wizard')}</a>"
+                . "<a href='#' onclick='return PiwikLookup();' title='{$this->l('Click here to open piwik site lookup wizard')}'>{$this->l('Configuration Wizard')}</a>"
             );
-        }  else {
+        } else {
             $fields_form[0]['form']['input'][] = array(
                 'type' => 'html',
-                'name' => "<a onclick='return PiwikLookup();' title='{$this->l('Click here to open piwik site lookup wizard')}'>{$this->l('Configuration Wizard')}</a>"
+                'name' => "<a href='#' onclick='return PiwikLookup();' title='{$this->l('Click here to open piwik site lookup wizard')}'>{$this->l('Configuration Wizard')}</a>"
             );
         }
 
@@ -1331,7 +1331,7 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     public static function getModuleLink($module, $controller = 'default') {
-        if (_PS_VERSION_ <= '1.5.0.1')
+        if (_PS_VERSION_ <= '1.5.0.2')
             return Tools::getShopDomainSsl(true, true) . _MODULE_DIR_ . $module . '/' . $controller . '.php';
         else
             return Context::getContext()->link->getModuleLink($module, $controller);
@@ -1456,7 +1456,7 @@ class piwikanalyticsjs extends Module {
         $tab->module = 'piwikanalyticsjs';
         $tab->active = TRUE;
 
-        if (_PS_VERSION_ <= '1.5.0.1') {
+        if (_PS_VERSION_ <= '1.5.0.2') {
             $tab->class_name = 'AdminPiwikAnalytics';
             if (method_exists('Tab', 'getInstanceFromClassName')) {
                 $AdminParentStats = Tab::getInstanceFromClassName('AdminStats');
@@ -1475,9 +1475,33 @@ class piwikanalyticsjs extends Module {
                     $AdminParentStats = new Tab($tmpId);
             }
         }
-        $tab->id_parent = (isset($AdminParentStats) && $AdminParentStats instanceof Tab ? $AdminParentStats->id : -1);
+        
+        $tab->id_parent = (isset($AdminParentStats) && ($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? $AdminParentStats->id : -1);
         if ($tab->add())
             Configuration::updateValue(PKHelper::CPREFIX . 'TAPID', (int) $tab->id);
+        else {
+            $this->_errors[] = sprintf($this->l('Unable to create new tab "Piwik Analytics", Please forward tthe following info to the developer %s'), 
+                    "<br/>"
+                    . (isset($AdminParentStats) ? "isset(\$AdminParentStats): True" : "isset(\$AdminParentStats): False")
+                    . "<br/>"
+                    . "Type of \$AdminParentStats: " . gettype($AdminParentStats)
+                    . "<br/>"
+                    . "Class name of \$AdminParentStats: " . get_class($AdminParentStats)
+                    . "<br/>"
+                    . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats instanceof Tab: True" : "\$AdminParentStats instanceof Tab: False")
+                    . "<br/>"
+                    . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->id: ".$AdminParentStats->id : "\$AdminParentStats->id: ?0?")
+                     . "<br/>"
+                    . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->name: ".$AdminParentStats->name : "\$AdminParentStats->name: ?0?")
+                    . "<br/>"
+                    . (($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->class_name: ".$AdminParentStats->class_name : "\$AdminParentStats->class_name: ?0?")
+                    . "<br/>"
+                    . "Prestashop version: " . _PS_VERSION_
+                    . "<br/>"
+                    . "PHP version: " . PHP_VERSION
+            );
+            return false;
+        }
 
         /* default values */
         foreach ($this->getConfigFields(FALSE) as $key => $value) {
@@ -1497,12 +1521,12 @@ class piwikanalyticsjs extends Module {
             }
             try {
                 if (method_exists('Tab', 'getInstanceFromClassName')) {
-                    if (_PS_VERSION_ <= '1.5.0.1')
+                    if (_PS_VERSION_ <= '1.5.0.2')
                         $AdminParentStats = Tab::getInstanceFromClassName('AdminPiwikAnalytics');
                     else
                         $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics');
                 } else if (method_exists('Tab', 'getIdFromClassName')) {
-                    if (_PS_VERSION_ <= '1.5.0.1')
+                    if (_PS_VERSION_ <= '1.5.0.2')
                         $tmpId = Tab::getIdFromClassName('AdminPiwikAnalytics');
                     else
                         $tmpId = Tab::getIdFromClassName('PiwikAnalytics');
@@ -1510,7 +1534,7 @@ class piwikanalyticsjs extends Module {
                     if ($tmpId != null && $tmpId > 0)
                         $AdminParentStats = new Tab($tmpId);
                 }
-                if (isset($AdminParentStats) && $AdminParentStats instanceof Tab) {
+                if (isset($AdminParentStats) && ($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore)) {
                     $AdminParentStats->delete();
                 }
             } catch (Exception $ex) {
