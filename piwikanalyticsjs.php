@@ -77,7 +77,7 @@ class piwikanalyticsjs extends Module {
         $this->_errors = PKHelper::$errors = PKHelper::$error = "";
 
         if ($this->id) {
-            if (version_compare(_PS_VERSION_ , '1.5.0.13', "<="))
+            if (version_compare(_PS_VERSION_, '1.5.0.13', "<="))
                 PKHelper::$_module = & $this;
         }
     }
@@ -93,13 +93,13 @@ class piwikanalyticsjs extends Module {
             die();
         }
 
-        if (version_compare(_PS_VERSION_ , '1.5.0.4', "<=")) {
+        if (version_compare(_PS_VERSION_, '1.5.0.4', "<=")) {
             $this->context->controller->addJquery(_PS_JQUERY_VERSION_);
             $this->context->controller->addJs($this->_path . 'js/jquery.alerts.js');
             $this->context->controller->addCss($this->_path . 'js/jquery.alerts.css');
         }
-        
-        if (version_compare(_PS_VERSION_ , '1.5.2.999', "<="))
+
+        if (version_compare(_PS_VERSION_, '1.5.2.999', "<="))
             $this->context->controller->addJqueryPlugin('fancybox', _PS_JS_DIR_ . 'jquery/plugins/');
 
         $_html = "";
@@ -1333,7 +1333,7 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     public static function getModuleLink($module, $controller = 'default') {
-        if (version_compare(_PS_VERSION_ , '1.5.0.13', "<="))
+        if (version_compare(_PS_VERSION_, '1.5.0.13', "<="))
             return Tools::getShopDomainSsl(true, true) . _MODULE_DIR_ . $module . '/' . $controller . '.php';
         else
             return Context::getContext()->link->getModuleLink($module, $controller);
@@ -1457,34 +1457,31 @@ class piwikanalyticsjs extends Module {
         }
         $tab->module = 'piwikanalyticsjs';
         $tab->active = TRUE;
-
-        /*
-
-         */
-        if (version_compare(_PS_VERSION_ , '1.5.0.5', ">=")) {
-            $tab->class_name = 'PiwikAnalytics15';
-            if (method_exists('Tab', 'getInstanceFromClassName')) {
-                $AdminParentStats = Tab::getInstanceFromClassName('AdminStats');
-            } else if (method_exists('Tab', 'getIdFromClassName')) {
-                $tmpId = Tab::getIdFromClassName('AdminStats');
-                if ($tmpId != null && $tmpId > 0)
-                    $AdminParentStats = new Tab($tmpId);
+        
+        if (method_exists('Tab', 'getInstanceFromClassName')) {
+            if (version_compare(_PS_VERSION_, '1.5.0.5', ">=") && version_compare(_PS_VERSION_, '1.5.3.999', "<=")) {
+                $tab->class_name = 'PiwikAnalytics15';
+            } else if (version_compare(_PS_VERSION_, '1.5.0.13', "<=")) {
+                $tab->class_name = 'AdminPiwikAnalytics';
+            } else {
+                $tab->class_name = 'PiwikAnalytics';
             }
-        } else if (version_compare(_PS_VERSION_ , '1.5.0.13', "<=")) {
-            $tab->class_name = 'AdminPiwikAnalytics';
-            if (method_exists('Tab', 'getInstanceFromClassName')) {
-                $AdminParentStats = Tab::getInstanceFromClassName('AdminStats');
-            } else if (method_exists('Tab', 'getIdFromClassName')) {
-                $tmpId = Tab::getIdFromClassName('AdminStats');
-                if ($tmpId != null && $tmpId > 0)
-                    $AdminParentStats = new Tab($tmpId);
+            $AdminParentStats = TabCore::getInstanceFromClassName('AdminStats');
+            if ($AdminParentStats == null || !($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) || $AdminParentStats->id == 0)
+                $AdminParentStats = TabCore::getInstanceFromClassName('AdminParentStats');
+        } else if (method_exists('Tab', 'getIdFromClassName')) {
+            if (version_compare(_PS_VERSION_, '1.5.0.5', ">=") && version_compare(_PS_VERSION_, '1.5.3.999', "<=")) {
+                $tab->class_name = 'PiwikAnalytics15';
+            } else if (version_compare(_PS_VERSION_, '1.5.0.13', "<=")) {
+                $tab->class_name = 'AdminPiwikAnalytics';
+            } else {
+                $tab->class_name = 'PiwikAnalytics';
             }
-        } else {
-            $tab->class_name = 'PiwikAnalytics';
-            if (method_exists('Tab', 'getInstanceFromClassName')) {
-                $AdminParentStats = Tab::getInstanceFromClassName('AdminParentStats');
-            } else if (method_exists('Tab', 'getIdFromClassName')) {
-                $tmpId = Tab::getIdFromClassName('AdminParentStats');
+            $tmpId = TabCore::getIdFromClassName('AdminStats');
+            if ($tmpId != null && $tmpId > 0)
+                $AdminParentStats = new Tab($tmpId);
+            else {
+                $tmpId = TabCore::getIdFromClassName('AdminParentStats');
                 if ($tmpId != null && $tmpId > 0)
                     $AdminParentStats = new Tab($tmpId);
             }
@@ -1513,7 +1510,6 @@ class piwikanalyticsjs extends Module {
                     . "<br/>"
                     . "PHP version: " . PHP_VERSION
             );
-            return false;
         }
 
         /* default values */
@@ -1534,20 +1530,19 @@ class piwikanalyticsjs extends Module {
             }
             try {
                 if (method_exists('Tab', 'getInstanceFromClassName')) {
-                    if (version_compare(_PS_VERSION_ , '1.5.0.5', ">="))
+                    if (version_compare(_PS_VERSION_, '1.5.0.5', ">=") && version_compare(_PS_VERSION_, '1.5.3.999', "<="))
                         $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics15');
-                    else if (version_compare(_PS_VERSION_ , '1.5.0.4', "<=")) 
+                    else if (version_compare(_PS_VERSION_, '1.5.0.4', "<="))
                         $AdminParentStats = Tab::getInstanceFromClassName('AdminPiwikAnalytics');
                     else
                         $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics');
                 } else if (method_exists('Tab', 'getIdFromClassName')) {
-                    if (version_compare(_PS_VERSION_ , '1.5.0.5', ">="))
+                    if (version_compare(_PS_VERSION_, '1.5.0.5', ">=") && version_compare(_PS_VERSION_, '1.5.3.999', "<="))
                         $tmpId = Tab::getIdFromClassName('PiwikAnalytics15');
-                    else if (version_compare(_PS_VERSION_ , '1.5.0.4', "<=")) 
+                    else if (version_compare(_PS_VERSION_, '1.5.0.4', "<="))
                         $tmpId = Tab::getIdFromClassName('AdminPiwikAnalytics');
                     else
                         $tmpId = Tab::getIdFromClassName('PiwikAnalytics');
-
                     if ($tmpId != null && $tmpId > 0)
                         $AdminParentStats = new Tab($tmpId);
                 }
