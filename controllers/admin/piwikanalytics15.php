@@ -30,6 +30,7 @@ if (!defined('_PS_VERSION_'))
  * 
  * Used for Prestashop version
  *  - 1.5.0.5
+ *  - 1.5.0.13
  */
 class PiwikAnalytics15Controller extends ModuleAdminController {
 
