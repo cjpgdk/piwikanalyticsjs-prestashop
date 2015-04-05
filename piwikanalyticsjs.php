@@ -99,7 +99,7 @@ class piwikanalyticsjs extends Module {
             $this->context->controller->addCss($this->_path . 'js/jquery.alerts.css');
         }
         
-        if (version_compare(_PS_VERSION_ , '1.5.1.999', "<="))
+        if (version_compare(_PS_VERSION_ , '1.5.2.999', "<="))
             $this->context->controller->addJqueryPlugin('fancybox', _PS_JS_DIR_ . 'jquery/plugins/');
 
         $_html = "";
