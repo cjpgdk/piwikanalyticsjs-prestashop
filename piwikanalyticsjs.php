@@ -128,8 +128,12 @@ class piwikanalyticsjs extends Module {
             $languages[$languages_key]['is_default'] = ($languages_value['id_lang'] == (int) Configuration::get('PS_LANG_DEFAULT') ? true : false);
         }
         $helper = new HelperForm();
-        if (_PS_VERSION_ < '1.6')
+        $helper->module = $this;
+
+        if (version_compare(_PS_VERSION_, '1.6.0.0', "<"))
             $helper->base_folder = _PS_MODULE_DIR_ . 'piwikanalyticsjs/views/templates/helpers/form/';
+        else
+            $helper->module = $this;
 
         $helper->languages = $languages;
         $helper->module = $this;
@@ -140,8 +144,8 @@ class piwikanalyticsjs extends Module {
         $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
         $helper->default_form_language = (int) Configuration::get('PS_LANG_DEFAULT');
         $helper->allow_employee_form_lang = (int) Configuration::get('PS_LANG_DEFAULT');
-        $helper->show_toolbar = true;
-        $helper->toolbar_scroll = true;
+        $helper->show_toolbar = false;
+        $helper->toolbar_scroll = false;
         $helper->title = $this->displayName;
         $helper->submit_action = 'submitUpdate' . $this->name;
 
@@ -359,6 +363,7 @@ class piwikanalyticsjs extends Module {
 
         $fields_form[0]['form']['submit'] = array(
             'title' => $this->l('Save'),
+            'class' => 'btn btn-default'
         );
 
 
@@ -479,6 +484,7 @@ class piwikanalyticsjs extends Module {
             ),
             'submit' => array(
                 'title' => $this->l('Save'),
+                'class' => 'btn btn-default'
             )
         );
 
@@ -1457,7 +1463,7 @@ class piwikanalyticsjs extends Module {
         }
         $tab->module = 'piwikanalyticsjs';
         $tab->active = TRUE;
-        
+
         if (method_exists('Tab', 'getInstanceFromClassName')) {
             if (version_compare(_PS_VERSION_, '1.5.0.5', ">=") && version_compare(_PS_VERSION_, '1.5.3.999', "<=")) {
                 $tab->class_name = 'PiwikAnalytics15';
