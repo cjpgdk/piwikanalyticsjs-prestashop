@@ -101,6 +101,8 @@ class piwikanalyticsjs extends Module {
 
         if (version_compare(_PS_VERSION_, '1.5.2.999', "<="))
             $this->context->controller->addJqueryPlugin('fancybox', _PS_JS_DIR_ . 'jquery/plugins/');
+        if (version_compare(_PS_VERSION_, '1.6.0.0', ">="))
+            $this->context->controller->addJqueryPlugin('tagify', _PS_JS_DIR_ . 'jquery/plugins/');
 
         $_html = "";
         $_html .= $this->processFormsUpdate();
@@ -595,23 +597,23 @@ class piwikanalyticsjs extends Module {
                         ),
                     ),
                     array(
-                        'type' => 'text',
+                        'type' => (version_compare(_PS_VERSION_ , '1.6.0.0', '>=') ? 'tags':'text'),
                         'label' => $this->l('Search Keyword Parameters'),
                         'name' => 'PKAdminSearchKeywordParameters',
                     ),
                     array(
-                        'type' => 'text',
+                        'type' => (version_compare(_PS_VERSION_ , '1.6.0.0', '>=') ? 'tags':'text'),
                         'label' => $this->l('Search Category Parameters'),
                         'name' => 'PKAdminSearchCategoryParameters',
                     ),
                     array(
-                        'type' => 'text',
+                        'type' => (version_compare(_PS_VERSION_ , '1.6.0.0', '>=') ? 'tags':'text'),
                         'label' => $this->l('Excluded ip addresses'),
                         'name' => 'PKAdminExcludedIps',
                         'desc' => $this->l('ip addresses excluded from tracking, separated by comma ","'),
                     ),
                     array(
-                        'type' => 'text',
+                        'type' => (version_compare(_PS_VERSION_ , '1.6.0.0', '>=') ? 'tags':'text'),
                         'label' => $this->l('Excluded Query Parameters'),
                         'name' => 'PKAdminExcludedQueryParameters',
                         'desc' => $this->l('please read: http://piwik.org/faq/how-to/faq_81/'),

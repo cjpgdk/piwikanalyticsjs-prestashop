@@ -27,9 +27,17 @@
         /*var urls = $('#PKAdminSiteUrls').val();*/
         var ecommerce = $('input[name=PKAdminEcommerce]:checked').val();
         var siteSearch = $('input[name=PKAdminSiteSearch]:checked').val();
+        if ( $.isFunction($.fn.tagify) )
+            $(this).find('#PKAdminSearchKeywordParameters').val($('#PKAdminSearchKeywordParameters').tagify('serialize'));
         var searchKeywordParameters = $('#PKAdminSearchKeywordParameters').val();
+        if ( $.isFunction($.fn.tagify) )
+            $(this).find('#PKAdminSearchCategoryParameters').val($('#PKAdminSearchCategoryParameters').tagify('serialize'));
         var searchCategoryParameters = $('#PKAdminSearchCategoryParameters').val();
+        if ( $.isFunction($.fn.tagify) )
+            $(this).find('#PKAdminExcludedIps').val($('#PKAdminExcludedIps').tagify('serialize'));
         var excludedIps = $('#PKAdminExcludedIps').val();
+        if ( $.isFunction($.fn.tagify) )
+            $(this).find('#PKAdminExcludedQueryParameters').val($('#PKAdminExcludedQueryParameters').tagify('serialize'));
         var excludedQueryParameters = $('#PKAdminExcludedQueryParameters').val();
         var timezone = $('#PKAdminTimezone').val();
         var currency = $('#PKAdminCurrency').val();

@@ -177,7 +177,6 @@ class PKHelper {
             $url .= "&keepURLFragments=" . urlencode($keepURLFragments);
         if ($type !== NULL)
             $url .= "&type=" . urlencode($type);
-        $md5Url = md5($url);
         if ($result = self::getAsJsonDecoded($url)) {
             $url2 = self::getBaseURL($idSite) . "&method=SitesManager.getSiteFromId&format=JSON";
             unset(self::$_cachedResults[md5($url2)]); // Clear cache for updated site
