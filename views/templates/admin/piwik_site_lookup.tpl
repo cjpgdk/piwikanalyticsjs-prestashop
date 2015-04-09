@@ -92,12 +92,10 @@
         $('#PIWIK_USRNAME').val(username);
         $('#PIWIK_USRPASSWD').val(password);
         
-        if ($('#PIWIK_HOST').val().trim() === ''){
-            piwikhost = prompt('{l s='Please enter piwik host' mod='piwikanalyticsjs'}', 'piwik.example.com/piwik2/');
-            $('#PIWIK_HOST').val(piwikhost);
-        } else{
-            piwikhost = $('#PIWIK_HOST').val();
-        }
+        piwikhost = prompt('{l s='Please enter piwik host' mod='piwikanalyticsjs'}', ($('#PIWIK_HOST').val().trim()==='' ? 'piwik.example.com/piwik2/' : $('#PIWIK_HOST').val().trim()));
+		piwikhost = piwikhost.replace("http://", "").replace("https://", "").replace("://", "").replace("//", ""); 
+        $('#PIWIK_HOST').val(piwikhost);
+		
         /* get auth token */
         $.ajax({
             type: 'POST',
