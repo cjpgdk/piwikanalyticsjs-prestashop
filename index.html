@@ -1,134 +1,393 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
-        <meta charset='utf-8'>
-        <meta http-equiv="X-UA-Compatible" content="chrome=1">
-        <meta name="description" content="Piwik Analytics Module for Prestashop : Track your customers with Piwik Analytics in PrestaShop 1.4, 1.5, 1.6">
-        <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-        <link rel="stylesheet" type="text/css" href="stylesheets/jquery.fancybox.css" media="screen" />
-        <script type="text/javascript" src="javascripts/jquery-1.10.2.min.js"></script>
-        <script type="text/javascript" src="javascripts/jquery.fancybox.pack.js"></script>
-        <script type="text/javascript" src="javascripts/jquery.hash-tabs.min.js"></script>
-        <script type="text/javascript" src="javascripts/main.js"></script>
-
-        <title>Piwik Analytics Module for Prestashop</title>
+        <meta charset="utf-8">
+        <title>PiwikAnalyticsJS Module for PrestaShop</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"> 
+        <link href="css/style.css" rel="stylesheet">
+        <link href="css/bootstrap.css" rel="stylesheet">
+        <link href="css/responsive.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="js/rs-plugin/css/settings.css" media="screen" />
+        <link rel="stylesheet" type="text/css" href="js/fancybox/jquery.fancybox.css" media="screen" />
+        <link rel="stylesheet" href="css/skins/blue.css" data-name="skins">
+        <link href="css/flat-ui.css" rel="stylesheet">
+        <meta name="description" content="Keep track your visitors and analyse your shop effectiveness with Piwik Analytics in PrestaShop 1.4, 1.5, 1.6">
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,600,700' rel='stylesheet' type='text/css'>
+        <!--[if lt IE 9]>
+          <script src="js/html5shiv.js"></script>
+        <![endif]-->
     </head>
+
     <body>
-        <!-- HEADER -->
-        <div id="header_wrap" class="outer">
-            <header class="inner">
-                <a id="forkme_banner" href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop">View on GitHub</a>
-                <h1 id="project_title">Piwik Analytics Module for Prestashop</h1>
-                <h2 id="project_tagline">Track your customers with Piwik Analytics in PrestaShop 1.4, 1.5, 1.6</h2>
-                <section id="downloads">
-                    <a class="zip_download_link" href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/releases/download/v0.7.0/piwikanalyticsjs.zip">Download Latest release</a>
-                </section>
-            </header>
+        <div id="preloader">
+            <div id="status"></div>
         </div>
-        <!-- MAIN CONTENT -->
-        <div id="main_content_wrap" class="outer">
-            <section id="main_content" class="inner">
-                <div class="tabWrapper">
-                    <article class="tab-container">
-                        <nav class="tab-nav">
-                            <span>
-                                <a href="#tab1" title="Info">Info</a>
-                            </span>
-                            <span>
-                                <a href="#tab2" title="Images">Images</a>
-                            </span>
-                            <span>
-                                <a href="#tab3" title="How does it work">How does it work</a>
-                            </span>
-                            <span>
-                                <a href="#tab4" title="ELP ME!">HELP ME!</a>
-                            </span>
-                        </nav>
-                        <div class="tab-pane-container">
-                            <section id="tab1">
-                                <header><h3><a name="welcome-to-piwikanalyticsjs" class="anchor" href="#welcome-to-piwikanalyticsjs"><span class="octicon octicon-link"></span></a>Welcome to PiwikAnalyticsJs a PrestaShop module</h3></header>
-                                <p>
-                                    <a title="Piwik HomePage" href="http://piwik.org" target="_blank">Piwik</a> Traking module for Prestashop (1.4,1.5,1.6).<br />
-                                    A simple little module to track your customers in your online store build with <a title="Prestashop HomePage" href="http://prestashop.com/" target="_blank">Prestashop</a>, track pages, carts, orders, product and category views, purchased products, total order amount, tax amount, shipping etc. etc. all the standard reports that are important to an online store<br />
-                                </p>
-                                <p>
-                                    Piwik is an Open Source Website/Ecommerce Analytics software similar to "Google Analytics" but you are in complete control over the data<br />
-                                </p>
-                                <p>
-                                    This module uses only JavaScript to track your customers, the JavaScript code is build by the module and appended to your store in the footer,
-                                </p>
-                                <blockquote>Don't hesitate to post issues or general questions, it's the only way a project gets better</blockquote>
-								<p>
-								    <a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/releases/download/v0.7.0/piwikanalyticsjs.zip">Download Prestashop 1.5, 1.6 - v0.7</a>
-								    <br/><a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/releases/download/PS14_v0.7.5/piwikanalyticsjs_prestashop-1.4.zip">Download Prestashop 1.4 - v0.7.5</a></p>
-								</p>
-                            </section>
-                            <section id="tab2">
-                                <header><h3><a name="images-off-piwikanalyticsjs" class="anchor" href="#images-off-piwikanalyticsjs"><span class="octicon octicon-link"></span></a>Images..</h3></header>
-                                <p>Images of the plugin (images are outdated)</p>
-								<h3>Prestashop 1.4</h3>
-                                <p>
-                                    <a class="fancybox"
-                                       href="images/PS1.4/PS1.4-madmin-full.jpg"
-                                       data-fancybox-group="gallery"
-                                       title="Prestashop 1.4 Module Admin">
-                                        <img src="images/PS1.4/PS1.4-madmin-150x150.jpg" alt="" />
-                                    </a>
-                                    <a class="fancybox"
-                                       href="images/PS1.4/PS1.4-mlist-full.jpg"
-                                       data-fancybox-group="gallery"
-                                       title="Prestashop 1.4 Module List">
-                                        <img src="images/PS1.4/PS1.4-mlist-150x150.jpg" alt="" />
-                                    </a>
-                                    <a class="fancybox"
-                                       href="images/PS1.4/PS1.4-pkdashboard-full.jpg"
-                                       data-fancybox-group="gallery"
-                                       title="Prestashop 1.4 Piwik Dashboard Link">
-                                        <img src="images/PS1.4/PS1.4-pkdashboard-150x150.jpg" alt="" />
-                                    </a>
-                                </p>
-                                <p>
-                                    <a class="fancybox"
-                                       href="images/PS1.5/PS1.5-pkdashboard-full.jpg"
-                                       data-fancybox-group="gallery"
-                                       title="Prestashop 1.5 Piwik Dashboard Link">
-                                        <img src="images/PS1.5/PS1.5-pkdashboard-150x150.jpg" alt="" />
-                                    </a>
-                                    <a class="fancybox"
-                                       href="images/PS1.6/PS1.6-madmin-full.jpg"
-                                       data-fancybox-group="gallery"
-                                       title="Prestashop 1.6 Module Admin">
-                                        <img src="images/PS1.6/PS1.6-madmin-150x150.jpg" alt="" />
-                                    </a>
-                                    <a class="fancybox"
-                                       href="images/PS1.6/PS1.6-mlist+pkdashboard-full.jpg"
-                                       data-fancybox-group="gallery"
-                                       title="Prestashop 1.6 Module List + Piwik Dashboard Link">
-                                        <img src="images/PS1.6/PS1.6-mlist+pkdashboard-150x150.jpg" alt="" />
-                                    </a>
-                                </p>
-                            </section>
-                            <section id="tab3">
-                                <header><h3><a name="how-does-it-work" class="anchor" href="#how-does-it-wor"><span class="octicon octicon-link"></span></a>How does it work</h3></header>
-                                <p>simply by creating the required segments of javascript code and append them to your shop, based on the page that being visited in your shop and the settings you provided in the module admin</p>
-                            </section>
-                            <section id="tab4">
-                                <header><h3><a name="help-piwikanalyticsjs" class="anchor" href="#help-piwikanalyticsjs"><span class="octicon octicon-link"></span></a>Help</h3></header>
-                                <p>This section is being written..!</p>
-                                <p>But, start <a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki">here</a> and <a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/issues">here</a></p>
-                            </section>
+
+        <header id ="top" class="mTop">
+            <div class="headContent">
+                <div class="container">
+                    <div class="row">
+                        <div class="span12">
+                            <div class="menu" id="steak">
+                                <nav>
+                                    <ul class="navMenu inline-list" id="nav"> 
+                                        <li class="current"><a href="#top">Start</a></li>
+                                        <li><a href="#about">About</a></li>
+                                        <li><a href="#images">Images</a></li>
+                                        <li><a href="#download">Download</a></li>
+                                        <li><a href="#contact">Support</a></li>
+                                        <li><a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop" onclick="document.location.href = 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop';"><i class="icon-github"></i> View on GitHub</a></li>
+                                    </ul>
+                                    <div class="clearfix"></div>
+                                </nav>
+                            </div>
                         </div>
-                    </article>
+                    </div>
                 </div>
-            </section>
-        </div>
-        <!-- FOOTER  -->
-        <div id="footer_wrap" class="outer">
-            <footer class="inner">
-                <p class="copyright">Piwik Analytics Module for Prestashop maintained by <a href="https://github.com/cmjnisse">cmjnisse</a></p>
-                <p>Download Prestashop 1.5, 1.6 <a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/releases/download/v0.7.0/piwikanalyticsjs.zip">(version 0.7)</a></p>
-                <p>Download Prestashop 1.4 <a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/releases/download/PS14_v0.7.5/piwikanalyticsjs_prestashop-1.4.zip">(version 0.7.5)</a></p>
-            </footer>
-        </div>
+            </div>
+        </header>
+
+        <section class="intro" >
+            <div class="container">
+                <div class="row">
+                    <div class="span12">
+                        <h4><span class="bold">PiwikAnalyticsJS</span> is a <span class="colDefault"><a href="http://piwik.org/" target="_piwik">Piwik Analytics</a></span> Module for <span class="colDefault"><a href="http://prestashop.com/" target="_prestashop">PrestaShop</a></span></h4>
+                        <p>
+                            Keep track your visitors and analyse your shop effectiveness with <span class="colDefault">Piwik Analytics</span> in <span class="colDefault">PrestaShop</span> 1.4, 1.5, 1.6
+                        </p>
+                        <!--DIVIDER-->
+                        <div class="divider">
+                            <div class="divLine" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>		
+            </div>
+        </section>
+
+        <section id="about" class="about lightgrey">
+            <div class="container">
+                <div class="row">
+                    <div class="span12">
+                        <div class="titleHead">
+                            <h3>About</h3>
+                            <p>
+                                PiwikAnalyticsJS  is a <span class="colDefault">PrestaShop</span> module to track your visitors and analyse your online PrestaShop store effectiveness, using Piwik Analytics<br>
+                                this module uses only JavaScript to track your customers, the JavaScript code is build by the module and appended to your store in the footer, 
+                            </p>
+                            <h4>How does it work</h4>
+                            <p>
+                                simply by creating the required segments of javascript code and 
+                                append them to your shop's footer, based on the page that being 
+                                visited in your shop and the settings you provided in the module admin
+                            </p>
+                        </div>
+                        <div class="row">
+                            <div class="divider">
+                                <div class="divLine"></div>
+                                <div class="divImg">
+                                    <i class="icon fui-info"></i>
+                                </div>
+                                <div class="divLine"></div>
+                            </div>
+                            <div class="span6">
+                                <div class="titleContent">
+                                    <h6><span>What's reported back to piwik</span></h6>
+                                </div>
+                                <ul class="list-plus">
+                                    <li>Logged in users (by id)</li>
+                                    <li>Page views</li>
+                                    <li>Shopping cart</li>
+                                    <li>Orders</li>
+                                    <li>Product views</li>
+                                    <li>Product id, reference and attribute ids</li>
+                                    <li>Category views</li>
+                                    <li>Purchased products</li>
+                                    <li>Total income</li>
+                                    <li>Total tax</li>
+                                    <li>Total shipping</li>
+                                    <li>And much more, all thanks to the wonders of <a href="http://piwik.org/" target="_piwik" class="colDefault">Piwik Analytics</a></li>
+                                </ul>
+                            </div>
+                            <div class="span6">
+                                <div class="titleContent">
+                                    <h6><span>More!</span></h6>
+                                </div>
+                                <ul class="nav nav-tabs nav-append-content">
+                                    <li class="active"><a href="#tab1">Piwik</a></li>
+                                    <li class=""><a href="#tab2">PrestaShop</a></li>
+                                </ul>
+                                <div class="tab-content">
+                                    <div id="tab1" class="tab-pane active">
+                                        <h6>Piwik Analytics</h6>
+                                        <blockquote cite="http://piwik.org">
+                                            Piwik is the leading open source web analytics software, 
+                                            used by more than 460,000 websites. 
+                                            It gives interesting reports on your website visitors, 
+                                            your popular pages, the search engines keywords they used, 
+                                            the language they speak… and so much more. 
+                                            Piwik aims to be an open source alternative to Google Analytics. 
+                                            Piwik is a PHP/MySQL software that you download and install on 
+                                            your own web server. At the end of the five minute installation
+                                            process you will be given a JavaScript tracking code. 
+                                            Simply copy and paste this tag to any websites you wish to 
+                                            track (or use an existing plugin to do it automatically for you) 
+                                            and access your analytics reports in real time. 
+                                            Piwik is fully featured and Piwik Consultants can help with 
+                                            Support Plans and Custom Development, White Label options, 
+                                            Google Analytics Data Import, and more: contact Professional Services. 
+                                        </blockquote>
+                                    </div>
+                                    <div id="tab2" class="tab-pane">
+                                        <h6>PrestaShop</h6>
+                                        <blockquote cite="http://www.prestashop.com">
+                                            PrestaShop was founded in 2007 with a mission to provide world class 
+                                            ecommerce software for free through open source innovation.<br><br>
+                                            Today, over 250,000 ecommerce stores run on PrestaShop technology. 
+                                            The company provides free hosted and on premise software that enables 
+                                            merchants to have a fully functional online store at the lowest cost possible.
+                                        </blockquote>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </section>
+
+        <section id="images" class="portfolio">
+            <div class="container">
+                <div class="row">
+                    <div class="span12">
+                        <div class="titleHead"><h3>Images</h3></div>
+                        <p>The images here is outdated.</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="divider">
+                        <div class="divLine"></div>
+                        <div class="divImg">
+                            <i class="icon fui-image"></i>
+                        </div>
+                        <div class="divLine"></div>
+                    </div>
+                    <div class="isotope">
+                        <ul id="filter" class="option-set clearfix">
+                            <li data-filter="*" class="selected"><a href="#">All</a></li>
+                            <li data-filter=".ps14"><a href="#">PrestaShop 1.4</a></li>
+                            <li data-filter=".ps15"><a href="#">PrestaShop 1.5</a></li>
+                            <li data-filter=".ps16"><a href="#">PrestaShop 1.6</a></li>
+                        </ul>
+                        <ul id="list" class="portfolio_list">
+
+                            <li class="list_item span4 ps15">
+                                <div class="view view-first">
+                                    <a href="images/PS1.5/PS1.5-pkdashboard-full.jpg" class="fancybox" data-rel="gallery1" title="Prestashop 1.5 Piwik Dashboard Link">
+                                        <img src="images/PS1.5/PS1.5-pkdashboard-300x300.jpg" alt="Prestashop 1.5 Piwik Dashboard Link">
+                                        <span class="mask">
+                                            <span class="fui-search zoom"></span>
+                                        </span>
+                                    </a>
+                                </div>
+
+                                <div class="portfolio_details">
+                                    <h2>Prestashop 1.5 Piwik Dashboard</h2>
+                                </div>
+                            </li>
+
+                            <li class="list_item span4 ps16">
+                                <div class="view view-first">
+                                    <a href="images/PS1.6/PS1.6-madmin-full.jpg" class="fancybox" data-rel="gallery1" title="Prestashop 1.6 Module Admin">
+                                        <img src="images/PS1.6/PS1.6-madmin-300x300.jpg" alt="Prestashop 1.6 Module Admin">
+                                        <span class="mask">
+                                            <span class="fui-search zoom"></span>
+                                        </span>
+                                    </a>
+                                </div>
+
+                                <div class="portfolio_details">
+                                    <h2>Prestashop 1.6 Module Admin</h2>
+                                </div>
+                            </li>
+
+                            <li class="list_item span4 ps16">
+                                <div class="view view-first">
+                                    <a href="images/PS1.6/PS1.6-mlist+pkdashboard-full.jpg" class="fancybox" data-rel="gallery1" title="Prestashop 1.6 Module List + Piwik Dashboard Link">
+                                        <img src="images/PS1.6/PS1.6-mlist+pkdashboard-300x300.jpg" alt="Prestashop 1.6 Module List + Piwik Dashboard Link">
+                                        <span class="mask">
+                                            <span class="fui-search zoom"></span>
+                                        </span>
+                                    </a>
+                                </div>
+
+                                <div class="portfolio_details">
+                                    <h2>Prestashop 1.6 Module List + Piwik Dashboard</h2>
+                                </div>
+                            </li>
+
+                            <li class="list_item span4 ps14">
+                                <div class="view view-first">
+                                    <a href="images/PS1.4/PS1.4-madmin-full.jpg" class="fancybox" data-rel="gallery1" title="Prestashop 1.4 Module Admin">
+                                        <img src="images/PS1.4/PS1.4-madmin-300x300.jpg" alt="Prestashop 1.4 Module Admin"/>
+                                        <span class="mask">
+                                            <span class="fui-search zoom"></span>
+                                        </span>
+                                    </a>
+                                </div>
+
+                                <div class="portfolio_details">
+                                    <h2>Prestashop 1.4 Module Admin</h2>
+                                </div>
+                            </li>
+
+                            <li class="list_item span4 ps14">
+                                <div class="view view-first">
+                                    <a href="images/PS1.4/PS1.4-mlist-full.jpg" class="fancybox" data-rel="gallery1" title="Prestashop 1.4 Module List">
+                                        <img src="images/PS1.4/PS1.4-mlist-300x300.jpg" alt="Prestashop 1.4 Module List">
+                                        <span class="mask">
+                                            <span class="fui-search zoom"></span>
+                                        </span>
+                                    </a>
+                                </div>
+                                <div class="portfolio_details">
+                                    <h2>Prestashop 1.4 Module List</h2>
+                                </div>
+                            </li>
+
+                            <li class="list_item span4 ps14">
+                                <div class="view view-first">
+                                    <a href="images/PS1.4/PS1.4-pkdashboard-full.jpg" class="fancybox" data-rel="gallery1" title="Prestashop 1.4 Piwik Dashboard Link">
+                                        <img src="images/PS1.4/PS1.4-pkdashboard-300x300.jpg" alt="Prestashop 1.4 Piwik Dashboard Link">
+                                        <span class="mask">
+                                            <span class="fui-search zoom"></span>
+                                        </span>
+                                    </a>
+                                </div>
+                                <div class="portfolio_details">
+                                    <h2>Prestashop 1.4 Piwik Dashboard</h2>
+                                </div>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>
+            </div>	
+        </section>
+
+        <section id="download" class="team">
+            <div class="container">
+                <div class="row">
+                    <div class="span12">
+                        <div class="titleHead">
+                            <h3>Download</h3>
+                            <p>Download the latest version here.</p>
+                        </div>
+                        <div class="divider">
+                            <div class="divLine"></div>
+                            <div class="divImg">
+                                <i class="icon icon-download-alt"></i>
+                            </div>
+                            <div class="divLine"></div>
+                        </div>
+                    </div>
+                    <div class="span12">
+                        <div class="titleContent">
+                            <h6><span>Prestashop 1.5 and 1.6</span></h6>
+                        </div>
+                        <p>
+                            Download the latest version for PrestaShop 1.5 and 1.6<br>
+                            only the latest tested version is listed here, for pre-releases and release-candidates please se the
+                            <a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/releases" class="colDefault">releases</a> page on github<br>
+
+                        </p>
+                        <ul class="list-arrow3">
+                            <li><a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/releases/download/v0.7.0/piwikanalyticsjs.zip">Version 0.7.0</a></li>
+                        </ul>
+                    </div>
+                    <div class="span12">
+                        <div class="titleContent">
+                            <h6><span>PrestaShop 1.4</span></h6>
+                        </div>
+                        <p>
+                            Download the latest version for PrestaShop 1.4<br>
+                            PrestaShop 1.4 is old and is no longer supported, the latest version for PrestaShop 1.4 can be downloaded here but no longer supported.
+                        </p>
+                        <ul class="list-arrow3">
+                            <li><a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/releases/download/PS14_v0.7.5/piwikanalyticsjs_prestashop-1.4.zip">Version 0.7.5</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="span12">
+                        <!--DIVIDER-->
+                        <div class="divider">
+                            <div class="divLine" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!--Contact-->
+        <section id="contact" class="contact">
+            <div class="container">
+                <div class="row">
+                    <div class="span12">
+                        <div class="titleHead">
+                            <h3>Support / Help</h3>
+                        </div>
+                        <p>
+                            if you require assistance, found a bug or maybe you have some ideas for improvements, please use the
+                            <a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/issues">issue system at GitHub</a><br>
+                            if you want to support this project you can submit a merge requests suggest new features, help with translations etc..<br>
+                            i do not accept donations simply because i want to be free to develop this when i have time.<br>
+                            instead donate to Piwik and show your support by spreading the word about the wonders of free analytics
+
+                        </p>
+                        <h4>Reports bugs</h4>
+                        <p>
+                            please use the <a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/issues">issue system at GitHub</a><br>
+                            But, start in the <a href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki">wiki</a> to make sure it's 
+                            not a simple thing you forgot to check before you report a bug. (currently the wiki is thin, not much to look at)<br>
+                            also make sure, that it hasn't been reported in an open issue
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!--Footer-->
+        <footer class="footer grey">
+            <div class="container">
+                <div class="row">
+                    <div class="span12">
+                        <div class="copyright">
+                            <p>&copy; 2013-2015. Christian M. Jensen</p>
+                            <p>
+                                all images and content on this page is copyright protected<br><br>
+                                text and images placed within a blockquote belong to the owners of the url that's placed within the "cite" attribute of that blockquote
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type="text/javascript" src="js/jquery.js"></script>
+        <script type="text/javascript" src="js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="js/jquery.nav.js"></script>
+        <script type="text/javascript" src="js/jquery.sticky.js"></script>
+        <script type="text/javascript" src="js/jquery.lavalamp-1.4.js"></script>
+        <script type="text/javascript" src="js/jquery.scrollTo.js"></script>
+        <script type="text/javascript" src="js/rs-plugin/js/jquery.themepunch.plugins.min.js"></script>
+        <script type="text/javascript" src="js/jquery.isotope.min.js"></script> 
+        <script type="text/javascript" src="js/fancybox/jquery.fancybox.pack.js"></script>
+        <script type="text/javascript" src="js/main.js" charset="utf-8"></script>
+
     </body>
 </html>
