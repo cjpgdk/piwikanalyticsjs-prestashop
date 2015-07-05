@@ -27,7 +27,6 @@ if (!defined('_PS_VERSION_'))
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  */
 class piwikanalyticsjs extends Module {
-
     private static $_isOrder = FALSE;
     protected $_errors = "";
     protected $piwikSite = FALSE;
@@ -54,7 +53,11 @@ class piwikanalyticsjs extends Module {
         $this->tab = 'analytics_stats';
         $this->version = '0.8.0';
         $this->author = 'Christian M. Jensen';
-        $this->displayName = 'Piwik Web Analytics';
+        $this->displayName = 'Piwik Analytics';
+        $this->author_uri = 'https://cmjscripter.net';
+        $this->url = 'http://cmjnisse.github.io/piwikanalyticsjs-prestashop/';
+        $this->need_instance = 1;
+        $this->ps_versions_compliancy = array('min' => '1.5.0.0', 'max' => _PS_VERSION_);
 
         $this->bootstrap = true;
 
@@ -64,17 +67,18 @@ class piwikanalyticsjs extends Module {
 
         //* warnings on module list page
         if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH'))
-            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('is not ready to roll you need to configure the auth token');
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You need to configure the auth token');
         if ($this->id && ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0))
             $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You have not yet set Piwik Site ID');
         if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'HOST'))
-            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('is not ready to roll you need to configure the Piwik server url');
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You need to configure the Piwik server url');
 
-        $this->description = $this->l('Piwik Web Analytics Javascript plugin');
+        $this->description = $this->l('Piwik Analytics');
         $this->confirmUninstall = $this->l('Are you sure you want to delete this plugin ?');
 
         self::$_isOrder = FALSE;
-        $this->_errors = PKHelper::$errors = PKHelper::$error = "";
+        $this->_errors = PKHelper::$error = "";
+        PKHelper::$errors = array();
 
         if ($this->id) {
             if (version_compare(_PS_VERSION_, '1.5.0.13', "<="))
@@ -82,9 +86,256 @@ class piwikanalyticsjs extends Module {
         }
     }
 
+    public function generateWizardForm($step = 1, & $fields_form, & $helperform) {
+        $username = $password = $piwikhost = $usernamehttp = $passwordhttp = false;
+        if (Tools::getIsset('usePiwikSite') && ((int) Tools::getValue('usePiwikSite') != 0)) {
+            $pksiteid = (int) Tools::getValue('usePiwikSite');
+            if ($pksite = PKHelper::getPiwikSite2($pksiteid)) {
+                if (isset($pksite[0]) && is_object($pksite[0])) {
+                    PKHelper::updatePiwikSite(
+                            $pksiteid /*$idSite*/, 
+                            $pksite[0]->name /*$siteName*/, 
+                            $pksite[0]->main_url /*$urls*/,
+                            1 /*$ecommerce*/, 1 /*$siteSearch*/, 
+                            $pksite[0]->sitesearch_keyword_parameters /*$searchKeywordParameters*/, 
+                            $pksite[0]->sitesearch_category_parameters /*$searchCategoryParameters*/, 
+                            $pksite[0]->excluded_ips /*$excludedIps*/, 
+                            $pksite[0]->excluded_parameters /*$excludedQueryParameters*/, 
+                            $pksite[0]->timezone /*$timezone*/, 
+                            $pksite[0]->currency /*$currency*/, 
+                            $pksite[0]->group /*$group*/, 
+                            $pksite[0]->ts_created /*$startDate*/, 
+                            $pksite[0]->excluded_user_agents /*$excludedUserAgents*/, 
+                            $pksite[0]->keep_url_fragment /*$keepURLFragments*/, 
+                            $pksite[0]->type /*$type*/);
+                    PKHelper::$error = PKHelper::$errors = null; // don't need them, we redirect
+                    ToolsCore::redirectAdmin(str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'));
+                } else {
+                    $this->_errors .= $this->displayError(sprintf($this->l("I encountered an unknown error while trying to get the selected site, id#%s"), $pksiteid));
+                    $password = Configuration::get(PKHelper::CPREFIX . "USRPASSWD");
+                    $username = Configuration::get(PKHelper::CPREFIX . "USRNAME");
+                    $usernamehttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
+                    $passwordhttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
+                    $piwikhost = Configuration::get(PKHelper::CPREFIX . 'HOST');
+                }
+            } else {
+                $this->_errors .= $this->displayError(sprintf($this->l("I'm unable, to get admin access to the selected site id #%s"), $pksiteid));
+                $password = Configuration::get(PKHelper::CPREFIX . "USRPASSWD");
+                $username = Configuration::get(PKHelper::CPREFIX . "USRNAME");
+                $usernamehttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
+                $passwordhttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
+                $piwikhost = Configuration::get(PKHelper::CPREFIX . 'HOST');
+            }
+        }
+        if (Tools::getIsset(PKHelper::CPREFIX . 'USRNAME_WIZARD'))
+            $username = Tools::getValue(PKHelper::CPREFIX . 'USRNAME_WIZARD');
+        if (Tools::getIsset(PKHelper::CPREFIX . 'USRPASSWD_WIZARD'))
+            $password = Tools::getValue(PKHelper::CPREFIX . 'USRPASSWD_WIZARD');
+        if (Tools::getIsset(PKHelper::CPREFIX . 'HOST_WIZARD'))
+            $piwikhost = Tools::getValue(PKHelper::CPREFIX . 'HOST_WIZARD');
+        if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHUSR_WIZARD'))
+            $usernamehttp = Tools::getValue(PKHelper::CPREFIX . 'PAUTHUSR_WIZARD', 0);
+        if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHPWD_WIZARD'))
+            $passwordhttp = Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD_WIZARD', 0);
+        $pkToken = false;
+        $pkSites = array();
+        if ($step == 2) {
+            PKHelper::$httpAuthUsername = ($usernamehttp !== false ? $usernamehttp : '');
+            PKHelper::$httpAuthPassword = ($passwordhttp !== false ? $passwordhttp : '');
+            PKHelper::$piwikHost = str_replace(array('http://', 'https://'), '', $piwikhost);
+            $pkToken = PKHelper::getTokenAuth($username, $password);
+            if (!empty(PKHelper::$error)) {
+                foreach (PKHelper::$errors as $key => $value) {
+                    $this->_errors .= $this->displayError($value);
+                }
+                $step = 1;
+            } else {
+                if ($pkToken !== false) {
+                    if ($_pkSites = PKHelper::getSitesWithAdminAccess(false, array(
+                                'idSite' => 0, 'pkHost' => PKHelper::$piwikHost,
+                                'https' => (strpos($piwikhost, 'https://') !== false),
+                                'pkModule' => 'API', 'isoCode' => NULL, 'tokenAuth' => $pkToken))) {
+                        //* if we get here login and token is valid so save it.
+                        Configuration::updateValue(PKHelper::CPREFIX . 'TOKEN_AUTH', $pkToken);
+                        if (!empty($_pkSites)) {
+                            foreach ($_pkSites as $value) {
+                                $pkSites[] = array(
+                                    'idsite' => $value->idsite,
+                                    'name' => $value->name,
+                                    'main_url' => $value->main_url,
+                                );
+                            }
+                        }
+                    }
+                    if (!empty(PKHelper::$error)) {
+                        foreach (PKHelper::$errors as $key => $value) {
+                            $this->_errors .= $this->displayError($value);
+                        }
+                        $step = 1;
+                    }
+                }
+            }
+        }
+        if ($step == 2 && is_array($pkSites) && !empty($pkSites)) {
+
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'html',
+                'name' => "<strong>{$this->l("Select a site.")}</strong>"
+            );
+            foreach ($pkSites as $key => $value) {
+                $fields_form[0]['form']['input'][] = array(
+                    'type' => 'myBtn',
+                    'href' => $helperform->currentIndex . '&usePiwikSite=' . $value['idsite'] . "&token=" . Tools::getAdminTokenLite('AdminModules'),
+                    /* 'class'=>'', */
+                    'id' => 'slectedpksid_' . $value['idsite'],
+                    /* 'extraattr' => ' onclick="return false;"', */
+                    'icon' => 'icon-chevron-right',
+                    'title' => '#' . $value['idsite'] . ' - ' . $value['name'] . ' [<strong>' . $value['main_url'] . '</strong>]',
+                );
+            }
+            $fields_form[0]['form']['buttons'][] = array(
+                'title' => $this->l('Create new Site'),
+                'icon' => 'process-icon-new',
+                'class' => '  pull-right donotdisable',
+                'type' => 'button',
+                'id' => 'btnCreateNewSite',
+                'name' => 'btnCreateNewSite',
+                'js' => "alert('this functionality is not implemented yet, i apologise for the inconvenience')",
+            );
+            $fields_form[0]['form']['buttons'][] = array(
+                'title' => $this->l('Cancel'),
+                'icon' => 'process-icon-cancel',
+                'class' => ' donotdisable',
+                'type' => 'button',
+                'href' => str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'),
+                'id' => 'btnCreateNewSite',
+                'name' => 'btnCreateNewSite',
+            );
+        } else if ($step == 2) {
+            $step = 1;
+            $this->_errors .= $this->displayError($this->l("Unable to get a list websites from piwik, if you dont have any sites in piwik yet click 'Create new Site' button."));
+        }
+        
+        
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'html',
+            'name' => "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'STEP_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'STEP_WIZARD' . "\" value=\"{$step}\" />"
+        );
+        $fields_form[0]['form']['legend']['title'] = $helperform->title . " [Step " . $step . "/2]";
+        if ($step != 1) {
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'html',
+                'name' => "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'HOST_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'HOST_WIZARD' . "\" value=\"{$piwikhost}\" />"
+                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'USRNAME_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'USRNAME_WIZARD' . "\" value=\"{$username}\" />"
+                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'USRPASSWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'USRPASSWD_WIZARD' . "\" value=\"{$password}\" />"
+                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' . "\" value=\"{$usernamehttp}\" />"
+                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" value=\"{$passwordhttp}\" />"
+            );
+        }
+        
+        
+        if ($step == 1) {
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'text',
+                'label' => $this->l('Piwik Host'),
+                'name' => PKHelper::CPREFIX . 'HOST_WIZARD',
+                'desc' => $this->l('Example: http://www.example.com/piwik/'),
+                'hint' => $this->l('The full url to your piwik installation.!'),
+                'required' => true,
+            );
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'text',
+                'label' => $this->l('Piwik User name'),
+                'name' => PKHelper::CPREFIX . 'USRNAME_WIZARD',
+                'desc' => $this->l('Enter your username for Piwik, we need this in order to fetch your api authentication token'),
+                'required' => true,
+                'autocomplete' => false,
+            );
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'password',
+                'label' => $this->l('Piwik User password'),
+                'name' => PKHelper::CPREFIX . 'USRPASSWD_WIZARD',
+                'desc' => $this->l('Enter your password for Piwik, we need this in order to fetch your api authentication token'),
+                'required' => true,
+                'autocomplete' => false,
+            );
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'switch',
+                'is_bool' => true, //retro compat 1.5
+                'label' => $this->l('Save username and password'),
+                'name' => PKHelper::CPREFIX . 'SAVE_USRPWD_WIZARD',
+                'desc' => $this->l('Whether or not to save the username and password, saving the username and password will enable quick(automatic) login to piwik from the integrated stats page'),
+                'required' => false,
+                'values' => array(
+                    array(
+                        'id' => 'active_on',
+                        'value' => 1,
+                        'label' => $this->l('Enabled')
+                    ),
+                    array(
+                        'id' => 'active_off',
+                        'value' => 0,
+                        'label' => $this->l('Disabled')
+                    )
+                ),
+            );
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'html',
+                'name' => "<strong>{$this->l("HTTP Basic Authorization")}</strong>"
+            );
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'text',
+                'label' => $this->l('HTTP Auth Username'),
+                'name' => PKHelper::CPREFIX . 'PAUTHUSR_WIZARD',
+                'required' => false,
+                'autocomplete' => false,
+                'desc' => $this->l('this field along with password can be used if piwik installation is protected by HTTP Basic Authorization'),
+            );
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'password',
+                'label' => $this->l('HTTP Auth Password'),
+                'name' => PKHelper::CPREFIX . 'PAUTHPWD_WIZARD',
+                'required' => false,
+                'autocomplete' => false,
+                'desc' => $this->l('this field along with username can be used if piwik installation is protected by HTTP Basic Authorization'),
+            );
+            $fields_form[0]['form']['submit'] = array(
+                'title' => $this->l('Next'),
+                'icon' => 'process-icon-next',
+                'class' => 'btn btn-default'
+            );
+            $fields_form[0]['form']['buttons'][] = array(
+                'title' => $this->l('Cancel'),
+                'icon' => 'process-icon-cancel',
+                'class' => ' donotdisable',
+                'type' => 'button',
+                'href' => str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'),
+                'id' => 'btnCreateNewSite',
+                'name' => 'btnCreateNewSite',
+            );
+            $fields_form[0]['form']['buttons'][] = array(
+                'title' => $this->l('Create new Site'),
+                'icon' => 'process-icon-new',
+                'class' => '  pull-right donotdisable',
+                'type' => 'button',
+                'id' => 'btnCreateNewSite',
+                'name' => 'btnCreateNewSite',
+                'js' => "alert('this functionality is not implemented yet, i apologise for the inconvenience')",
+            );
+        }
+        $helperform->show_cancel_button = false; // link is wrong and can end up in and annoying loop
+        $helperform->fields_value = array(
+            PKHelper::CPREFIX . 'USRNAME_WIZARD' => ($username !== false ? $username : ''),
+            PKHelper::CPREFIX . 'USRPASSWD_WIZARD' => ($password !== false ? $password : ''),
+            PKHelper::CPREFIX . 'HOST_WIZARD' => ($piwikhost !== false ? $piwikhost : ''),
+            PKHelper::CPREFIX . 'SAVE_USRPWD_WIZARD' => 0,
+            PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' => ($usernamehttp !== false ? $usernamehttp : ''),
+            PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' => ($passwordhttp !== false ? $passwordhttp : ''),
+        );
+    }
+
     /**
      * get content to display in the admin area
-     * @global string $currentIndex
      * @return string
      */
     public function getContent() {
@@ -101,26 +352,34 @@ class piwikanalyticsjs extends Module {
 
         if (version_compare(_PS_VERSION_, '1.5.2.999', "<="))
             $this->context->controller->addJqueryPlugin('fancybox', _PS_JS_DIR_ . 'jquery/plugins/');
+
         if (version_compare(_PS_VERSION_, '1.6.0.0', ">="))
             $this->context->controller->addJqueryPlugin('tagify', _PS_JS_DIR_ . 'jquery/plugins/');
 
+        // @todo process only returns a value on error so move them from $_html to $this->_errors
         $_html = "";
         $_html .= $this->processFormsUpdate();
-        if (Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') !== false)
-            $this->piwikSite = PKHelper::getPiwikSite();
-        else
-            $this->piwikSite = false;
+        if (Tools::isSubmit('submitUpdateWizardForm' . $this->name)) {
+            $_html .= $this->processWizardFormUpdate();
+        }
+        $this->piwikSite = false;
+        if (!Tools::getIsset('pkwizard')) { /* do not try to connect when using wizard */
+            if (Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') !== false)
+                $this->piwikSite = PKHelper::getPiwikSite();
+        }
         $this->displayErrors(PKHelper::$errors);
         PKHelper::$errors = PKHelper::$error = "";
         $this->__setCurrencies();
 
         //* warnings on module configure page
-        if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') && !Tools::getIsset(PKHelper::CPREFIX . 'TOKEN_AUTH')) /* avoid the same error message twice */
-            $this->_errors .= $this->displayError($this->l('Piwik auth token is empty'));
-        if ($this->id && ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0) && !Tools::getIsset(PKHelper::CPREFIX . 'SITEID')) /* avoid the same error message twice */
-            $this->_errors .= $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
-        if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'HOST'))
-            $this->_errors .= $this->displayError($this->l('Piwik host cannot be empty'));
+        if (!Tools::getIsset('pkwizard')) { /* do not show them if we are using the  wizard */
+            if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') && !Tools::getIsset(PKHelper::CPREFIX . 'TOKEN_AUTH')) /* avoid the same error message twice */
+                $this->_errors .= $this->displayError($this->l('Piwik auth token is empty'));
+            if ($this->id && ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0) && !Tools::getIsset(PKHelper::CPREFIX . 'SITEID')) /* avoid the same error message twice */
+                $this->_errors .= $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
+            if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'HOST'))
+                $this->_errors .= $this->displayError($this->l('Piwik host cannot be empty'));
+        }
 
         $fields_form = array();
 
@@ -132,40 +391,69 @@ class piwikanalyticsjs extends Module {
         $helper = new HelperForm();
         if (version_compare(_PS_VERSION_, '1.6.0.0', "<"))
             $helper->base_folder = _PS_MODULE_DIR_ . 'piwikanalyticsjs/views/templates/helpers/form/';
-        else
-            $helper->module = $this;
 
         $helper->languages = $languages;
         $helper->module = $this;
         $helper->name_controller = $this->name;
         $helper->identifier = $this->identifier;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
-
-        $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
         $helper->default_form_language = (int) Configuration::get('PS_LANG_DEFAULT');
         $helper->allow_employee_form_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         $helper->show_toolbar = false;
         $helper->toolbar_scroll = false;
-        $helper->title = $this->displayName;
-        $helper->submit_action = 'submitUpdate' . $this->name;
 
         $fields_form[0]['form']['legend'] = array(
             'title' => $this->displayName,
-            'image' => $this->_path . 'logo.png'
+            'image' => $this->_path . 'logox22.png'
         );
+
+        if (Tools::getIsset('pkwizard')) {
+            $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name . '&pkwizard';
+            $step = 1;
+            if (empty($this->_errors) && empty($_html)) {
+                if (Tools::getIsset(PKHelper::CPREFIX . 'STEP_WIZARD')) {
+                    $step = Tools::getValue(PKHelper::CPREFIX . 'STEP_WIZARD', 0);
+                    $step++;
+                }
+            }
+            $helper->title = $this->displayName . ' - ' . $this->l('Configuration Wizard');
+            $helper->submit_action = 'submitUpdateWizardForm' . $this->name;
+            $this->generateWizardForm($step, $fields_form, $helper);
+
+            $this->context->smarty->assign(array(
+                'psversion' => _PS_VERSION_,
+            ));
+            return $this->_errors
+                    . $_html
+                    . $helper->generateForm($fields_form)
+                    . $this->display(__FILE__, 'views/templates/admin/jsfunctions.tpl')
+                    . $this->display(__FILE__, 'views/templates/admin/piwik_site_lookup.tpl');
+        }
+
+
+        $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
+        $helper->title = $this->displayName;
+        $helper->submit_action = 'submitUpdate' . $this->name;
+
 
         if ($this->piwikSite !== FALSE) {
             $fields_form[0]['form']['input'][] = array(
                 'type' => 'html',
-                'name' => $this->l('Based on the settings you provided this is the info i get from Piwik!') . "<br>"
+                'name' => "<div class=\"nav nav-pills pull-right\">"
+                . "<i class=\"icon-wrench\" style=\"padding-right: 5px;\"></i>"
+                . "<a href='?controller=AdminModules&token=" . Tools::getAdminTokenLite('AdminModules') . "&configure=piwikanalyticsjs&tab_module=analytics_stats&module_name=piwikanalyticsjs&pkwizard' title='{$this->l('Click here to open piwik site lookup wizard')}' data-html='true' data-toggle='tooltip' data-original-title='{$this->l('Click here to open piwik site lookup wizard')}' class='label-tooltip'>{$this->l('Configuration Wizard')}</a>"
+                . "</div>"
+                . $this->l('Based on the settings you provided this is the info i get from Piwik!') . "<br>"
                 . "<strong>" . $this->l('Name') . "</strong>: <i>{$this->piwikSite[0]->name}</i><br>"
                 . "<strong>" . $this->l('Main Url') . "</strong>: <i>{$this->piwikSite[0]->main_url}</i><br>"
-                . "<a href='#' onclick='return PiwikLookup();' title='{$this->l('Click here to open piwik site lookup wizard')}'>{$this->l('Configuration Wizard')}</a>"
             );
         } else {
             $fields_form[0]['form']['input'][] = array(
                 'type' => 'html',
-                'name' => "<a href='#' onclick='return PiwikLookup();' title='{$this->l('Click here to open piwik site lookup wizard')}'>{$this->l('Configuration Wizard')}</a>"
+                'name' => "<div class=\"nav nav-pills pull-right\">"
+                . "<i class=\"icon-wrench\" style=\"padding-right: 5px;\"></i>"
+                . "<a href='?controller=AdminModules&token=" . Tools::getAdminTokenLite('AdminModules') . "&configure=piwikanalyticsjs&tab_module=analytics_stats&module_name=piwikanalyticsjs&pkwizard' title='{$this->l('Click here to open piwik site lookup wizard')}' data-html='true' data-toggle='tooltip' data-original-title='{$this->l('Click here to open piwik site lookup wizard')}' class='label-tooltip'>{$this->l('Configuration Wizard')}</a>"
+                . "</div>"
             );
         }
 
@@ -597,23 +885,23 @@ class piwikanalyticsjs extends Module {
                         ),
                     ),
                     array(
-                        'type' => (version_compare(_PS_VERSION_ , '1.6.0.0', '>=') ? 'tags':'text'),
+                        'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
                         'label' => $this->l('Search Keyword Parameters'),
                         'name' => 'PKAdminSearchKeywordParameters',
                     ),
                     array(
-                        'type' => (version_compare(_PS_VERSION_ , '1.6.0.0', '>=') ? 'tags':'text'),
+                        'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
                         'label' => $this->l('Search Category Parameters'),
                         'name' => 'PKAdminSearchCategoryParameters',
                     ),
                     array(
-                        'type' => (version_compare(_PS_VERSION_ , '1.6.0.0', '>=') ? 'tags':'text'),
+                        'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
                         'label' => $this->l('Excluded ip addresses'),
                         'name' => 'PKAdminExcludedIps',
                         'desc' => $this->l('ip addresses excluded from tracking, separated by comma ","'),
                     ),
                     array(
-                        'type' => (version_compare(_PS_VERSION_ , '1.6.0.0', '>=') ? 'tags':'text'),
+                        'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
                         'label' => $this->l('Excluded Query Parameters'),
                         'name' => 'PKAdminExcludedQueryParameters',
                         'desc' => $this->l('please read: http://piwik.org/faq/how-to/faq_81/'),
@@ -701,19 +989,23 @@ class piwikanalyticsjs extends Module {
         $helper->fields_value = $this->getFormFields();
         $this->context->smarty->assign(array(
             'psversion' => _PS_VERSION_,
-            /* piwik_site_lookup */
-            'psl_CPREFIX' => PKHelper::CPREFIX,
-            'psl_currentIndex' => $helper->currentIndex,
-            'psl_token' => $helper->token,
             /* piwik_site_manager */
             'psm_currentIndex' => $helper->currentIndex,
             'psm_token' => $helper->token,
         ));
-        return $this->_errors . $_html . $helper->generateForm($fields_form)
-                . $this->display(__FILE__, 'views/templates/admin/piwik_site_manager.tpl')
-                . $this->display(__FILE__, 'views/templates/admin/piwik_site_lookup.tpl');
+        return $this->_errors
+                . $_html
+                . $helper->generateForm($fields_form)
+                . $this->display(__FILE__, 'views/templates/admin/jsfunctions.tpl')
+                . $this->display(__FILE__, 'views/templates/admin/piwik_site_manager.tpl');
     }
 
+    /**
+     * Method used when making ajax calls to Piwik API,
+     * this method outputs json data.
+     * 
+     * NOTE: only methods defiend in "KHelper::$acp" can be called
+     */
     private function __pkapicall() {
         $apiMethod = Tools::getValue('pkapicall');
         if (method_exists('PKHelper', $apiMethod) && isset(PKHelper::$acp[$apiMethod])) {
@@ -749,7 +1041,7 @@ class piwikanalyticsjs extends Module {
                     $lastError = "\n" . PKHelper::$error;
                 die(Tools::jsonEncode(array('error' => TRUE, 'message' => sprintf($this->l('Unknown error occurred%s'), $lastError))));
             } else {
-                PKHelper::DebugLogger("__pkapicall():\n\t- Al good");
+                PKHelper::DebugLogger("__pkapicall():\n\t- All good");
                 if (is_array($result) && isset($result[0])) {
                     $message = $result;
                 } else if (is_object($result)) {
@@ -768,6 +1060,10 @@ class piwikanalyticsjs extends Module {
         }
     }
 
+    /**
+     * returns a form helper formatted array of default input data for use with piwikanalyticsjs::getContent()
+     * @return array
+     */
     protected function getFormFields() {
         $PIWIK_PRODID_V1 = Configuration::get(PKHelper::CPREFIX . 'PRODID_V1');
         $PIWIK_PRODID_V2 = Configuration::get(PKHelper::CPREFIX . 'PRODID_V2');
@@ -820,18 +1116,70 @@ class piwikanalyticsjs extends Module {
         );
     }
 
+    private function processWizardFormUpdate() {
+        $_html = "";
+        $username = $password = $piwikhost = $saveusrpwd = $usernamehttp = $passwordhttp = false;
+        if (Tools::getIsset(PKHelper::CPREFIX . 'USRNAME_WIZARD'))
+            $username = Tools::getValue(PKHelper::CPREFIX . 'USRNAME_WIZARD');
+        if (Tools::getIsset(PKHelper::CPREFIX . 'USRPASSWD_WIZARD'))
+            $password = Tools::getValue(PKHelper::CPREFIX . 'USRPASSWD_WIZARD');
+        if (Tools::getIsset(PKHelper::CPREFIX . 'HOST_WIZARD'))
+            $piwikhost = Tools::getValue(PKHelper::CPREFIX . 'HOST_WIZARD');
+        if (Tools::getIsset(PKHelper::CPREFIX . 'SAVE_USRPWD_WIZARD'))
+            $saveusrpwd = (bool) Tools::getValue(PKHelper::CPREFIX . 'SAVE_USRPWD_WIZARD', 0);
+        if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHUSR_WIZARD'))
+            $usernamehttp = Tools::getValue(PKHelper::CPREFIX . 'PAUTHUSR_WIZARD', 0);
+        if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHPWD_WIZARD'))
+            $passwordhttp = Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD_WIZARD', 0);
+        if ($piwikhost !== false) {
+            $tmp = $piwikhost;
+            if (!empty($tmp)) {
+                if (Validate::isUrl($tmp) || Validate::isUrl('http://' . $tmp)) {
+                    $tmp = str_replace(array('http://', 'https://', '//'), "", $tmp);
+                    if (substr($tmp, -1) != "/") {
+                        $tmp .= "/";
+                    }
+                    Configuration::updateValue(PKHelper::CPREFIX . 'HOST', $tmp);
+                } else {
+                    $_html .= $this->displayError($this->l('Piwik host url is not valid'));
+                }
+            } else {
+                $_html .= $this->displayError($this->l('Piwik host cannot be empty'));
+            }
+        } else {
+            $_html .= $this->displayError($this->l('Piwik host cannot be empty'));
+        }
+        if (($username !== false && strlen($username) > 2) && ($password !== false && strlen($password) > 2)) {
+            if ($saveusrpwd == 1 || $saveusrpwd !== false) {
+                Configuration::updateValue(PKHelper::CPREFIX . "USRPASSWD", $password);
+                Configuration::updateValue(PKHelper::CPREFIX . "USRNAME", $username);
+            }
+        } else {
+            $_html .= $this->displayError($this->l('Username and/or password is missing/to short'));
+        }
+        if (($usernamehttp !== false && strlen($usernamehttp) > 0) && ($passwordhttp !== false && strlen($passwordhttp) > 0)) {
+            Configuration::updateValue(PKHelper::CPREFIX . "PAUTHUSR", $usernamehttp);
+            Configuration::updateValue(PKHelper::CPREFIX . "PAUTHPWD", $passwordhttp);
+        }
+        return $_html;
+    }
+
     private function processFormsUpdate() {
 
         $_html = "";
         if (Tools::isSubmit('submitUpdate' . $this->name)) {
             if (Tools::getIsset(PKHelper::CPREFIX . 'HOST')) {
                 $tmp = Tools::getValue(PKHelper::CPREFIX . 'HOST', '');
-                if (!empty($tmp) && (filter_var($tmp, FILTER_VALIDATE_URL) || filter_var('http://' . $tmp, FILTER_VALIDATE_URL))) {
-                    $tmp = str_replace(array('http://', 'https://', '//'), "", $tmp);
-                    if (substr($tmp, -1) != "/") {
-                        $tmp .= "/";
+                if (!empty($tmp)) {
+                    if (Validate::isUrl($tmp) || Validate::isUrl('http://' . $tmp)) {
+                        $tmp = str_replace(array('http://', 'https://', '//'), "", $tmp);
+                        if (substr($tmp, -1) != "/") {
+                            $tmp .= "/";
+                        }
+                        Configuration::updateValue(PKHelper::CPREFIX . 'HOST', $tmp);
+                    } else {
+                        $_html .= $this->displayError($this->l('Piwik host url is not valid'));
                     }
-                    Configuration::updateValue(PKHelper::CPREFIX . 'HOST', $tmp);
                 } else {
                     $_html .= $this->displayError($this->l('Piwik host cannot be empty'));
                 }
@@ -938,7 +1286,7 @@ class piwikanalyticsjs extends Module {
     public function hookdisplayRightColumnProduct($param) {
         if ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0)
             return "";
-        if ((int) Tools::getValue('content_only') > 0 && get_class($this->context->controller) == 'ProductController') { // we also do this in the tpl file.!
+        if ((int) Tools::getValue('content_only') > 0 && get_class($this->context->controller) == 'ProductController') {
             return $this->hookFooter($param);
         }
     }
@@ -956,7 +1304,7 @@ class piwikanalyticsjs extends Module {
         if (Tools::getIsset('p')) {
             $page = " (" . Tools::getValue('p') . ")";
         }
-        // $param['expr'] is not the searched word if lets say search is SnitmÃ¸ntre then the $param['expr'] will be Snitmontre
+        // $param['expr'] is not the searched word if lets say search is Snitmøntre then the $param['expr'] will be Snitmontre
         $expr = Tools::getIsset('search_query') ? htmlentities(Tools::getValue('search_query')) : $param['expr'];
         $this->context->smarty->assign(array(
             PKHelper::CPREFIX . 'SITE_SEARCH' => "_paq.push(['trackSiteSearch',\"{$expr}{$page}\",false,{$param['total']}]);"
@@ -1059,7 +1407,6 @@ class piwikanalyticsjs extends Module {
 
         if (self::$_isOrder)
             return "";
-
 
         if (_PS_VERSION_ < '1.5.6') {
             /* get page name the LAME way :) */
@@ -1191,10 +1538,8 @@ class piwikanalyticsjs extends Module {
         }
     }
 
-    /* Prestashop 1.4 only HOOKs */
-
     /**
-     * add Prestashop 1.4 specific settings
+     * add Prestashop 1.4 to 1.5.6 specific settings
      * @param mixed $params
      * @since 0.4
      */
@@ -1452,6 +1797,16 @@ class piwikanalyticsjs extends Module {
     /* INSTALL / UNINSTALL */
 
     /**
+     * Reset the module configuration
+     */
+    public function reset() {
+        foreach ($this->getConfigFields(FALSE) as $key => $value) {
+            Configuration::deleteByName($key);
+        }
+        return true;
+    }
+
+    /**
      * Install the module
      * @return boolean false on install error
      */
@@ -1522,7 +1877,13 @@ class piwikanalyticsjs extends Module {
         foreach ($this->getConfigFields(FALSE) as $key => $value) {
             Configuration::updateValue($key, $value);
         }
-        return (parent::install() && $this->registerHook('header') && $this->registerHook('footer') && $this->registerHook('actionSearch') && $this->registerHook('displayRightColumnProduct') && $this->registerHook('orderConfirmation') && $this->registerHook('displayMaintenance'));
+        return (parent::install() &&
+                $this->registerHook('header') &&
+                $this->registerHook('footer') &&
+                $this->registerHook('actionSearch') &&
+                $this->registerHook('displayRightColumnProduct') &&
+                $this->registerHook('orderConfirmation') &&
+                $this->registerHook('displayMaintenance'));
     }
 
     /**

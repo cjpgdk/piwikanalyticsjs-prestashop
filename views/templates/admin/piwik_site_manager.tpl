@@ -83,22 +83,6 @@
     
         return false;
     }
-    {if version_compare($psversion, '1.5.4.999','>')}
-    function hideLoadingStuff() { 
-        $('#ajax_running').hide('fast'); 
-        clearTimeout(ajax_running_timeout); 
-        $.fancybox.helpers.overlay.close(); 
-        $.fancybox.hideLoading(); 
-    }
-    function showLoadingStuff() {
-        showAjaxOverlay();
-        $.fancybox.helpers.overlay.open({ parent: $('body') });
-        $.fancybox.showLoading();
-    }
-    {else}
-    function showLoadingStuff() { $.fancybox.showActivity(); };
-    function hideLoadingStuff() { $.fancybox.hideActivity(); };
-    {/if}
     function ChangePKSiteEdit(id){
         $.ajax( { 
             type: 'POST',

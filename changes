@@ -1,0 +1,8 @@
+
+Version: 0.8.1
+    * Seriously improve the world crappiest configuration wizard, :)
+    - it has been completely redesigned with usability in mind
+    
+    * Use PS core function Validate::isUrl instead of useless php filter_var
+
+    * add initial setup for update check, not implemented yet but the basics have been set

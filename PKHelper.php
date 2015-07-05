@@ -41,7 +41,7 @@ class PKHelper {
         'getPiwikSite2' => array('required' => array('idSite'), 'optional' => array(''), 'order' => array('idSite'),),
         'getSitesGroups' => array('required' => array(), 'optional' => array(), 'order' => array(),),
         'getSitesWithViewAccess' => array('required' => array(), 'optional' => array(), 'order' => array(),),
-        'getSitesWithAdminAccess' => array('required' => array(), 'optional' => array('fetchAliasUrls'), 'order' => array('fetchAliasUrls'),),
+        'getSitesWithAdminAccess' => array('required' => array(), 'optional' => array('fetchAliasUrls','getBaseURLParams'), 'order' => array('fetchAliasUrls','getBaseURLParams'),),
         'getTokenAuth' => array(
             'required' => array('userLogin'),
             'optional' => array('password', 'md5Password'),
@@ -77,9 +77,9 @@ class PKHelper {
     public static $httpAuthUsername = "";
     public static $httpAuthPassword = "";
     public static $piwikHost = "";
-    
+
     /**
-     * create a log of all events if set to "1", usfull if tracking not working
+     * create a log of all events if set to "1", usefull if tracking not working
      * Log debug == 1
      * DO NOT log == 0
      * log will be saved to [PS ROOT]/log/YYYYMMDD_piwik.debug.log
@@ -204,13 +204,11 @@ class PKHelper {
      * get users token auth from Piwik
      * NOTE: password is required either an md5 encoded password or a normal string
      * @param string $userLogin the user name
-     * @param string $password password as clear text string
+     * @param string $password password in clear text
      * @param string $md5Password md5 encoded password
      * @return string|boolean
      */
     public static function getTokenAuth($userLogin, $password = NULL, $md5Password = NULL) {
-        /* if (!self::baseTest())
-          return FALSE; */
         if ($password === null || empty($password)) {
             $password = $md5Password;
             if ($md5Password === NULL || empty($md5Password)) {
@@ -220,11 +218,6 @@ class PKHelper {
             }
         } else
             $password = md5($password);
-        
-        /*
-                'httpUser': http_username,
-                'httpPasswd': http_password,
-         */
 
         $url = self::getBaseURL(0, NULL, NULL, 'API', NULL, '');
         $url .= "&method=UsersManager.getTokenAuth&userLogin={$userLogin}&md5Password={$password}&format=JSON";
@@ -300,17 +293,17 @@ class PKHelper {
             if (!isset(self::$_cachedResults[$md5Url][0])) {
                 return false;
             }
-            if ((bool) self::$_cachedResults[$md5Url][0]->ecommerce === false || self::$_cachedResults[$md5Url][0]->ecommerce == 0) {
-                if ((_PS_VERSION_ < '1.5'))
-                    self::$error = self::l('E-commerce is not active for your site in piwik!');
-                else
+            if (((bool) self::$_cachedResults[$md5Url][0]->ecommerce === false) || self::$_cachedResults[$md5Url][0]->ecommerce == 0) {
+//                if ((_PS_VERSION_ < '1.5'))
+//                    self::$error = self::l('E-commerce is not active for your site in piwik!');
+//                else
                     self::$error = self::l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page');
                 self::$errors[] = self::$error;
             }
-            if ((bool) self::$_cachedResults[$md5Url][0]->sitesearch === false || self::$_cachedResults[$md5Url][0]->sitesearch == 0) {
-                if ((_PS_VERSION_ < '1.5'))
-                    self::$error = self::l('Site search is not active for your site in piwik!');
-                else
+            if (((bool) self::$_cachedResults[$md5Url][0]->sitesearch) === false || self::$_cachedResults[$md5Url][0]->sitesearch == 0) {
+//                if ((_PS_VERSION_ < '1.5'))
+//                    self::$error = self::l('Site search is not active for your site in piwik!');
+//                else
                     self::$error = self::l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page');
                 self::$errors[] = self::$error;
             }
@@ -382,10 +375,15 @@ class PKHelper {
      * @param boolean $fetchAliasUrls
      * @return stdClass[]
      */
-    public static function getSitesWithAdminAccess($fetchAliasUrls = false) {
+    public static function getSitesWithAdminAccess($fetchAliasUrls = false, $getBaseURLParams = NULL) {
         if (!self::baseTest())
             return array();
-        $url = self::getBaseURL();
+        if ($getBaseURLParams == NULL && !is_array($getBaseURLParams) || !(is_array($getBaseURLParams) && count($getBaseURLParams) == 6))
+            $url = self::getBaseURL();
+        else {
+            extract($getBaseURLParams, EXTR_OVERWRITE);
+            $url = self::getBaseURL($idSite, $pkHost, $https, $pkModule, $isoCode, $tokenAuth);
+        }
         $url .= "&method=SitesManager.getSitesWithAdminAccess&format=JSON" . ($fetchAliasUrls ? '&fetchAliasUrls=1' : '');
         $md5Url = md5($url);
         if (!isset(self::$_cachedResults[$md5Url . "2"])) {
@@ -429,11 +427,11 @@ class PKHelper {
     protected static function getBaseURL($idSite = NULL, $pkHost = NULL, $https = NULL, $pkModule = 'API', $isoCode = NULL, $tokenAuth = NULL) {
         if ($https === NULL)
             $https = (bool) Configuration::get(PKHelper::CPREFIX . 'CRHTTPS');
-        
-        
-        if (self::$piwikHost == "" || self::$piwikHost === false) 
+
+
+        if (self::$piwikHost == "" || self::$piwikHost === false)
             self::$piwikHost = Configuration::get(PKHelper::CPREFIX . 'HOST');
-        
+
         if ($pkHost === NULL)
             $pkHost = self::$piwikHost;
         if ($isoCode === NULL)
@@ -442,8 +440,8 @@ class PKHelper {
             $idSite = Configuration::get(PKHelper::CPREFIX . 'SITEID');
         if ($tokenAuth === NULL)
             $tokenAuth = Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH');
-        
-        
+
+
         return ($https ? 'https' : 'http') . "://{$pkHost}index.php?module={$pkModule}&language={$isoCode}&idSite={$idSite}&token_auth={$tokenAuth}";
     }
 
@@ -474,7 +472,7 @@ class PKHelper {
     protected static function getAsJsonDecoded($url) {
         static $_error2 = FALSE;
         $use_cURL = (bool) Configuration::get(PKHelper::CPREFIX . 'USE_CURL');
-        
+
         $getF = self::get_http($url);
         if ($getF !== FALSE) {
             return Tools::jsonDecode($getF);
@@ -495,9 +493,9 @@ class PKHelper {
 
         if (self::$httpAuthUsername == "" || self::$httpAuthUsername === false)
             self::$httpAuthUsername = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
-        if (self::$httpAuthPassword == "" || self::$httpAuthPassword === false) 
+        if (self::$httpAuthPassword == "" || self::$httpAuthPassword === false)
             self::$httpAuthPassword = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
-        
+
         $httpauth_usr = self::$httpAuthUsername;
         $httpauth_pwd = self::$httpAuthPassword;
 
@@ -517,7 +515,7 @@ class PKHelper {
                 )
             );
             $context = stream_context_create($options);
-            PKHelper::DebugLogger('Calling: '. $url . (!empty($httpauth) ? "\n\t- With Http auth":""));
+            PKHelper::DebugLogger('Calling: ' . $url . (!empty($httpauth) ? "\n\t- With Http auth" : ""));
             $result = @file_get_contents($url, false, $context);
             if ($result === FALSE) {
                 $http_response = "";
@@ -528,14 +526,14 @@ class PKHelper {
                         }
                     }
                 }
-                PKHelper::DebugLogger('request returned ERROR: http response: '. $http_response);
-                if(isset($http_response_header))
-                    PKHelper::DebugLogger('$http_response_header: '. print_r($http_response_header, true));
+                PKHelper::DebugLogger('request returned ERROR: http response: ' . $http_response);
+                if (isset($http_response_header))
+                    PKHelper::DebugLogger('$http_response_header: ' . print_r($http_response_header, true));
                 if (!$_error2) {
                     self::$error = sprintf(self::l('Unable to connect to api%s'), " {$http_response}");
                     self::$errors[] = self::$error;
                     $_error2 = TRUE;
-                    PKHelper::DebugLogger('Last error message: '. self::$error);
+                    PKHelper::DebugLogger('Last error message: ' . self::$error);
                 }
             } else {
                 PKHelper::DebugLogger('request returned OK');
@@ -587,7 +585,7 @@ class PKHelper {
      * @see Module::l
      */
     private static function l($string, $specific = false) {
-        if (version_compare(_PS_VERSION_ , '1.5.0.13', "<="))
+        if (version_compare(_PS_VERSION_, '1.5.0.13', "<="))
             return PKHelper::$_module->l($string, ($specific) ? $specific : 'pkhelper');
         return Translate::getModuleTranslation('piwikanalyticsjs', $string, ($specific) ? $specific : 'pkhelper');
         // the following lines are need for the translation to work properly

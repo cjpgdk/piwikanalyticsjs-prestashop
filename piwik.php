@@ -14,8 +14,7 @@
 // -----
 
 /**
- * This file is modified to function with Prestashop module 
- * "piwikanalyticsjs and piwikanalytics"
+ * This file is modified to function with Prestashop module piwikanalyticsjs
  * By: Christian Jensen
  * https://github.com/cmjnisse/piwikanalyticsjs-prestashop
  * 
