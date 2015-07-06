@@ -25,8 +25,11 @@ if (!defined('_PS_VERSION_'))
  * @author Christian M. Jensen
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ * 
+ * @todo config wiz, set currency to use.
  */
 class piwikanalyticsjs extends Module {
+
     private static $_isOrder = FALSE;
     protected $_errors = "";
     protected $piwikSite = FALSE;
@@ -51,7 +54,7 @@ class piwikanalyticsjs extends Module {
     public function __construct($name = null, $context = null) {
         $this->name = 'piwikanalyticsjs';
         $this->tab = 'analytics_stats';
-        $this->version = '0.8.0';
+        $this->version = '0.8.3';
         $this->author = 'Christian M. Jensen';
         $this->displayName = 'Piwik Analytics';
         $this->author_uri = 'https://cmjscripter.net';
@@ -77,8 +80,8 @@ class piwikanalyticsjs extends Module {
         $this->confirmUninstall = $this->l('Are you sure you want to delete this plugin ?');
 
         self::$_isOrder = FALSE;
-        $this->_errors = PKHelper::$error = "";
-        PKHelper::$errors = array();
+        PKHelper::$error = "";
+        $this->_errors = PKHelper::$errors = array();
 
         if ($this->id) {
             if (version_compare(_PS_VERSION_, '1.5.0.13', "<="))
@@ -92,26 +95,13 @@ class piwikanalyticsjs extends Module {
             $pksiteid = (int) Tools::getValue('usePiwikSite');
             if ($pksite = PKHelper::getPiwikSite2($pksiteid)) {
                 if (isset($pksite[0]) && is_object($pksite[0])) {
-                    PKHelper::updatePiwikSite(
-                            $pksiteid /*$idSite*/, 
-                            $pksite[0]->name /*$siteName*/, 
-                            $pksite[0]->main_url /*$urls*/,
-                            1 /*$ecommerce*/, 1 /*$siteSearch*/, 
-                            $pksite[0]->sitesearch_keyword_parameters /*$searchKeywordParameters*/, 
-                            $pksite[0]->sitesearch_category_parameters /*$searchCategoryParameters*/, 
-                            $pksite[0]->excluded_ips /*$excludedIps*/, 
-                            $pksite[0]->excluded_parameters /*$excludedQueryParameters*/, 
-                            $pksite[0]->timezone /*$timezone*/, 
-                            $pksite[0]->currency /*$currency*/, 
-                            $pksite[0]->group /*$group*/, 
-                            $pksite[0]->ts_created /*$startDate*/, 
-                            $pksite[0]->excluded_user_agents /*$excludedUserAgents*/, 
-                            $pksite[0]->keep_url_fragment /*$keepURLFragments*/, 
-                            $pksite[0]->type /*$type*/);
+                    PKHelper::updatePiwikSite($pksiteid /* $idSite */, $pksite[0]->name /* $siteName */, $pksite[0]->main_url /* $urls */, 1 /* $ecommerce */, 1 /* $siteSearch */, $pksite[0]->sitesearch_keyword_parameters /* $searchKeywordParameters */, $pksite[0]->sitesearch_category_parameters /* $searchCategoryParameters */, $pksite[0]->excluded_ips /* $excludedIps */, $pksite[0]->excluded_parameters /* $excludedQueryParameters */, $pksite[0]->timezone /* $timezone */, $pksite[0]->currency /* $currency */, $pksite[0]->group /* $group */, $pksite[0]->ts_created /* $startDate */, $pksite[0]->excluded_user_agents /* $excludedUserAgents */, $pksite[0]->keep_url_fragment /* $keepURLFragments */, $pksite[0]->type /* $type */);
                     PKHelper::$error = PKHelper::$errors = null; // don't need them, we redirect
-                    ToolsCore::redirectAdmin(str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'));
+                    // save site id
+                    Configuration::updateValue(PKHelper::CPREFIX . 'SITEID', $pksiteid);
+                    Tools::redirectAdmin(str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'));
                 } else {
-                    $this->_errors .= $this->displayError(sprintf($this->l("I encountered an unknown error while trying to get the selected site, id#%s"), $pksiteid));
+                    $this->_errors[] = $this->displayError(sprintf($this->l("I encountered an unknown error while trying to get the selected site, id#%s"), $pksiteid));
                     $password = Configuration::get(PKHelper::CPREFIX . "USRPASSWD");
                     $username = Configuration::get(PKHelper::CPREFIX . "USRNAME");
                     $usernamehttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
@@ -119,7 +109,7 @@ class piwikanalyticsjs extends Module {
                     $piwikhost = Configuration::get(PKHelper::CPREFIX . 'HOST');
                 }
             } else {
-                $this->_errors .= $this->displayError(sprintf($this->l("I'm unable, to get admin access to the selected site id #%s"), $pksiteid));
+                $this->_errors[] = $this->displayError(sprintf($this->l("I'm unable, to get admin access to the selected site id #%s"), $pksiteid));
                 $password = Configuration::get(PKHelper::CPREFIX . "USRPASSWD");
                 $username = Configuration::get(PKHelper::CPREFIX . "USRNAME");
                 $usernamehttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
@@ -146,17 +136,18 @@ class piwikanalyticsjs extends Module {
             $pkToken = PKHelper::getTokenAuth($username, $password);
             if (!empty(PKHelper::$error)) {
                 foreach (PKHelper::$errors as $key => $value) {
-                    $this->_errors .= $this->displayError($value);
+                    $this->_errors[] = $this->displayError($value);
                 }
                 $step = 1;
             } else {
                 if ($pkToken !== false) {
+                    // wee need to saved the token to avoid errore from PKHelper class
+                    // @todo allow token overide 'PKHelper::getSitesWithAdminAccess' (skip missing error)
+                    Configuration::updateValue(PKHelper::CPREFIX . 'TOKEN_AUTH', $pkToken);
                     if ($_pkSites = PKHelper::getSitesWithAdminAccess(false, array(
                                 'idSite' => 0, 'pkHost' => PKHelper::$piwikHost,
                                 'https' => (strpos($piwikhost, 'https://') !== false),
                                 'pkModule' => 'API', 'isoCode' => NULL, 'tokenAuth' => $pkToken))) {
-                        //* if we get here login and token is valid so save it.
-                        Configuration::updateValue(PKHelper::CPREFIX . 'TOKEN_AUTH', $pkToken);
                         if (!empty($_pkSites)) {
                             foreach ($_pkSites as $value) {
                                 $pkSites[] = array(
@@ -169,7 +160,7 @@ class piwikanalyticsjs extends Module {
                     }
                     if (!empty(PKHelper::$error)) {
                         foreach (PKHelper::$errors as $key => $value) {
-                            $this->_errors .= $this->displayError($value);
+                            $this->_errors[] = $this->displayError($value);
                         }
                         $step = 1;
                     }
@@ -184,6 +175,7 @@ class piwikanalyticsjs extends Module {
             );
             foreach ($pkSites as $key => $value) {
                 $fields_form[0]['form']['input'][] = array(
+                    'name'=>'', /*avoid not isset error*/
                     'type' => 'myBtn',
                     'href' => $helperform->currentIndex . '&usePiwikSite=' . $value['idsite'] . "&token=" . Tools::getAdminTokenLite('AdminModules'),
                     /* 'class'=>'', */
@@ -213,10 +205,10 @@ class piwikanalyticsjs extends Module {
             );
         } else if ($step == 2) {
             $step = 1;
-            $this->_errors .= $this->displayError($this->l("Unable to get a list websites from piwik, if you dont have any sites in piwik yet click 'Create new Site' button."));
+            $this->_errors[] = $this->displayError($this->l("Unable to get a list websites from piwik, if you dont have any sites in piwik yet click 'Create new Site' button."));
         }
-        
-        
+
+
         $fields_form[0]['form']['input'][] = array(
             'type' => 'html',
             'name' => "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'STEP_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'STEP_WIZARD' . "\" value=\"{$step}\" />"
@@ -232,8 +224,8 @@ class piwikanalyticsjs extends Module {
                 . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" value=\"{$passwordhttp}\" />"
             );
         }
-        
-        
+
+
         if ($step == 1) {
             $fields_form[0]['form']['input'][] = array(
                 'type' => 'text',
@@ -374,11 +366,11 @@ class piwikanalyticsjs extends Module {
         //* warnings on module configure page
         if (!Tools::getIsset('pkwizard')) { /* do not show them if we are using the  wizard */
             if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') && !Tools::getIsset(PKHelper::CPREFIX . 'TOKEN_AUTH')) /* avoid the same error message twice */
-                $this->_errors .= $this->displayError($this->l('Piwik auth token is empty'));
+                $this->_errors[] = $this->displayError($this->l('Piwik auth token is empty'));
             if ($this->id && ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0) && !Tools::getIsset(PKHelper::CPREFIX . 'SITEID')) /* avoid the same error message twice */
-                $this->_errors .= $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
+                $this->_errors[] = $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
             if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'HOST'))
-                $this->_errors .= $this->displayError($this->l('Piwik host cannot be empty'));
+                $this->_errors[] = $this->displayError($this->l('Piwik host cannot be empty'));
         }
 
         $fields_form = array();
@@ -423,8 +415,11 @@ class piwikanalyticsjs extends Module {
             $this->context->smarty->assign(array(
                 'psversion' => _PS_VERSION_,
             ));
-            return $this->_errors
-                    . $_html
+            if (is_array($this->_errors))
+                $_html = implode('', $this->_errors) . $_html;
+            else
+                $_html = $this->_errors . $_html;
+            return $_html
                     . $helper->generateForm($fields_form)
                     . $this->display(__FILE__, 'views/templates/admin/jsfunctions.tpl')
                     . $this->display(__FILE__, 'views/templates/admin/piwik_site_lookup.tpl');
@@ -539,12 +534,12 @@ class piwikanalyticsjs extends Module {
             'required' => false
         );
         $fields_form[0]['form']['input'][] = array(
-            'type' => 'text',
+            'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
             'label' => $this->l('Hide known alias URLs'),
             'name' => PKHelper::CPREFIX . 'SET_DOMAINS',
             'desc' => $this->l('In the "Outlinks" report, hide clicks to known alias URLs, Example: *.example.com')
             . '<br />'
-            . $this->l('Note: to add multiple domains you must separate them with space " " one space')
+            . $this->l('Note: to add multiple domains you must separate them with comma ","')
             . '<br />'
             . $this->l('Note: the currently tracked website is added to this array automatically')
             . '<br />'
@@ -586,6 +581,10 @@ class piwikanalyticsjs extends Module {
             'name' => $this->l('Piwik image tracking code append one of them to field "Extra HTML" this will add images tracking code to all your pages') . "<br>"
             . "<strong>" . $this->l('default') . "</strong>:<br /><i>{$image_tracking['default']}</i><br>"
             . "<strong>" . $this->l('using proxy script') . "</strong>:<br /><i>{$image_tracking['proxy']}</i><br>"
+            . (version_compare(_PS_VERSION_, '1.6.0.7', '>=') ?
+                    "<br><strong>{$this->l("Before you add the image tracking code make sure the HTMLPurifier library isn't in use, check the settings in 'Preferences => General', you can enable the HTMLPurifier again after you made your changes")}</strong>" :
+                    ""
+            )
         );
         $fields_form[0]['form']['input'][] = array(
             'type' => 'textarea',
@@ -659,7 +658,7 @@ class piwikanalyticsjs extends Module {
         $fields_form[1]['form'] = array(
             'legend' => array(
                 'title' => $this->displayName . ' ' . $this->l('Advanced'),
-                'image' => $this->_path . 'logo.png'
+                'image' => $this->_path . 'logox22.png'
             ),
             'input' => array(
                 array(
@@ -814,7 +813,7 @@ class piwikanalyticsjs extends Module {
             $fields_form[2]['form'] = array(
                 'legend' => array(
                     'title' => $this->displayName . ' ' . $this->l('Advanced') . ' - ' . $this->l('Edit Piwik site'),
-                    'image' => $this->_path . 'logo.png'
+                    'image' => $this->_path . 'logox22.png'
                 ),
                 'input' => array(
                     array(
@@ -888,6 +887,8 @@ class piwikanalyticsjs extends Module {
                         'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
                         'label' => $this->l('Search Keyword Parameters'),
                         'name' => 'PKAdminSearchKeywordParameters',
+                        'desc' => $this->l('the following keyword parameters must be excluded to avoid normal page views to be interpreted as searches (the tracking code will see them and make the required postback to Piwik if it is a real search), if you are only using PrestaShop with this site setting this to empty, will be sufficient')
+                                . "<br><strong>tag</strong> and <strong>search_query</strong>",
                     ),
                     array(
                         'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
@@ -993,8 +994,11 @@ class piwikanalyticsjs extends Module {
             'psm_currentIndex' => $helper->currentIndex,
             'psm_token' => $helper->token,
         ));
-        return $this->_errors
-                . $_html
+        if (is_array($this->_errors))
+            $_html = implode('', $this->_errors) . $_html;
+        else
+            $_html = $this->_errors . $_html;
+        return $_html
                 . $helper->generateForm($fields_form)
                 . $this->display(__FILE__, 'views/templates/admin/jsfunctions.tpl')
                 . $this->display(__FILE__, 'views/templates/admin/piwik_site_manager.tpl');
@@ -1004,7 +1008,7 @@ class piwikanalyticsjs extends Module {
      * Method used when making ajax calls to Piwik API,
      * this method outputs json data.
      * 
-     * NOTE: only methods defiend in "KHelper::$acp" can be called
+     * NOTE: only methods defiend in "PKHelper::$acp" can be called
      */
     private function __pkapicall() {
         $apiMethod = Tools::getValue('pkapicall');
@@ -1266,6 +1270,50 @@ class piwikanalyticsjs extends Module {
     }
 
     /* HOOKs */
+
+    public function hookActionProductCancel($params) {
+        /*
+         * @todo research [ps 1.6]
+         * admin hook, wonder if this can be implemented
+         * remove a product from the cart in Piwik
+         * 
+         * $params = array('order' => obj [Order], 'id_order_detail' => int)
+         * 
+         * if (version_compare(_PS_VERSION_, '1.5', '>=')
+         *     $this->registerHook('actionProductCancel')
+         */
+    }
+
+    public function hookProductFooter($params) {
+        /**
+         * @todo research
+         * use for product views, keeping hookFooter as simple as possible
+         * $params = array('product' => $product, 'category' => $category)
+         * displayFooterProduct ?? [array('product' => obj, 'category' => obj)]
+         * 
+         * $this->registerHook('productfooter')
+         */
+    }
+
+    public function hookActionCartSave() {
+        /*
+         * @todo research [ps 1.6]
+         * hmm, called on cart add and update
+         * 
+         * if (version_compare(_PS_VERSION_, '1.5', '>=')
+         *     $this->registerHook('actionCartSave')
+         */
+        if (!isset($this->context->cart))
+            return;
+
+        $cart = array(
+            'controller' => Tools::getValue('controller'),
+            'addAction' => Tools::getValue('add') ? 'add' : '',
+            'removeAction' => Tools::getValue('delete') ? 'delete' : '',
+            'extraAction' => Tools::getValue('op'),
+            'qty' => (int) Tools::getValue('qty', 1)
+        );
+    }
 
     /**
      * hook into maintenance page.
@@ -1614,7 +1662,7 @@ class piwikanalyticsjs extends Module {
     public function displayErrors($errors) {
         if (!empty($errors)) {
             foreach ($errors as $key => $value) {
-                $this->_errors .= $this->displayError($value);
+                $this->_errors[] = $this->displayError($value);
             }
         }
     }
@@ -1642,7 +1690,7 @@ class piwikanalyticsjs extends Module {
     /**
      * get category names by product id
      * @param integer $id product id
-     * @param boolean $array get categories as PHP array (TRUE), or javacript (FAlSE)
+     * @param boolean $array get categories as PHP array (TRUE), or javascript (FAlSE)
      * @return string|array
      */
     private function get_category_names_by_product($id, $array = true) {
@@ -1727,7 +1775,7 @@ class piwikanalyticsjs extends Module {
 
         $PIWIK_SET_DOMAINS = Configuration::get(PKHelper::CPREFIX . 'SET_DOMAINS');
         if (!empty($PIWIK_SET_DOMAINS)) {
-            $sdArr = explode(' ', Configuration::get(PKHelper::CPREFIX . 'SET_DOMAINS'));
+            $sdArr = explode(',', Configuration::get(PKHelper::CPREFIX . 'SET_DOMAINS'));
             if (count($sdArr) > 1)
                 $PIWIK_SET_DOMAINS = "['" . trim(implode("','", $sdArr), ",'") . "']";
             else
@@ -1877,6 +1925,20 @@ class piwikanalyticsjs extends Module {
         foreach ($this->getConfigFields(FALSE) as $key => $value) {
             Configuration::updateValue($key, $value);
         }
+
+
+//        if (!Db::getInstance()->Execute('
+//			CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'piwikanalytics` (
+//				`id_pk_analytics` int(11) NOT NULL AUTO_INCREMENT,
+//				`id_order` int(11) NOT NULL,
+//				`id_customer` int(10) NOT NULL,
+//				`id_shop` int(11) NOT NULL,
+//				`sent` tinyint(1) DEFAULT NULL,
+//				`date_add` datetime DEFAULT NULL,
+//				PRIMARY KEY (`id_google_analytics`),
+//				KEY `id_order` (`id_order`),
+//				KEY `sent` (`sent`)
+//			) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8 AUTO_INCREMENT=1'))
         return (parent::install() &&
                 $this->registerHook('header') &&
                 $this->registerHook('footer') &&

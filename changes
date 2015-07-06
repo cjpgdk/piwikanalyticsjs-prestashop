@@ -1,8 +1,17 @@
 
-Version: 0.8.1
+Version: 0.8.3
     * Seriously improve the world crappiest configuration wizard, :)
     - it has been completely redesigned with usability in mind
     
     * Use PS core function Validate::isUrl instead of useless php filter_var
 
     * add initial setup for update check, not implemented yet but the basics have been set
+    - only for Prestashop 1.6.0.4 and up.
+
+    * fixed var $this->_errors, must be an array
+
+    * use comma instead of ' ' in set Domains so we can take advantages of jQuery.tags
+    - also makes it more readable
+
+Version: <=0.8.2
+    see releases page

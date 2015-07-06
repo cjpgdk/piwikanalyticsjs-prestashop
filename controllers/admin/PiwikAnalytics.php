@@ -26,6 +26,9 @@ if (!defined('_PS_VERSION_'))
  * @author Christian M. Jensen
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ * 
+ * 
+ * @todo !use same protocol in iframe as the one used in admin.!, !unless https has been set in module admin!
  */
 class PiwikAnalyticsController extends ModuleAdminController {
 

@@ -24,7 +24,7 @@
 {extends file="helpers/form/form.tpl"}
 
 {block name="input"}
-    {if $input.type == 'html' && $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.6.1'}
+    {if $input.type == 'html' && $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.6.0.4'}
         {if isset($input.html_content)}
             {$input.html_content}
         {else}
@@ -50,7 +50,7 @@
             {if isset($value.p) && $value.p}<p>{$value.p}</p>{/if}
         {/foreach}
     {elseif $input.type == 'myBtn'}
-        <a href="{$input.href}" {if isset($input.id)}id="{$input.id}"{/if} class="btn btn-default{if isset($input.class)} {$input.class}{/if}" {if isset($input.extraattr)}{$input.extraattr}{/if}>{if isset($input.icon)}<i class="{$input.icon}" ></i> {/if}{$input.title}</a>
+        <a {if isset($input.href)}href="{$input.href}"{/if} {if isset($input.id)}id="{$input.id}"{/if} class="btn btn-default{if isset($input.class)} {$input.class}{/if}" {if isset($input.extraattr)}{$input.extraattr}{/if}>{if isset($input.icon)}<i class="{$input.icon}" ></i> {/if}{if isset($input.title)}{$input.title}{/if}</a>
     {else}
         {$smarty.block.parent}
     {/if}
@@ -59,7 +59,7 @@
 
 {block name="footer"}
 {capture name='form_submit_btn'}{counter name='form_submit_btn'}{/capture}
-{if isset($fieldset['form']['submit']) || isset($fieldset['form']['buttons']) && $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.6.1'}
+{if isset($fieldset['form']['submit']) || isset($fieldset['form']['buttons']) && $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.6.0.3'}
     <div class="panel-footer">
         {if isset($fieldset['form']['submit']) && !empty($fieldset['form']['submit'])}
             <button type="submit" value="1"	id="{if isset($fieldset['form']['submit']['id'])}{$fieldset['form']['submit']['id']}{else}{$table}_form_submit_btn{/if}{if $smarty.capture.form_submit_btn > 1}_{($smarty.capture.form_submit_btn - 1)|intval}{/if}" name="{if isset($fieldset['form']['submit']['name'])}{$fieldset['form']['submit']['name']}{else}{$submit_action}{/if}{if isset($fieldset['form']['submit']['stay']) && $fieldset['form']['submit']['stay']}AndStay{/if}" class="{if isset($fieldset['form']['submit']['class'])}{$fieldset['form']['submit']['class']}{else}btn btn-default pull-right{/if}">
