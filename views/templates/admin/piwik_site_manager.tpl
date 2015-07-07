@@ -132,10 +132,23 @@
                         $('input[id=active_on][name=PKAdminSiteSearch]').attr('checked', false);
                     }
                 {/if}
+                 
+                $('#PKAdminSearchKeywordParameters').tagify('destroy');
                 $('#PKAdminSearchKeywordParameters').val(data.message[0].sitesearch_keyword_parameters);
+                $('#PKAdminSearchKeywordParameters').tagify({ delimiters: [13,44], addTagPrompt: '{l s='Add keyword'  mod='piwikanalyticsjs'}' });
+                
+                $('#PKAdminSearchCategoryParameters').tagify('destroy');
                 $('#PKAdminSearchCategoryParameters').val(data.message[0].sitesearch_category_parameters);
+                $('#PKAdminSearchCategoryParameters').tagify({ delimiters: [13,44], addTagPrompt: '{l s='Add keyword'  mod='piwikanalyticsjs'}' });
+                
+                $('#PKAdminExcludedIps').tagify('destroy');
                 $('#PKAdminExcludedIps').val(data.message[0].excluded_ips);
+                $('#PKAdminExcludedIps').tagify({ delimiters: [13,44], addTagPrompt: '{l s='Add IP'  mod='piwikanalyticsjs'}' });
+                
+                $('#PKAdminExcludedQueryParameters').tagify('destroy');
                 $('#PKAdminExcludedQueryParameters').val(data.message[0].excluded_parameters);
+                $('#PKAdminExcludedQueryParameters').tagify({ delimiters: [13,44], addTagPrompt: '{l s='Add parameter'  mod='piwikanalyticsjs'}' });
+                
                 $('#PKAdminTimezone').val(data.message[0].timezone);
                 $('#PKAdminCurrency').val(data.message[0].currency);
                 /*$('#PKAdminGroup').val(data.message[0].group);*/

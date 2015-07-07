@@ -28,22 +28,38 @@
     $(document).ready(function () {
         /*PIWIK_ XXXXXXXX _WIZARD */
 
+        {if version_compare($psversion, '1.5.0.13','>=')}
         $("#PIWIK_HOST_WIZARD").on("keyup", function () {
+        {else}
+        $("#PIWIK_HOST_WIZARD").keyup(function () {
+        {/if}
             $("#PIWIK_HOST_WIZARD").trigger("input");
             return true;
         });
 
+        {if version_compare($psversion, '1.5.0.13','>=')}
         $("#PIWIK_USRNAME_WIZARD").on("keyup", function () {
+        {else}
+        $("#PIWIK_USRNAME_WIZARD").keyup(function () {
+        {/if}
             $("#PIWIK_USRNAME_WIZARD").trigger("input");
             return true;
         });
 
+        {if version_compare($psversion, '1.5.0.13','>=')}
         $("#PIWIK_USRPASSWD_WIZARD").on("keyup", function () {
+        {else}
+        $("#PIWIK_USRPASSWD_WIZARD").keyup(function () {
+        {/if}
             $("#PIWIK_USRPASSWD_WIZARD").trigger("input");
             return true;
         });
 
+        {if version_compare($psversion, '1.5.0.13','>=')}
         $("#PIWIK_HOST_WIZARD").on("input", function () {
+        {else}
+        $("#PIWIK_HOST_WIZARD").change(function () {
+        {/if}
             var strvalue = $(this).val();
             hostvalid = false;
             var stringLength = strvalue.length;
@@ -72,7 +88,11 @@
             return true;
         });
 
+        {if version_compare($psversion, '1.5.0.13','>=')}
         $("#PIWIK_USRNAME_WIZARD").on("input", function () {
+        {else}
+        $("#PIWIK_USRNAME_WIZARD").change(function () {
+        {/if}
             var strvalue = $(this).val();
             if (strvalue !== undefined && strvalue !== "" && strvalue.length > 2)
                 usernamevalid = true;
@@ -88,7 +108,11 @@
             return true;
         });
 
+        {if version_compare($psversion, '1.5.0.13','>=')}
         $("#PIWIK_USRPASSWD_WIZARD").on("input", function () {
+        {else}
+        $("#PIWIK_USRPASSWD_WIZARD").change(function () {
+        {/if}
             var strvalue = $(this).val();
             if (strvalue !== undefined && strvalue !== "" && strvalue.length > 2)
                 passwordvalid = true;

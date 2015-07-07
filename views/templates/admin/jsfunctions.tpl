@@ -24,10 +24,14 @@
 <script type="text/javascript">
     $(document).ready(function () {
         $('a#desc-module-update').attr('href', "#");
+
+    {if version_compare($psversion, '1.5.0.13','>=')}
+        {* jQuery is to old *}
         $('a#desc-module-update').on('click', function () {
             showLoadingStuff();
             jConfirm('{l s="You are about to check for updates, if you continue a call to github repository will be made in order to check for new stable releases" mod='piwikanalyticsjs'}', '{l s="Check for updates to PiwikAnalyticsJS" mod='piwikanalyticsjs'}', moduleUpdateConfirmClick)
         });
+    {/if}
     });
     function moduleUpdateConfirmClick(result) {
         hideLoadingStuff();
@@ -62,7 +66,13 @@
         $.fancybox.showLoading();
     }
     {else}
-    function showLoadingStuff() { $.fancybox.showActivity(); };
-    function hideLoadingStuff() { $.fancybox.hideActivity(); };
+    function showLoadingStuff() {
+        $.fancybox.showActivity();
+    }
+    ;
+    function hideLoadingStuff() {
+        $.fancybox.hideActivity();
+    }
+    ;
     {/if}
 </script>

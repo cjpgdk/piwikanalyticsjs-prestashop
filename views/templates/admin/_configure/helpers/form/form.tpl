@@ -24,7 +24,10 @@
 {extends file="helpers/form/form.tpl"}
 
 {block name="input"}
-    {if $input.type == 'html' && $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.6.0.4'}
+    {if  $input.type == 'password' && $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.6'}
+        {* fix not isset input.size *}
+        <input type="password" name="{$input.name}" {if isset($input.size)}size="{$input.size}"{/if} class="{if isset($input.class)}{$input.class}{/if}" value="" {if isset($input.autocomplete) && !$input.autocomplete}autocomplete="off"{/if} />
+    {elseif $input.type == 'html' && $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.6.0.4'}
         {if isset($input.html_content)}
             {$input.html_content}
         {else}
@@ -49,14 +52,99 @@
             {if isset($input.br) && $input.br}<br />{/if}
             {if isset($value.p) && $value.p}<p>{$value.p}</p>{/if}
         {/foreach}
+    {elseif $input.type == 'tags' && $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.5.6.1'}
+        {* copy from ps version 1.5.6.2 *}
+        {if isset($input.lang) AND $input.lang}
+            <div class="translatable">
+                {foreach $languages as $language}
+                    <div class="lang_{$language.id_lang}" style="display:{if $language.id_lang == $defaultFormLanguage}block{else}none{/if}; float: left;">
+                        {if $input.type == 'tags'}
+                            {literal}
+                                <script type="text/javascript">
+                                    $().ready(function () {
+                                        var input_id = '{/literal}{if isset($input.id)}{$input.id}_{$language.id_lang}{else}{$input.name}_{$language.id_lang}{/if}{literal}';
+                                                $('#' + input_id).tagify({delimiters: [13, 44], addTagPrompt: '{/literal}{l s='Add tag' js=1}{literal}'});
+                                                $({/literal}'#{$table}{literal}_form').submit(function () {
+                                                    $(this).find('#' + input_id).val($('#' + input_id).tagify('serialize'));
+                                                });
+                                            });
+                                </script>
+                            {/literal}
+                        {/if}
+                        {assign var='value_text' value=$fields_value[$input.name][$language.id_lang]}
+                        <input type="text"
+                               name="{$input.name}_{$language.id_lang}"
+                               id="{if isset($input.id)}{$input.id}_{$language.id_lang}{else}{$input.name}_{$language.id_lang}{/if}"
+                               value="{if isset($input.string_format) && $input.string_format}{$value_text|string_format:$input.string_format|escape:'htmlall':'UTF-8'}{else}{$value_text|escape:'htmlall':'UTF-8'}{/if}"
+                               class="{if $input.type == 'tags'}tagify {/if}{if isset($input.class)}{$input.class}{/if}"
+                               {if isset($input.size)}size="{$input.size}"{/if}
+                               {if isset($input.maxlength)}maxlength="{$input.maxlength}"{/if}
+                               {if isset($input.readonly) && $input.readonly}readonly="readonly"{/if}
+                               {if isset($input.disabled) && $input.disabled}disabled="disabled"{/if}
+                               {if isset($input.autocomplete) && !$input.autocomplete}autocomplete="off"{/if} />
+                        {if !empty($input.hint)}<span class="hint" name="help_box">{$input.hint}<span class="hint-pointer">&nbsp;</span></span>{/if}
+                    </div>
+                {/foreach}
+            </div>
+        {else}
+            {if $input.type == 'tags'}
+                {literal}
+                    <script type="text/javascript">
+                        $().ready(function () {
+                            var input_id = '{/literal}{if isset($input.id)}{$input.id}{else}{$input.name}{/if}{literal}';
+                            $('#' + input_id).tagify({delimiters: [13, 44], addTagPrompt: '{/literal}{l s='Add tag'}{literal}'});
+                            $({/literal}'#{$table}{literal}_form').submit(function () {
+                                $(this).find('#' + input_id).val($('#' + input_id).tagify('serialize'));
+                            });
+                        });
+                    </script>
+                {/literal}
+            {/if}
+            {assign var='value_text' value=$fields_value[$input.name]}
+            <input type="text"
+                   name="{$input.name}"
+                   id="{if isset($input.id)}{$input.id}{else}{$input.name}{/if}"
+                   value="{if isset($input.string_format) && $input.string_format}{$value_text|string_format:$input.string_format|escape:'htmlall':'UTF-8'}{else}{$value_text|escape:'htmlall':'UTF-8'}{/if}"
+                   class="{if $input.type == 'tags'}tagify {/if}{if isset($input.class)}{$input.class}{/if}"
+                   {if isset($input.size)}size="{$input.size}"{/if}
+                   {if isset($input.maxlength)}maxlength="{$input.maxlength}"{/if}
+                   {if isset($input.class)}class="{$input.class}"{/if}
+                   {if isset($input.readonly) && $input.readonly}readonly="readonly"{/if}
+                   {if isset($input.disabled) && $input.disabled}disabled="disabled"{/if}
+                   {if isset($input.autocomplete) && !$input.autocomplete}autocomplete="off"{/if} />
+            {if isset($input.suffix)}{$input.suffix}{/if}
+            {if !empty($input.hint)}<span class="hint" name="help_box">{$input.hint}<span class="hint-pointer">&nbsp;</span></span>{/if}
+        {/if}
     {elseif $input.type == 'myBtn'}
-        <a {if isset($input.href)}href="{$input.href}"{/if} {if isset($input.id)}id="{$input.id}"{/if} class="btn btn-default{if isset($input.class)} {$input.class}{/if}" {if isset($input.extraattr)}{$input.extraattr}{/if}>{if isset($input.icon)}<i class="{$input.icon}" ></i> {/if}{if isset($input.title)}{$input.title}{/if}</a>
+        {if  $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.6'}
+            <a {if isset($input.href)}href="{$input.href}"{/if} {if isset($input.id)}id="{$input.id}"{/if} class="button{if isset($input.class)} {$input.class}{/if}" {if isset($input.extraattr)}{$input.extraattr}{/if}>{if isset($input.title)}<span>{$input.title}</span>{/if}</a>
+                {else}
+            <a {if isset($input.href)}href="{$input.href}"{/if} {if isset($input.id)}id="{$input.id}"{/if} class="btn btn-default{if isset($input.class)} {$input.class}{/if}" {if isset($input.extraattr)}{$input.extraattr}{/if}>{if isset($input.icon)}<i class="{$input.icon}" ></i> {/if}{if isset($input.title)}{$input.title}{/if}</a>
+        {/if}
     {else}
         {$smarty.block.parent}
     {/if}
 {/block}
 
+{* show buttons in ps 1.5 *}
+{block name="other_input"}
+    {if $key == 'buttons' && $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.6'}
+        {* show buttons in ps 1.5 *}
+        <div class="margin-form">
+            {foreach from=$field item=btn key=k}
+                {if isset($btn.href) && trim($btn.href) != ''}
+                    <a {if isset($btn['ps15style'])}style="{$btn['ps15style']}"{/if} href="{$btn.href}" {if isset($btn['id'])}id="{$btn['id']}"{/if} class="button{if isset($btn['class'])} {$btn['class']}{/if}" {if isset($btn.js) && $btn.js} onclick="{$btn.js}"{/if}>{$btn.title}</a>
+                {else}
+                    <button type="button" {if isset($btn['id'])}id="{$btn['id']}"{/if} class="button{if isset($btn['class'])} {$btn['class']}{/if}" {if isset($btn['name'])}name="{$btn['name']}"{/if}{if isset($btn.js) && $btn.js} onclick="{$btn.js}"{/if}>{$btn.title}</button>
+                {/if}
+            {/foreach}
+        </div>
+    {else}
+        {$smarty.block.parent}
+    {/if}
+{/block}
 
+{* only available in >= ps 1.6 *}
 {block name="footer"}
 {capture name='form_submit_btn'}{counter name='form_submit_btn'}{/capture}
 {if isset($fieldset['form']['submit']) || isset($fieldset['form']['buttons']) && $smarty.const._PS_VERSION_|@addcslashes:'\'' < '1.6.0.3'}

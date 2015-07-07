@@ -32,9 +32,27 @@ if (!defined('_PS_VERSION_'))
  *  - 1.5.0.2
  *  - 1.5.0.3
  */
-if(!class_exists('PiwikAnalytics15Controller', false))
-    require './controllers/admin/piwikanalytics15.php';
+if (!class_exists('PiwikAnalytics15Controller', false)) {
+
+    if (!class_exists('ModuleAdminControllerCore', false)) {
+
+        abstract class ModuleAdminControllerCore extends AdminController {
+            
+        }
+
+    }
+
+    if (!class_exists('ModuleAdminController', false)) {
+
+        abstract class ModuleAdminController extends ModuleAdminControllerCore {
+            
+        }
+
+    }
+
+    require _PS_MODULE_DIR_ . '/piwikanalyticsjs/controllers/admin/piwikanalytics15.php';
+}
 
 class AdminPiwikAnalyticsController extends PiwikAnalytics15Controller {
-
+    
 }

@@ -260,6 +260,8 @@
 									{else}
 										{$input.name}
 									{/if}
+								{elseif $input.type == 'myBtn'}
+                                                                    <a {if isset($input.href)}href="{$input.href}"{/if} {if isset($input.id)}id="{$input.id}"{/if} class="button{if isset($input.class)} {$input.class}{/if}" {if isset($input.extraattr)}{$input.extraattr}{/if}>{if isset($input.title)}<span>{$input.title}</span>{/if}</a>
 								{/if}
 								{if isset($input.required) && $input.required && $input.type != 'radio'} <sup>*</sup>{/if}
 								{/block}{* end block input *}
@@ -297,7 +299,18 @@
 							name="{if isset($field.name)}{$field.name}{else}{$submit_action}{/if}{if isset($field.stay) && $field.stay}AndStay{/if}"
 							{if isset($field.class)}class="{$field.class}"{/if} />
 					</div>
-				{elseif $key == 'desc'}
+                                
+                                {elseif $key == 'buttons'}
+                                    <div class="margin-form">
+                                        {foreach from=$field item=btn key=k}
+                                            {if isset($btn.href) && trim($btn.href) != ''}
+                                                <a {if isset($btn['ps15style'])}style="{$btn['ps15style']}"{/if} href="{$btn.href}" {if isset($btn['id'])}id="{$btn['id']}"{/if} class="button{if isset($btn['class'])} {$btn['class']}{/if}" {if isset($btn.js) && $btn.js} onclick="{$btn.js}"{/if}>{$btn.title}</a>
+                                            {else}
+                                                <button type="button" {if isset($btn['id'])}id="{$btn['id']}"{/if} class="button{if isset($btn['class'])} {$btn['class']}{/if}" {if isset($btn['name'])}name="{$btn['name']}"{/if}{if isset($btn.js) && $btn.js} onclick="{$btn.js}"{/if}>{$btn.title}</button>
+                                            {/if}
+                                        {/foreach}
+                                    </div>
+                                {elseif $key == 'desc'}
 					<p class="clear">
 						{if is_array($field)}
 							{foreach $field as $k => $p}

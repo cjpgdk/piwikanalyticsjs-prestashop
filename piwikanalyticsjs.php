@@ -60,7 +60,10 @@ class piwikanalyticsjs extends Module {
         $this->author_uri = 'https://cmjscripter.net';
         $this->url = 'http://cmjnisse.github.io/piwikanalyticsjs-prestashop/';
         $this->need_instance = 1;
-        $this->ps_versions_compliancy = array('min' => '1.5.0.0', 'max' => _PS_VERSION_);
+
+        /* version 1.5 uses invalid compatibility check */
+        if (version_compare(_PS_VERSION_, '1.6.0.0', '>='))
+            $this->ps_versions_compliancy = array('min' => '1.5', 'max' => _PS_VERSION_);
 
         $this->bootstrap = true;
 
@@ -175,7 +178,7 @@ class piwikanalyticsjs extends Module {
             );
             foreach ($pkSites as $key => $value) {
                 $fields_form[0]['form']['input'][] = array(
-                    'name'=>'', /*avoid not isset error*/
+                    'name' => '', /* avoid not isset error */
                     'type' => 'myBtn',
                     'href' => $helperform->currentIndex . '&usePiwikSite=' . $value['idsite'] . "&token=" . Tools::getAdminTokenLite('AdminModules'),
                     /* 'class'=>'', */
@@ -186,6 +189,16 @@ class piwikanalyticsjs extends Module {
                 );
             }
             $fields_form[0]['form']['buttons'][] = array(
+                'title' => $this->l('Cancel'),
+                'icon' => 'process-icon-cancel',
+                'class' => ' donotdisable',
+                'ps15style' => 'font-size: 14px; padding: 5px 10px;',
+                'type' => 'button',
+                'href' => str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'),
+                'id' => 'btnCreateNewSite',
+                'name' => 'btnCreateNewSite',
+            );
+            $fields_form[0]['form']['buttons'][] = array(
                 'title' => $this->l('Create new Site'),
                 'icon' => 'process-icon-new',
                 'class' => '  pull-right donotdisable',
@@ -193,15 +206,6 @@ class piwikanalyticsjs extends Module {
                 'id' => 'btnCreateNewSite',
                 'name' => 'btnCreateNewSite',
                 'js' => "alert('this functionality is not implemented yet, i apologise for the inconvenience')",
-            );
-            $fields_form[0]['form']['buttons'][] = array(
-                'title' => $this->l('Cancel'),
-                'icon' => 'process-icon-cancel',
-                'class' => ' donotdisable',
-                'type' => 'button',
-                'href' => str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'),
-                'id' => 'btnCreateNewSite',
-                'name' => 'btnCreateNewSite',
             );
         } else if ($step == 2) {
             $step = 1;
@@ -294,12 +298,13 @@ class piwikanalyticsjs extends Module {
             $fields_form[0]['form']['submit'] = array(
                 'title' => $this->l('Next'),
                 'icon' => 'process-icon-next',
-                'class' => 'btn btn-default'
+                'class' => (version_compare(_PS_VERSION_, '1.6', '>=') ? 'btn btn-default' : 'button'),
             );
             $fields_form[0]['form']['buttons'][] = array(
                 'title' => $this->l('Cancel'),
                 'icon' => 'process-icon-cancel',
                 'class' => ' donotdisable',
+                'ps15style' => 'font-size: 14px; padding: 5px 10px;',
                 'type' => 'button',
                 'href' => str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'),
                 'id' => 'btnCreateNewSite',
@@ -345,8 +350,15 @@ class piwikanalyticsjs extends Module {
         if (version_compare(_PS_VERSION_, '1.5.2.999', "<="))
             $this->context->controller->addJqueryPlugin('fancybox', _PS_JS_DIR_ . 'jquery/plugins/');
 
-        if (version_compare(_PS_VERSION_, '1.6.0.0', ">="))
+        if (version_compare(_PS_VERSION_, '1.6', "<")) {
+            $this->context->controller->addJqueryUI(array(
+                'ui.core',
+                'ui.widget',
+            ));
+        }
+        if (version_compare(_PS_VERSION_, '1.5', ">="))
             $this->context->controller->addJqueryPlugin('tagify', _PS_JS_DIR_ . 'jquery/plugins/');
+
 
         // @todo process only returns a value on error so move them from $_html to $this->_errors
         $_html = "";
@@ -381,7 +393,7 @@ class piwikanalyticsjs extends Module {
             $languages[$languages_key]['is_default'] = ($languages_value['id_lang'] == (int) Configuration::get('PS_LANG_DEFAULT') ? true : false);
         }
         $helper = new HelperForm();
-        if (version_compare(_PS_VERSION_, '1.6.0.0', "<"))
+        if (version_compare(_PS_VERSION_, '1.5.0.13', "<"))
             $helper->base_folder = _PS_MODULE_DIR_ . 'piwikanalyticsjs/views/templates/helpers/form/';
 
         $helper->languages = $languages;
@@ -534,7 +546,7 @@ class piwikanalyticsjs extends Module {
             'required' => false
         );
         $fields_form[0]['form']['input'][] = array(
-            'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
+            'type' => (version_compare(_PS_VERSION_, '1.5', '>=') ? 'tags' : 'text'),
             'label' => $this->l('Hide known alias URLs'),
             'name' => PKHelper::CPREFIX . 'SET_DOMAINS',
             'desc' => $this->l('In the "Outlinks" report, hide clicks to known alias URLs, Example: *.example.com')
@@ -884,25 +896,25 @@ class piwikanalyticsjs extends Module {
                         ),
                     ),
                     array(
-                        'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
+                        'type' => (version_compare(_PS_VERSION_, '1.5', '>=') ? 'tags' : 'text'),
                         'label' => $this->l('Search Keyword Parameters'),
                         'name' => 'PKAdminSearchKeywordParameters',
                         'desc' => $this->l('the following keyword parameters must be excluded to avoid normal page views to be interpreted as searches (the tracking code will see them and make the required postback to Piwik if it is a real search), if you are only using PrestaShop with this site setting this to empty, will be sufficient')
-                                . "<br><strong>tag</strong> and <strong>search_query</strong>",
+                        . "<br><br><strong>tag</strong> and <strong>search_query</strong>",
                     ),
                     array(
-                        'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
+                        'type' => (version_compare(_PS_VERSION_, '1.5', '>=') ? 'tags' : 'text'),
                         'label' => $this->l('Search Category Parameters'),
                         'name' => 'PKAdminSearchCategoryParameters',
                     ),
                     array(
-                        'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
+                        'type' => (version_compare(_PS_VERSION_, '1.5', '>=') ? 'tags' : 'text'),
                         'label' => $this->l('Excluded ip addresses'),
                         'name' => 'PKAdminExcludedIps',
                         'desc' => $this->l('ip addresses excluded from tracking, separated by comma ","'),
                     ),
                     array(
-                        'type' => (version_compare(_PS_VERSION_, '1.6.0.0', '>=') ? 'tags' : 'text'),
+                        'type' => (version_compare(_PS_VERSION_, '1.5', '>=') ? 'tags' : 'text'),
                         'label' => $this->l('Excluded Query Parameters'),
                         'name' => 'PKAdminExcludedQueryParameters',
                         'desc' => $this->l('please read: http://piwik.org/faq/how-to/faq_81/'),
@@ -1959,20 +1971,18 @@ class piwikanalyticsjs extends Module {
             }
             try {
                 if (method_exists('Tab', 'getInstanceFromClassName')) {
-                    if (version_compare(_PS_VERSION_, '1.5.0.5', ">=") && version_compare(_PS_VERSION_, '1.5.3.999', "<="))
-                        $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics15');
-                    else if (version_compare(_PS_VERSION_, '1.5.0.4', "<="))
+                    $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics15');
+                    if (!isset($AdminParentStats) || !Validate::isLoadedObject($AdminParentStats))
                         $AdminParentStats = Tab::getInstanceFromClassName('AdminPiwikAnalytics');
-                    else
+                    if (!isset($AdminParentStats) || !Validate::isLoadedObject($AdminParentStats))
                         $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics');
                 } else if (method_exists('Tab', 'getIdFromClassName')) {
-                    if (version_compare(_PS_VERSION_, '1.5.0.5', ">=") && version_compare(_PS_VERSION_, '1.5.3.999', "<="))
-                        $tmpId = Tab::getIdFromClassName('PiwikAnalytics15');
-                    else if (version_compare(_PS_VERSION_, '1.5.0.4', "<="))
+                    $tmpId = TabCore::getIdFromClassName('PiwikAnalytics15');
+                    if (!isset($tmpId) || !((bool)$tmpId) || ((int)$tmpId < 1))
                         $tmpId = Tab::getIdFromClassName('AdminPiwikAnalytics');
-                    else
+                    if (!isset($tmpId) || !((bool)$tmpId) || ((int)$tmpId < 1))
                         $tmpId = Tab::getIdFromClassName('PiwikAnalytics');
-                    if ($tmpId != null && $tmpId > 0)
+                    if (!isset($tmpId) || !((bool)$tmpId) || ((int)$tmpId < 1))
                         $AdminParentStats = new Tab($tmpId);
                 }
                 if (isset($AdminParentStats) && ($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore)) {

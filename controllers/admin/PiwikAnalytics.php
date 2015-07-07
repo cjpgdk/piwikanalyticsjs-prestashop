@@ -3,7 +3,6 @@
 if (!defined('_PS_VERSION_'))
     exit;
 
-
 /**
  * Copyright (C) 2015 Christian Jensen
  *
@@ -46,8 +45,10 @@ class PiwikAnalyticsController extends ModuleAdminController {
         if ($this->ajax)
             return;
 
-        $this->initTabModuleList();
-        $this->addToolBarModulesListButton();
+        if (version_compare(_PS_VERSION_, '1.5.4.0', '>=')) {
+            $this->initTabModuleList();
+            $this->addToolBarModulesListButton();
+        }
         $this->toolbar_title = $this->l('Stats', 'PiwikAnalytics');
 
         if (_PS_VERSION_ < '1.6')
