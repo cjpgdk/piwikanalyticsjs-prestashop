@@ -1861,7 +1861,25 @@ class piwikanalyticsjs extends Module {
      */
     public function reset() {
         foreach ($this->getConfigFields(FALSE) as $key => $value) {
-            Configuration::deleteByName($key);
+            if (Shop::getContext() == Shop::CONTEXT_ALL) {
+                // delete for all shops.!
+                Configuration::deleteByName($key);
+            } else {
+                // delete only for current shop.!
+                if (!Validate::isConfigName($key))
+                    continue;
+                $id_shop = Shop::getContextShopID(true);
+                Db::getInstance()->execute('
+                    DELETE FROM `' . _DB_PREFIX_ . 'configuration_lang`
+                    WHERE `id_configuration` IN (
+                            SELECT `id_configuration`
+                            FROM `' . _DB_PREFIX_ . 'configuration`
+                            WHERE `name` = "' . pSQL($key) . '" AND `id_shop` = "' . pSQL($id_shop) . '"
+                    )');
+                Db::getInstance()->execute('
+                    DELETE FROM `' . _DB_PREFIX_ . 'configuration`
+                    WHERE `name` = "' . pSQL($key) . '" AND `id_shop` = "' . pSQL($id_shop) . '"');
+            }
         }
         return true;
     }
