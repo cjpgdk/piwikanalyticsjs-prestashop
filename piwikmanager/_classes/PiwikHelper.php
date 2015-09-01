@@ -56,7 +56,6 @@ class PiwikHelper {
     protected static $httpAuthUsername = "";
     protected static $httpAuthPassword = "";
     protected static $piwikHost = "";
-    protected static $_cachedResults = array();
 
     /**
      * create a log of all events if set to "1", usefull if tracking not working
@@ -97,28 +96,27 @@ class PiwikHelper {
         }
         self::$_debug_logger->logDebug($message);
     }
-    
 
-        /*
-         * SitesManager.addSite(
-         *     * siteName, 
-         *     * urls, 
-         *     * ecommerce = '', 
-         *     * siteSearch = '', 
-         *     * searchKeywordParameters = '',
-         *     * searchCategoryParameters = '', 
-         *     * excludedIps = '',
-         *     * excludedQueryParameters = '', 
-         *     * timezone = '', 
-         *     * currency = '', 
-         *     - group = '', 
-         *     - startDate = '', 
-         *     * excludedUserAgents = '', 
-         *     * keepURLFragments = '', 
-         *     - type = '', 
-         *     - settings = ''
-         * )
-         */
+    /*
+     * SitesManager.addSite(
+     *     * siteName, 
+     *     * urls, 
+     *     * ecommerce = '', 
+     *     * siteSearch = '', 
+     *     * searchKeywordParameters = '',
+     *     * searchCategoryParameters = '', 
+     *     * excludedIps = '',
+     *     * excludedQueryParameters = '', 
+     *     * timezone = '', 
+     *     * currency = '', 
+     *     - group = '', 
+     *     - startDate = '', 
+     *     * excludedUserAgents = '', 
+     *     * keepURLFragments = '', 
+     *     - type = '', 
+     *     - settings = ''
+     * )
+     */
 
     /**
      * update a piwik site.
@@ -200,7 +198,7 @@ class PiwikHelper {
 
         if ($result = self::getAsJsonDecoded($url . http_build_query($url_params))) {
             $url2 = self::getBaseURL($idSite) . "&method=SitesManager.getSiteFromId&format=JSON";
-            unset(self::$_cachedResults[md5($url2)]); // Clear cache for updated site
+            Cache::clean('PiwikHelper' . md5($url2)); // Clear cache for updated site
             return ($result->result == 'success' && $result->message == 'ok' ? TRUE : ($result->result != 'success' ? $result->message : FALSE));
         } else
             return FALSE;
@@ -217,13 +215,13 @@ class PiwikHelper {
         $url = self::getBaseURL();
         $url .= "&method=API.isPluginActivated&pluginName={$name}&format=JSON";
         $md5Url = md5($url);
-        if (!isset(self::$_cachedResults[$md5Url])) {
+        if (!Cache::isStored('PiwikHelper' . $md5Url)) {
             if ($result = self::getAsJsonDecoded($url))
-                self::$_cachedResults[$md5Url] = ((isset($result->value) && $result->value === false) ? false : true);
+                Cache::store('PiwikHelper' . $md5Url, ((isset($result->value) && $result->value === false) ? false : true));
             else
-                self::$_cachedResults[$md5Url] = false;
+                Cache::store('PiwikHelper' . $md5Url, false);
         }
-        return self::$_cachedResults[$md5Url];
+        return Cache::retrieve('PiwikHelper' . $md5Url);
     }
 
     /**
@@ -236,13 +234,13 @@ class PiwikHelper {
         $url = self::getBaseURL();
         $url .= "&method=SitesManager.getCurrencyList&format=JSON";
         $md5Url = md5($url);
-        if (!isset(self::$_cachedResults[$md5Url])) {
+        if (!Cache::isStored('PiwikHelper' . $md5Url)) {
             if ($result = self::getAsJsonDecoded($url))
-                self::$_cachedResults[$md5Url] = $result;
+                Cache::store('PiwikHelper' . $md5Url, $result);
             else
-                self::$_cachedResults[$md5Url] = array();
+                Cache::store('PiwikHelper' . $md5Url, array());
         }
-        return self::$_cachedResults[$md5Url];
+        return Cache::retrieve('PiwikHelper' . $md5Url);
     }
 
     /**
@@ -255,13 +253,13 @@ class PiwikHelper {
         $url = self::getBaseURL();
         $url .= "&method=SitesManager.getTimezonesList&format=JSON";
         $md5Url = md5($url);
-        if (!isset(self::$_cachedResults[$md5Url])) {
+        if (!Cache::isStored('PiwikHelper' . $md5Url)) {
             if ($result = self::getAsJsonDecoded($url))
-                self::$_cachedResults[$md5Url] = $result;
+                Cache::store('PiwikHelper' . $md5Url, $result);
             else
-                self::$_cachedResults[$md5Url] = array();
+                Cache::store('PiwikHelper' . $md5Url, array());
         }
-        return self::$_cachedResults[$md5Url];
+        return Cache::retrieve('PiwikHelper' . $md5Url);
     }
 
     /**
@@ -278,30 +276,31 @@ class PiwikHelper {
         $url = self::getBaseURL($idSite);
         $url .= "&method=SitesManager.getSiteFromId&format=JSON";
         $md5Url = md5($url);
-        if (!isset(self::$_cachedResults[$md5Url])) {
+        if (!Cache::isStored('PiwikHelper' . $md5Url)) {
             if ($result = self::getAsJsonDecoded($url))
-                self::$_cachedResults[$md5Url] = $result;
+                Cache::store('PiwikHelper' . $md5Url, $result);
             else
-                self::$_cachedResults[$md5Url] = false;
+                Cache::store('PiwikHelper' . $md5Url, false);
         }
-        if (self::$_cachedResults[$md5Url] !== FALSE) {
-            if (isset(self::$_cachedResults[$md5Url]->result) && self::$_cachedResults[$md5Url]->result == 'error') {
-                self::$error = self::$_cachedResults[$md5Url]->message;
+        $result = Cache::retrieve('PiwikHelper' . $md5Url);
+        if ($result !== FALSE) {
+            if (isset($result->result) && $result->result == 'error') {
+                self::$error = $result->message;
                 self::$errors[] = self::$error;
                 return false;
             }
-            if (!isset(self::$_cachedResults[$md5Url][0])) {
+            if (!isset($result[0])) {
                 return false;
             }
-            if (((bool) self::$_cachedResults[$md5Url][0]->ecommerce === false) || self::$_cachedResults[$md5Url][0]->ecommerce == 0) {
+            if (((bool) $result[0]->ecommerce === false) || $result[0]->ecommerce == 0) {
                 self::$error = self::l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page');
                 self::$errors[] = self::$error;
             }
-            if (((bool) self::$_cachedResults[$md5Url][0]->sitesearch) === false || self::$_cachedResults[$md5Url][0]->sitesearch == 0) {
+            if (((bool) $result[0]->sitesearch) === false || $result[0]->sitesearch == 0) {
                 self::$error = self::l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page');
                 self::$errors[] = self::$error;
             }
-            return self::$_cachedResults[$md5Url];
+            return $result;
         }
         return false;
     }
@@ -342,13 +341,13 @@ class PiwikHelper {
         }
         $url .= "&method=SitesManager.getSitesWithAdminAccess&format=JSON" . ($fetchAliasUrls ? '&fetchAliasUrls=1' : '');
         $md5Url = md5($url);
-        if (!isset(self::$_cachedResults[$md5Url])) {
+        if (!Cache::isStored('PiwikHelper' . $md5Url)) {
             if ($result = self::getAsJsonDecoded($url))
-                self::$_cachedResults[$md5Url] = $result;
+                Cache::store('PiwikHelper' . $md5Url, $result);
             else
-                self::$_cachedResults[$md5Url] = array();
+                Cache::store('PiwikHelper' . $md5Url, array());
         }
-        return self::$_cachedResults[$md5Url];
+        return Cache::retrieve('PiwikHelper' . $md5Url);
     }
 
     private static $require_initialize = true;

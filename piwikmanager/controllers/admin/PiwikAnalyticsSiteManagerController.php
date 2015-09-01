@@ -915,9 +915,9 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
             'type' => 'html',
             'name' => '<button'
             . ' onclick="alert(\'this functionality is not implemented yet, i apologise for the inconvenience\')"'
-            . ' name="btnCreateNewSite"'
+            . ' name="btnLookupAuthToken"'
             . ' class="btn btn-default "'
-            . ' id="btnCreateNewSite"'
+            . ' id="btnLookupAuthToken"'
             . ' type="button">'
             . '<i class="icon-search"></i> '
             . $this->l('Lookup - auth token', 'PiwikAnalyticsSiteManager')

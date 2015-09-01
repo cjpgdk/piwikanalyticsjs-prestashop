@@ -44,13 +44,13 @@ class PiwikPluginCustomOptOut extends PiwikHelper {
             $url = self::getBaseURL($siteId, NULL, NULL, 'API', NULL, NULL);
             $url .= "&method=CustomOptOut.getSiteDataId&format=JSON";
             $md5Url = md5($url);
-            if (!isset(self::$_cachedResults[$md5Url])) {
+            if (!Cache::isStored('PiwikPluginCustomOptOut' . $md5Url)) {
                 if ($result = self::getAsJsonDecoded($url))
-                    self::$_cachedResults[$md5Url] = $result;
+                    Cache::store('PiwikPluginCustomOptOut' . $md5Url, $result);
                 else
-                    self::$_cachedResults[$md5Url] = false;
+                    Cache::store('PiwikPluginCustomOptOut' . $md5Url, false);
             }
-            return self::$_cachedResults[$md5Url];
+            return Cache::retrieve('PiwikPluginCustomOptOut' . $md5Url);
         } else {
             self::$error = "PiwikPluginCustomOptOut::GetSiteDataId(): site id is not valid";
             self::$errors[] = self::$error;
@@ -80,17 +80,18 @@ class PiwikPluginCustomOptOut extends PiwikHelper {
             return false;
         }
         $md5Url = md5($url);
-        if (!isset(self::$_cachedResults[$md5Url])) {
+        if (!Cache::isStored('PiwikPluginCustomOptOut' . $md5Url)) {
             if ($result = self::getAsJsonDecoded($url))
-                self::$_cachedResults[$md5Url] = $result;
+                Cache::store('PiwikPluginCustomOptOut' . $md5Url, $result);
             else
-                self::$_cachedResults[$md5Url] = false;
+                Cache::store('PiwikPluginCustomOptOut' . $md5Url, false);
         }
-        if (self::$_cachedResults[$md5Url] !== false && isset(self::$_cachedResults[$md5Url]->result) && self::$_cachedResults[$md5Url]->result == 'error') {
-            self::$error = (isset(self::$_cachedResults[$md5Url]->message) ? 'PiwikPluginCustomOptOut::SaveSite(): ' . self::$_cachedResults[$md5Url]->message : 'Unkown error from PiwikPluginCustomOptOut::SaveSite();');
+        $result = Cache::retrieve('PiwikPluginCustomOptOut' . $md5Url);
+        if ($result !== false && isset($result->result) && $result->result == 'error') {
+            self::$error = (isset($result->message) ? 'PiwikPluginCustomOptOut::SaveSite(): ' . $result->message : 'Unkown error from PiwikPluginCustomOptOut::SaveSite();');
             self::$errors[] = self::$error;
         }
-        return self::$_cachedResults[$md5Url];
+        return $result;
     }
 
 }

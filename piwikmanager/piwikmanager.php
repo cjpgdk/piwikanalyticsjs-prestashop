@@ -65,11 +65,18 @@ class piwikmanager extends Module {
         exit;
     }
 
-    public function enable($force_all = false) {
-        parent::enable($force_all);
-    }
-
     public function disable($force_all = false) {
+        // check if module piwikanalytics is installed
+        if (Module::isInstalled('piwikanalytics')) {
+            $this->_errors[] = Tools::displayError($this->l('Can not disable ' . $this->displayName . ", Module 'piwikanalytics' depends on this module"));
+            return false;
+        }
+
+        // check if module piwikdashboard is installed
+        if (Module::isInstalled('piwikdashboard')) {
+            $this->_errors[] = Tools::displayError($this->l('Can not disable ' . $this->displayName . ", Module 'piwikdashboard' depends on this module"));
+            return false;
+        }
         parent::disable($force_all);
     }
 
