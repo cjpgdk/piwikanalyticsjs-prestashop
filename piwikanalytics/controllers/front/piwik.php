@@ -33,7 +33,7 @@
 if (!defined('_PS_VERSION_'))
     exit;
 
-class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
+class PiwikAnalyticsPiwikModuleFrontController extends ModuleFrontController {
 
     public function __construct() {
         // Edit the line below, and replace http://your-piwik-domain.example.org/piwik/

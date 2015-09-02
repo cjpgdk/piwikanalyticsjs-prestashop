@@ -21,6 +21,11 @@
  * @author Christian M. Jensen
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ * 
+ * 
+ * 
+ * 
+ * UNTESTED, NOT SURE IF NEEDED..
  */
 include(dirname(__FILE__) . '/../../config/config.inc.php');
 include(dirname(__FILE__) . '/../../init.php');
@@ -37,6 +42,7 @@ if (Tools::getIsset('pkapicall')) {
 
     // load PiwikHelper class
     PKClassLoader::LoadStatic('PiwikHelper');
+    PiwikHelper::initialize();
 
     if (method_exists('PiwikHelper', $apiMethod) && isset(PiwikHelper::$allowed_ajax_methods[$apiMethod])) {
         $required = PiwikHelper::$allowed_ajax_methods[$apiMethod]['required'];

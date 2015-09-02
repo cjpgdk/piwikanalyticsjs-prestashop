@@ -36,7 +36,7 @@ class piwikmanager extends Module {
 
         $this->name = 'piwikmanager';
         $this->tab = 'administration';
-        $this->version = '1.0-dev53';
+        $this->version = '1.0-dev58';
         $this->author = 'Christian M. Jensen';
         $this->displayName = $this->l('Piwik Site Manager');
         $this->author_uri = 'http://cmjscripter.net';
@@ -68,16 +68,16 @@ class piwikmanager extends Module {
     public function disable($force_all = false) {
         // check if module piwikanalytics is installed
         if (Module::isInstalled('piwikanalytics')) {
-            $this->_errors[] = Tools::displayError($this->l('Can not disable ' . $this->displayName . ", Module 'piwikanalytics' depends on this module"));
+            $this->_errors[] = Tools::displayError(sprintf($this->l('Can not disable  %s, Module \'piwikanalytics\' depends on this module'), $this->displayName));
             return false;
         }
 
         // check if module piwikdashboard is installed
         if (Module::isInstalled('piwikdashboard')) {
-            $this->_errors[] = Tools::displayError($this->l('Can not disable ' . $this->displayName . ", Module 'piwikdashboard' depends on this module"));
+            $this->_errors[] = Tools::displayError(sprintf($this->l('Can not disable  %s, Module \'piwikdashboard\' depends on this module'), $this->displayName));
             return false;
         }
-        parent::disable($force_all);
+        return parent::disable($force_all);
     }
 
     public function install() {

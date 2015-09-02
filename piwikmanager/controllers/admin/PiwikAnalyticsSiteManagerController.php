@@ -146,7 +146,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
 
     private function processAddNewSite() {
         $this->displayInformation('Add New Site: Not yet sorry..');
-        
+
 
         $addons = PKClassLoader::LoadAddons(array('controller' => & $this));
         foreach ($addons as $addon) {
@@ -839,12 +839,28 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
                     $tmp = 0; // if int cast faild set to zero (disabled)
                 Configuration::updateValue(PiwikHelper::CPREFIX . 'CRHTTPS', $tmp);
             }
+            // Validate and update debug
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'DEBUG')) {
                 $tmp = Tools::getValue(PiwikHelper::CPREFIX . 'DEBUG', 0);
                 if ((int) $tmp != $tmp)
                     $tmp = 0;
                 Configuration::updateValue(PiwikHelper::CPREFIX . 'DEBUG', $tmp);
             }
+            // Validate and update use cURL
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'USE_CURL')) {
+                $tmp = Tools::getValue(PiwikHelper::CPREFIX . 'USE_CURL', 0);
+                if ((int) $tmp != $tmp)
+                    $tmp = 0;
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'USE_CURL', $tmp);
+            }
+            
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'PAUTHUSR'))
+                Configuration::updateValue(PiwikHelper::CPREFIX . "PAUTHUSR", Tools::getValue(PiwikHelper::CPREFIX . 'PAUTHUSR', ''));
+            
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'PAUTHPWD') && Tools::getValue(PiwikHelper::CPREFIX . 'PAUTHPWD', '') != "")
+                Configuration::updateValue(PiwikHelper::CPREFIX . "PAUTHPWD", Tools::getValue(PiwikHelper::CPREFIX . 'PAUTHPWD', Configuration::get(PiwikHelper::CPREFIX . 'PAUTHPWD')));
+
+            
         }
     }
 
@@ -894,6 +910,27 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
             ),
         );
 
+        if (function_exists('curl_version')) {
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'switch',
+                'label' => $this->l('Use cURL'),
+                'name' => PiwikHelper::CPREFIX . 'USE_CURL',
+                'desc' => $this->l('Whether or not to use cURL in Piwik API and proxy requests?', 'PiwikAnalyticsSiteManager'),
+                'values' => array(
+                    array(
+                        'id' => 'active_on',
+                        'value' => 1,
+                        'label' => $this->l('Enabled', 'PiwikAnalyticsSiteManager')
+                    ),
+                    array(
+                        'id' => 'active_off',
+                        'value' => 0,
+                        'label' => $this->l('Disabled', 'PiwikAnalyticsSiteManager')
+                    )
+                ),
+            );
+        }
+
         $fields_form[0]['form']['input'][] = array(
             'type' => 'text',
             'label' => $this->l('Piwik Host'),
@@ -942,6 +979,30 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
             ),
         );
 
+
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'html',
+            'name' => $this->l('Authorization? if piwik is installed behind HTTP Basic Authorization (Both password and username must be filled before the values will be used)', 'PiwikAnalyticsSiteManager'),
+        );
+
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'text',
+            'label' => $this->l('Username', 'PiwikAnalyticsSiteManager'),
+            'name' => PiwikHelper::CPREFIX . 'PAUTHUSR',
+            'required' => false,
+            'autocomplete' => false,
+            'desc' => $this->l('this field along with password can be used if your Piwik installation is protected by HTTP Basic Authorization', 'PiwikAnalyticsSiteManager'),
+        );
+
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'password',
+            'label' => $this->l('Password', 'PiwikAnalyticsSiteManager'),
+            'name' => PiwikHelper::CPREFIX . 'PAUTHPWD',
+            'required' => false,
+            'autocomplete' => false,
+            'desc' => $this->l('this field along with username can be used if your Piwik installation is protected by HTTP Basic Authorization', 'PiwikAnalyticsSiteManager'),
+        );
+
         $fields_form[0]['form']['submit'] = array(
             'title' => $this->l('Save'),
             'class' => 'btn btn-default'
@@ -951,6 +1012,9 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
             PiwikHelper::CPREFIX . 'HOST' => Configuration::get(PiwikHelper::CPREFIX . 'HOST'),
             PiwikHelper::CPREFIX . 'TOKEN_AUTH' => Configuration::get(PiwikHelper::CPREFIX . 'TOKEN_AUTH'),
             PiwikHelper::CPREFIX . 'DEBUG' => Configuration::get(PiwikHelper::CPREFIX . 'DEBUG'),
+            PiwikHelper::CPREFIX . 'USE_CURL' => Configuration::get(PiwikHelper::CPREFIX . 'USE_CURL'),
+            PiwikHelper::CPREFIX . 'PAUTHUSR' => Configuration::get(PiwikHelper::CPREFIX . 'PAUTHUSR'),
+            PiwikHelper::CPREFIX . 'PAUTHPWD' => Configuration::get(PiwikHelper::CPREFIX . 'PAUTHPWD'),
         );
 
         return $helper->generateForm($fields_form);
