@@ -32,11 +32,21 @@ PiwikHelper::initialize();
 
 class piwikmanager extends Module {
 
+    private $_default_config_values = array();
+    
     public function __construct($name = null, $context = null) {
+        
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'CRHTTPS'] = 0;
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'DEBUG'] = 0;
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'USE_CURL'] = 0;
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'PAUTHUSR'] = '';
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'PAUTHPWD'] = '';
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'TOKEN_AUTH'] = '';
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'HOST'] = '';
 
         $this->name = 'piwikmanager';
         $this->tab = 'administration';
-        $this->version = '1.0-dev58';
+        $this->version = '1.0-dev59';
         $this->author = 'Christian M. Jensen';
         $this->displayName = $this->l('Piwik Site Manager');
         $this->author_uri = 'http://cmjscripter.net';
@@ -84,6 +94,11 @@ class piwikmanager extends Module {
         if (Shop::isFeatureActive()) {
             Shop::setContext(Shop::CONTEXT_ALL);
         }
+        foreach ($this->_default_config_values as $key => $value) {
+            /* only set if not isset, compatibility with module 'piwikanalyticsjs' */
+            if (Configuration::getGlobalValue($key) === false)
+                Configuration::updateGlobalValue($key, $value);
+        }
         return parent::install() &&
                 $this->installTabs() &&
                 $this->registerHook('displayBackOfficeHeader');
@@ -105,6 +120,10 @@ class piwikmanager extends Module {
 
         if (!parent::uninstall()) {
             return false;
+        }
+        
+        foreach ($this->_default_config_values as $key => $value) {
+            Configuration::deleteByName($key);
         }
 
         // Tabs

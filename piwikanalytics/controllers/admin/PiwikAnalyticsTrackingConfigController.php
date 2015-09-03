@@ -63,7 +63,134 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
         $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki/Piwik-Analytics');
     }
 
+    public function processSubmitConfiguration() {
+        if (Tools::isSubmit('submitAddconfiguration')) {
+
+            // update site id.
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'SITEID')) {
+                $piwikSiteID = (int) Tools::getValue(PiwikHelper::CPREFIX . 'SITEID');
+                if (Validate::isInt($piwikSiteID) && $piwikSiteID > 0) {
+                    Configuration::updateValue(PiwikHelper::CPREFIX . 'SITEID', $piwikSiteID);
+                } else {
+                    $this->errors[] = Tools::displayError($this->l('Piwik site id is not valid, must be an integer and higher than 0', $this->name));
+                }
+            }
+
+            // update cookie domain
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'COOKIE_DOMAIN')) {
+                $piwikCookieDomain = preg_replace('/\s+/', '', Tools::getValue(PiwikHelper::CPREFIX . 'COOKIE_DOMAIN'));
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'COOKIE_DOMAIN', $piwikCookieDomain);
+            }
+
+            // update alias urls
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'SET_DOMAINS')) {
+                $piwikSetDomain = preg_replace('/\s+/', '', Tools::getValue(PiwikHelper::CPREFIX . 'SET_DOMAINS'));
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'SET_DOMAINS', $piwikSetDomain);
+            }
+
+            // update do not track
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'DNT')) {
+                $piwikDNT = (int) Tools::getValue(PiwikHelper::CPREFIX . 'DNT');
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'DNT', ($piwikDNT == 1 ? 1 : 0));
+            }
+
+            // update currency
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'DEFAULT_CURRENCY')) {
+                $piwikDefaultCurrency = strtoupper(Tools::getValue(PiwikHelper::CPREFIX . 'DEFAULT_CURRENCY'));
+                if (!empty($piwikDefaultCurrency) && $piwikDefaultCurrency !== false) {
+                    $cisd = Currency::getIdByIsoCode($piwikDefaultCurrency);
+                    if ($cisd !== false && Validate::isInt($cisd)) {
+                        Configuration::updateValue(PiwikHelper::CPREFIX . 'DEFAULT_CURRENCY', $piwikDefaultCurrency);
+                    } else {
+                        $this->errors[] = Tools::displayError($this->l('Selected currency do not exists in this shop.!', $this->name));
+                    }
+                } else {
+                    $this->errors[] = Tools::displayError($this->l('Currency cannot be empty', $this->name));
+                }
+            }
+
+            // update extra html
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'EXHTML')) {
+                $piwikEXHTML = Tools::getValue(PiwikHelper::CPREFIX . 'EXHTML');
+                Configuration::updateValue(PKHelper::CPREFIX . 'EXHTML', $piwikEXHTML, TRUE);
+            }
+
+            // update report product id v1
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'PRODID_V1')) {
+                $PRODID_V1 = Tools::getValue(PiwikHelper::CPREFIX . 'PRODID_V1');
+                Configuration::updateValue(PKHelper::CPREFIX . 'PRODID_V1', $PRODID_V1);
+            }
+
+            // update report product id v2
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'PRODID_V2')) {
+                $PRODID_V2 = Tools::getValue(PiwikHelper::CPREFIX . 'PRODID_V2');
+                Configuration::updateValue(PKHelper::CPREFIX . 'PRODID_V2', $PRODID_V2);
+            }
+
+            // update report product id v3
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'PRODID_V3')) {
+                $PRODID_V3 = Tools::getValue(PiwikHelper::CPREFIX . 'PRODID_V3');
+                Configuration::updateValue(PKHelper::CPREFIX . 'PRODID_V3', $PRODID_V3);
+            }
+
+            // update session timout
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'SESSION_TIMEOUT')) {
+                $piwikSessionTimout = (int) Tools::getValue(PiwikHelper::CPREFIX . 'SESSION_TIMEOUT');
+                if (Validate::isInt($piwikSessionTimout) && $piwikSessionTimout > 0) {
+                    Configuration::updateValue(PKHelper::CPREFIX . 'SESSION_TIMEOUT', $piwikSessionTimout);
+                } else {
+                    $this->errors[] = Tools::displayError($this->l('Session Timout is not valid, must be an integer and higher than 0', $this->name));
+                }
+            }
+
+            // update cookie timout
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'COOKIE_TIMEOUT')) {
+                $piwikCookieTimout = (int) Tools::getValue(PiwikHelper::CPREFIX . 'COOKIE_TIMEOUT');
+                if (Validate::isInt($piwikCookieTimout) && $piwikCookieTimout > 0) {
+                    Configuration::updateValue(PKHelper::CPREFIX . 'COOKIE_TIMEOUT', $piwikCookieTimout);
+                } else {
+                    $this->errors[] = Tools::displayError($this->l('Cookie Timout is not valid, must be an integer and higher than 0', $this->name));
+                }
+            }
+
+            // update referral cookie timeout 
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'RCOOKIE_TIMEOUT')) {
+                $piwikCookieTimout = (int) Tools::getValue(PiwikHelper::CPREFIX . 'RCOOKIE_TIMEOUT');
+                if (Validate::isInt($piwikCookieTimout) && $piwikCookieTimout > 0) {
+                    Configuration::updateValue(PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT', $piwikCookieTimout);
+                } else {
+                    $this->errors[] = Tools::displayError($this->l('Referral Cookie Timout is not valid, must be an integer and higher than 0', $this->name));
+                }
+            }
+
+            // update cookie path 
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'COOKIE_PATH')) {
+                $piwikCookiePath = preg_replace('/\s+/', '', Tools::getValue(PiwikHelper::CPREFIX . 'COOKIE_PATH'));
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'COOKIE_PATH', $piwikCookiePath);
+            }
+
+            // update use proxy
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'USE_PROXY')) {
+                $USE_PROXY = Tools::getValue(PiwikHelper::CPREFIX . 'USE_PROXY');
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'USE_PROXY', ($USE_PROXY == 1 ? 1 : 0));
+            }
+
+            // update proxy script
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'PROXY_SCRIPT')) {
+                $PROXY_SCRIPT = str_replace(
+                        array("http://", "https://", '//'),
+                        '',
+                        preg_replace('/\s+/', '', Tools::getValue(PiwikHelper::CPREFIX . 'PROXY_SCRIPT'))
+                );
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'PROXY_SCRIPT', $PROXY_SCRIPT);
+            }
+
+            $this->confirmations[] = $this->l("Update process complete", $this->name);
+        }
+    }
+
     public function renderForm() {
+        $this->processSubmitConfiguration();
 
         $this->addJqueryPlugin('tagify', _PS_JS_DIR_ . 'jquery/plugins/');
 
@@ -92,6 +219,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             PiwikHelper::CPREFIX . 'RCOOKIE_TIMEOUT' => ($PIWIK_RCOOKIE_TIMEOUT != 0 ? (int) $PIWIK_RCOOKIE_TIMEOUT : (int) (piwikanalytics::PK_RC_TIMEOUT)),
             PiwikHelper::CPREFIX . 'USE_PROXY' => Configuration::get(PiwikHelper::CPREFIX . 'USE_PROXY'),
             PiwikHelper::CPREFIX . 'PROXY_SCRIPT' => empty($PIWIK_PROXY_SCRIPT) ? str_replace(array("http://", "https://"), '', Context::getContext()->link->getModuleLink($this->module->name, 'piwik')) : $PIWIK_PROXY_SCRIPT,
+            PiwikHelper::CPREFIX . 'COOKIE_PATH' => Configuration::get(PiwikHelper::CPREFIX . 'COOKIE_PATH'),
         );
 
         $piwik_host = $this->fields_value[PiwikHelper::CPREFIX . 'HOST'];
@@ -100,34 +228,56 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
         if (!empty($piwik_token) && ($piwik_token !== false) && ((!empty($piwik_host) && ($piwik_host !== false)))) {
             // get current selected site
             $piwik_site = PiwikHelper::getPiwikSite();
+        } else {
+            $this->errors[] = str_replace(
+                    array('{LINK}', '{/LINK}'), array('<a href="' . Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager') . '">', "</a>"), Tools::displayError($this->l("You need to configure Piwik Site ID and/or Auth token in {LINK}Site Manager{/LINK}", $this->name))
+            );
         }
 
         // display host/token or link to manager.
         if (empty($piwik_host) || ($piwik_host === false)) {
-            $piwik_host = "<a href='" . Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager') . "'>" . $this->l('Missing click here to goto Piwik Manager.', $this->name) . "</a>";
+            $piwik_host = "<a href='" . Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager') . "'>" . $this->l('Missing click here to goto Site Manager.', $this->name) . "</a>";
         }
         if (empty($piwik_token) || ($piwik_token === false)) {
-            $piwik_token = "<a href='" . Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager') . "'>" . $this->l('Missing click here to goto Piwik Manager.', $this->name) . "</a>";
+            $piwik_token = "<a href='" . Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager') . "'>" . $this->l('Missing click here to goto Site Manager.', $this->name) . "</a>";
         } else {
             $piwik_token = $this->l('***HIDDEN***', $this->name);
         }
 
         // do stuff with valid site
         $piwik_currency = $this->l('unknown', $this->name);
+        $piwik_image_url = "";
+        $piwik_image_url_proxy = "";
         if ($piwik_site !== false) {
             $piwik_currency = $piwik_site[0]->currency;
+            $piwik_image_url = '&lt;noscript&gt;' . htmlentities(PiwikHelper::getImageTrackingCode()) . '&lt;/noscript&gt;';
+
+            if ((bool) Configuration::get('PS_REWRITING_SETTINGS'))
+                $piwik_image_url_proxy = str_replace($this->fields_value[PiwikHelper::CPREFIX . 'HOST'] . 'piwik.php', $this->fields_value[PiwikHelper::CPREFIX . 'PROXY_SCRIPT'], $piwik_image_url);
+            else
+                $piwik_image_url_proxy = str_replace($this->fields_value[PiwikHelper::CPREFIX . 'HOST'] . 'piwik.php?', $this->fields_value[PiwikHelper::CPREFIX . 'PROXY_SCRIPT'] . '&', $piwik_image_url);
         }
 
         // done with piwik lookups display errors if any
         $this->displayErrorsFromPiwikHelper();
 
         // load currencies installed in the shop
+        $piwik_currency_valid = false;
         $currencies = array();
         foreach (Currency::getCurrencies() as $key => $val) {
             $currencies[$key] = array(
                 'iso_code' => $val['iso_code'],
                 'name' => "{$val['name']} {$val['iso_code']}",
             );
+
+            if ($this->fields_value[PiwikHelper::CPREFIX . 'DEFAULT_CURRENCY'] == $val['iso_code'])
+                $piwik_currency_valid = true;
+        }
+        if (!$piwik_currency_valid) {
+            $this->errors[] = Tools::displayError(sprintf($this->l("The selected currency (%s), is not installed in this shop, either install it or change it.", $this->name), $this->fields_value[PiwikHelper::CPREFIX . 'DEFAULT_CURRENCY']));
+        }
+        if ($this->fields_value[PiwikHelper::CPREFIX . 'DEFAULT_CURRENCY'] != $piwik_currency) {
+            $this->errors[] = Tools::displayError(sprintf($this->l("The selected currency (%s), do not match the currency selected in piwik (%s)", $this->name), $this->fields_value[PiwikHelper::CPREFIX . 'DEFAULT_CURRENCY'], $piwik_currency));
         }
 
         // main form.
@@ -222,6 +372,24 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                             'id' => 'iso_code',
                             'name' => 'name'
                         ),
+                    ),
+                    array(
+                        'type' => 'html',
+                        'name' => $this->l('Piwik image tracking code append one of them to field "Extra HTML" this will add images tracking code to all your pages', $this->name) . "<br>"
+                        . "<strong>" . $this->l('default', $this->name) . "</strong>:<br /><i>{$piwik_image_url}</i><br>"
+                        . "<strong>" . $this->l('using proxy script', $this->name) . "</strong>:<br /><i>{$piwik_image_url_proxy}</i><br>"
+                        . (version_compare(_PS_VERSION_, '1.6.0.7', '>=') ?
+                                "<br><strong>{$this->l("Before you add the image tracking code make sure the HTMLPurifier library isn't in use, check the settings in 'Preferences => General', you can enable the HTMLPurifier again after you made your changes", $this->name)}</strong>" :
+                                ""
+                        )
+                    ),
+                    array(
+                        'type' => 'textarea',
+                        'label' => $this->l('Extra HTML', $this->name),
+                        'name' => PiwikHelper::CPREFIX . 'EXHTML',
+                        'desc' => $this->l('Some extra HTML code to put after the piwik tracking code, this can be any html of your choice', $this->name),
+                        'rows' => 10,
+                        'cols' => 50,
                     )
                 ),
                 'submit' => array(
@@ -286,6 +454,12 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                 ),
                 array(
                     'type' => 'text',
+                    'label' => $this->l('Piwik Cookie Path', $this->name),
+                    'name' => PiwikHelper::CPREFIX . 'COOKIE_PATH',
+                    'required' => false,
+                ),
+                array(
+                    'type' => 'text',
                     'label' => $this->l('Piwik Session Cookie timeout', $this->name),
                     'name' => PiwikHelper::CPREFIX . 'SESSION_TIMEOUT',
                     'required' => false,
@@ -347,6 +521,17 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
         // $this->fields_form_override
 
         return parent::renderForm();
+    }
+
+    public function displayConfirmation($string) {
+        if (method_exists($this->module, 'displayConfirmation')) {
+            return $this->module->displayConfirmation($string);
+        }
+        $output = '<div class="bootstrap">'
+                . '<div class="module_confirmation conf confirm alert alert-success">'
+                . '<button type="button" class="close" data-dismiss="alert">&times;</button>'
+                . $string . '</div></div>';
+        return $output;
     }
 
     private function displayErrors($errors) {

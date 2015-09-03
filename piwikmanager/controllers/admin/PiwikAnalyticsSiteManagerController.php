@@ -140,7 +140,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
 //    }
 
     private function deletePiwikAnalyticsSite($languages, $idSite) {
-        die("delete, site: " . Tools::getValue('idsite'));
+        //die("delete, site: " . Tools::getValue('idsite'));
         $this->displayInformation('Delete Site: Not yet sorry..');
     }
 
@@ -853,14 +853,12 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
                     $tmp = 0;
                 Configuration::updateValue(PiwikHelper::CPREFIX . 'USE_CURL', $tmp);
             }
-            
-            if (Tools::getIsset(PiwikHelper::CPREFIX . 'PAUTHUSR'))
-                Configuration::updateValue(PiwikHelper::CPREFIX . "PAUTHUSR", Tools::getValue(PiwikHelper::CPREFIX . 'PAUTHUSR', ''));
-            
-            if (Tools::getIsset(PiwikHelper::CPREFIX . 'PAUTHPWD') && Tools::getValue(PiwikHelper::CPREFIX . 'PAUTHPWD', '') != "")
-                Configuration::updateValue(PiwikHelper::CPREFIX . "PAUTHPWD", Tools::getValue(PiwikHelper::CPREFIX . 'PAUTHPWD', Configuration::get(PiwikHelper::CPREFIX . 'PAUTHPWD')));
 
-            
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'PAUTHUSR'))
+                Configuration::updateValue(PiwikHelper::CPREFIX . "PAUTHUSR", Tools::getValue(PiwikHelper::CPREFIX . 'PAUTHUSR', Configuration::get(PiwikHelper::CPREFIX . 'PAUTHUSR')));
+
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'PAUTHPWD'))
+                Configuration::updateValue(PiwikHelper::CPREFIX . "PAUTHPWD", Tools::getValue(PiwikHelper::CPREFIX . 'PAUTHPWD', Configuration::get(PiwikHelper::CPREFIX . 'PAUTHPWD')));
         }
     }
 
@@ -878,6 +876,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
         $helper->allow_employee_form_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         $helper->show_toolbar = false;
         $helper->toolbar_scroll = false;
+        $helper->override_folder = false;
         $helper->currentIndex = AdminController::$currentIndex;
         $helper->title = $this->module->displayName;
         $helper->submit_action = 'submitUpdate' . $this->module->name;
@@ -999,7 +998,6 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
             'label' => $this->l('Password', 'PiwikAnalyticsSiteManager'),
             'name' => PiwikHelper::CPREFIX . 'PAUTHPWD',
             'required' => false,
-            'autocomplete' => false,
             'desc' => $this->l('this field along with username can be used if your Piwik installation is protected by HTTP Basic Authorization', 'PiwikAnalyticsSiteManager'),
         );
 
@@ -1018,6 +1016,28 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
         );
 
         return $helper->generateForm($fields_form);
+    }
+
+    public function createTemplate($tpl_name) {
+        if ($this->override_folder) {
+            if ($this->context->controller instanceof ModuleAdminController)
+                $override_tpl_path = $this->context->controller->getTemplatePath() . $this->override_folder . $this->base_folder . $tpl_name;
+            else if ($this->module)
+                $override_tpl_path = _PS_MODULE_DIR_ . $this->module->name . '/views/templates/admin/_configure/' . $this->override_folder . $this->base_folder . $tpl_name;
+            else {
+                if (file_exists($this->context->smarty->getTemplateDir(1) . $this->override_folder . $this->base_folder . $tpl_name))
+                    $override_tpl_path = $this->context->smarty->getTemplateDir(1) . $this->override_folder . $this->base_folder . $tpl_name;
+                else if (file_exists($this->context->smarty->getTemplateDir(0) . 'controllers' . DIRECTORY_SEPARATOR . $this->override_folder . $this->base_folder . $tpl_name))
+                    $override_tpl_path = $this->context->smarty->getTemplateDir(0) . 'controllers' . DIRECTORY_SEPARATOR . $this->override_folder . $this->base_folder . $tpl_name;
+            }
+        }
+        else if ($this->module)
+            $override_tpl_path = _PS_MODULE_DIR_ . $this->module->name . '/views/templates/admin/_configure/' . $this->base_folder . $tpl_name;
+
+        if (isset($override_tpl_path) && file_exists($override_tpl_path))
+            return $this->context->smarty->createTemplate($override_tpl_path, $this->context->smarty);
+        else
+            return $this->context->smarty->createTemplate($this->base_folder . $tpl_name, $this->context->smarty);
     }
 
     public function displayConfirmation($string) {

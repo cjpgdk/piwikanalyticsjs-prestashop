@@ -205,6 +205,52 @@ class PiwikHelper {
     }
 
     /**
+     * get image tracking code for use with or without proxy script
+     * @param int $idSite
+     * @param string $piwikUrl
+     * @param string $actionName
+     * @param string $idGoal
+     * @param type $revenue
+     * @return string|boolean boolean false on error, otherwize html image code
+     */
+    public static function getImageTrackingCode($idSite = null, $piwikUrl = NULL, $actionName = 'NoJavaScript', $idGoal = '', $revenue = '') {
+        if ((int) $idSite == 0 || $idSite == NULL)
+            $idSite = (int) Configuration::get(self::CPREFIX . 'SITEID');
+
+        if ($piwikUrl == NULL)
+            $piwikUrl = Configuration::get(self::CPREFIX . 'HOST');
+
+        if (!self::baseTest() || ($idSite <= 0))
+            return $ret;
+
+        $url = self::getBaseURL();
+        $url .= "&method=SitesManager.getImageTrackingCode&format=JSON";
+        $url .= "&piwikUrl=" . urlencode(rtrim($piwikUrl, '/'));
+        
+        if ($actionName != NULL)
+            $url .= "&actionName=" . urlencode($actionName);
+        
+        if(!empty($idGoal))
+            $url .= "&idGoal=" . urlencode($idGoal);
+        
+        if(!empty($revenue))
+            $url .= "&revenue=" . urlencode($revenue);
+
+        $md5Url = md5($url);
+        
+        if (!Cache::isStored('PiwikHelper' . $md5Url)) {
+            if ($result = self::getAsJsonDecoded($url))
+                Cache::store('PiwikHelper' . $md5Url, $result->value);
+            else
+                Cache::store('PiwikHelper' . $md5Url, false);
+        }
+        $result = Cache::retrieve('PiwikHelper' . $md5Url);
+        if ($result !== FALSE)
+            return $result;
+        return false;
+    }
+
+    /**
      * check if a plugin is installed and active in piwik
      * @param string $name name of the plugin
      * @return boolean
@@ -541,7 +587,6 @@ class PiwikHelper {
     private static function l($string, $specific = false) {
         return Translate::getModuleTranslation('piwikmanager', $string, ($specific) ? $specific : 'piwikhelper');
         // the following lines are need for the translation to work properly
-        // $this->l('I need Site ID and Auth Token before i can get your image tracking code')
         // $this->l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page')
         // $this->l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page')
         // $this->l('Unable to connect to api %s')
