@@ -511,7 +511,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                     'hint' => $this->l('Example: www.example.com/pkproxy.php', $this->name),
                     'desc' => sprintf($this->l('the FULL url+path to proxy script to use, build-in: [%s]', $this->name), Context::getContext()->link->getModuleLink($this->module->name, 'piwik')),
                     'required' => false
-                )
+                ),
             ),
             'submit' => array(
                 'title' => $this->l('Save', $this->name),

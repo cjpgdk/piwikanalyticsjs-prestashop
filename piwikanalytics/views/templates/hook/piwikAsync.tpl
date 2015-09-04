@@ -4,21 +4,25 @@
         g.type = "text/javascript";
         g.defer = true;
         g.async = true;
-    {if $useProxy eq true}
-        g.src = "{$protocol}{$piwikHost}";
+    {if $piwikUseProxy eq true}
+        g.src = "{$piwikProtocol}{$piwikHost}";
     {else}
-        g.src = "{$protocol}{$piwikHost}piwik.js";
+        g.src = "{$piwikProtocol}{$piwikHost}piwik.js";
     {/if}
         s.parentNode.insertBefore(g, s);
     })();
     window.piwikTracker = null;
     window.piwikAsyncInit = function () {
         try {
-            var u = "{$protocol}{$piwikHost}";
-    {if $useProxy eq true}
-            window.piwikTracker = Piwik.getTracker(u, {$idSite});
+            var u = "{$piwikProtocol}{$piwikHost}";
+    {if $piwikUseProxy eq true}
+            window.piwikTracker = Piwik.getTracker(u, {$piwikIdSite});
     {else}
-            window.piwikTracker = Piwik.getTracker(u + 'piwik.php', {$idSite});
+            window.piwikTracker = Piwik.getTracker(u + 'piwik.php', {$piwikIdSite});
+    {/if}
+    {hook h="piwikTrackerStart"}
+    {if $piwikDNT eq true}
+            window.piwikTracker.setDoNotTrack(true);
     {/if}
     {if isset($piwikCookieDomain) && $piwikCookieDomain != ""}
             window.piwikTracker.setCookieDomain('{$piwikCookieDomain}');
@@ -36,15 +40,51 @@
             window.piwikTracker.setSessionCookieTimeout({$piwikSessionCookieTimeout});
     {/if}
             window.piwikTracker.enableLinkTracking();
+    {if isset($piwikUserId)}
+            window.piwikTracker.setUserId('{$piwikUserId}');
+    {/if}
+    {if isset($piwikProducts) && is_array($piwikProducts)}
+        {foreach from=$piwikProducts item=piwikproduct}
+            window.piwikTracker.setEcommerceView('{$piwikproduct.sku}', '{$piwikproduct.name|escape:'htmlall':'UTF-8'}', {$piwikproduct.category}, '{$piwikproduct.price|floatval}');
+        {/foreach}
+    {/if}
+    {if isset($piwikCategory)}
+            window.piwikTracker.setEcommerceView(false, false, '{$piwikCategory|escape:'htmlall':'UTF-8'}');
+    {/if}
+    {if $piwikIsCart eq true}
+        {if is_array($piwikCartProducts)}
+            {foreach from=$piwikCartProducts item=cartproduct}
+            window.piwikTracker.addEcommerceItem('{$cartproduct.sku}', '{$cartproduct.name}', {$cartproduct.category}, '{$cartproduct.price}', '{$cartproduct.quantity}');
+            {/foreach}
+        {/if}
+        {if isset($piwikCartTotal)}
+            window.piwikTracker.trackEcommerceCartUpdate({$piwikCartTotal|floatval});
+        {/if}
+    {/if}
+    {if $piwikIsOrder eq true}
+        {if is_array($piwikOrderProducts)}
+            {foreach from=$piwikOrderProducts item=orderproduct}
+            window.piwikTracker.addEcommerceItem('{$orderproduct.sku}', '{$orderproduct.name}', {$orderproduct.category}, '{$orderproduct.price}', '{$orderproduct.quantity}');
+            {/foreach}
+        {/if}
+            window.piwikTracker.trackEcommerceOrder("{$piwikOrderDetails.id}", '{$piwikOrderDetails.total}', '{$piwikOrderDetails.sub_total}', '{$piwikOrderDetails.tax}', '{$piwikOrderDetails.shipping}', '{$piwikOrderDetails.discount}');
 
-    {if isset($userId)}
-            window.piwikTracker.setUserId('{$userId}');
+    {/if}
+    {if isset($piwikMaintenanceTitle)}
+            window.piwikTracker.setDocumentTitle('{$piwikMaintenanceTitle}/' + document.title);
     {/if}
 
-    {if $isOrder eq true}
-
+    {if isset($piwik404) && $piwik404 eq true}
+            window.piwikTracker.setDocumentTitle('404/URL = ' + encodeURIComponent(document.location.pathname + document.location.search) + '/From = ' + encodeURIComponent(document.referrer));
     {/if}
+    {hook h="piwikTrackerEnd"}
+    {if isset($piwikIsSearch) && $piwikIsSearch eq true}
+        {hook h="piwikTrackerSiteSearch"}
+            window.piwikTracker.trackSiteSearch('{$piwikSearchWord}', false, '{$piwikSearchTotal}');
+    {else}
+        {hook h="piwikTrackerPageView"}
             window.piwikTracker.trackPageView();
+    {/if}
         } catch (err) {
         }
     };

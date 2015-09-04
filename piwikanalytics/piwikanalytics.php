@@ -1,5 +1,18 @@
 <?php
 
+/*
+ * dev notes.
+ * 
+ * hooks:
+ * 
+ * - executed from smarty template, can be used by other modules to extend the piwik tracking code
+ * 
+ * piwikTrackerStart      : executed after getTracker() method call
+ * piwikTrackerEnd        : executed before trackPageView() and before trackSiteSearch()
+ * piwikTrackerPageView   : executed before trackPageView() method call 
+ * piwikTrackerSiteSearch : executed before trackSiteSearch() method call 
+ */
+
 if (!defined('_PS_VERSION_'))
     exit;
 
@@ -49,12 +62,16 @@ class piwikanalytics extends Module {
 
     private $_default_config_values = array();
     private static $isOrder = FALSE;
-    // ||DEV|OPTION|REMOVE||
+    // ||DEV|REMOVE||
     private $_hooks = array(
         'displayHeader',
-        'displayFooter'
+        'displayFooter',
+        'actionSearch',
+        'displayRightColumnProduct',
+        'displayMaintenance',
+        'orderConfirmation'
     );
-
+    
     public function __construct($name = null, $context = null) {
 
         $this->_default_config_values[PiwikHelper::CPREFIX . 'COOKIE_DOMAIN'] = Tools::getShopDomain();
@@ -79,11 +96,13 @@ class piwikanalytics extends Module {
 
         $this->name = 'piwikanalytics';
         $this->tab = 'analytics_stats';
-        $this->version = '1.0-dev15';
+        $this->version = '1.0-dev16';
         $this->author = 'Christian M. Jensen';
         $this->displayName = 'Piwik Analytics Tracking';
         $this->author_uri = 'http://cmjscripter.net';
         $this->url = 'http://cmjnisse.github.io/piwikanalyticsjs-prestashop/';
+
+        $this->ps_versions_compliancy = array('min' => '1.6.0.0', 'max' => '1.6.999.999');
 
         $this->bootstrap = true;
 
@@ -101,6 +120,7 @@ class piwikanalytics extends Module {
             $this->smarty = $this->context->smarty->createData($this->context->smarty);
         }
 
+        // ||DEV|REMOVE||
         foreach ($this->_hooks as $hook) {
             if (!$this->isRegisteredInHook($hook))
                 $this->registerHook($hook);
@@ -114,6 +134,174 @@ class piwikanalytics extends Module {
 
     /* ## HOOKs ## */
 
+    public function hookOrderConfirmation($params) {
+        // short code the config prefix
+        $CPREFIX = PiwikHelper::CPREFIX;
+        if ((int) Configuration::get($CPREFIX . 'SITEID') <= 0)
+            return "";
+
+        $order = $params['objOrder'];
+        if (Validate::isLoadedObject($order)) {
+            $piwikAsync = true;
+
+            // get all the required data from db config
+            $dbConfigKeys = array(
+                $CPREFIX . 'SITEID',
+                $CPREFIX . 'USE_PROXY',
+                $CPREFIX . 'PROXY_SCRIPT',
+                $CPREFIX . 'HOST',
+                $CPREFIX . 'COOKIE_DOMAIN',
+                $CPREFIX . 'SET_DOMAINS',
+                $CPREFIX . 'COOKIE_TIMEOUT',
+                $CPREFIX . 'RCOOKIE_TIMEOUT',
+                $CPREFIX . 'SESSION_TIMEOUT',
+                $CPREFIX . 'DNT',
+            );
+            $dbConfigValues = Configuration::getMultiple($dbConfigKeys);
+
+            // get http protocol
+            $protocol = Tools::getShopProtocol();
+
+            $this->assignDefaults($dbConfigValues, $protocol);
+
+            $this->smartyAssign('IsOrder', TRUE);
+            $this->smartyAssign('IsCart', FALSE);
+
+
+            $smarty_ad = array();
+            foreach ($params['objOrder']->getProductsDetail() as $value) {
+                $smarty_ad[] = array(
+                    'sku' => $this->parseProductSku($value['product_id'], (isset($value['product_attribute_id']) ? $value['product_attribute_id'] : FALSE), (isset($value['product_reference']) ? $value['product_reference'] : FALSE)),
+                    'name' => $value['product_name'],
+                    'category' => $this->getCategoriesByProductId($value['product_id'], FALSE),
+                    'price' => $this->currencyConvertion(
+                            array(
+                                'price' => (isset($value['total_price_tax_incl']) ? floatval($value['total_price_tax_incl']) : (isset($value['total_price_tax_incl']) ? floatval($value['total_price_tax_incl']) : 0.00)),
+                                'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
+                            )
+                    ),
+                    'quantity' => $value['product_quantity'],
+                );
+            }
+            $this->smartyAssign('OrderProducts', $smarty_ad);
+
+            if (isset($params['objOrder']->total_paid_tax_incl) && isset($params['objOrder']->total_paid_tax_excl))
+                $tax = floatval($params['objOrder']->total_paid_tax_incl - $params['objOrder']->total_paid_tax_excl);
+            else if (isset($params['objOrder']->total_products_wt) && isset($params['objOrder']->total_products))
+                $tax = floatval($params['objOrder']->total_products_wt - $params['objOrder']->total_products);
+            else
+                $tax = 0.00;
+            
+            $ORDER_DETAILS = array(
+                'id' => $params['objOrder']->id,
+                'total' => $this->currencyConvertion(
+                        array(
+                            'price' => floatval(isset($params['objOrder']->total_paid_tax_incl) ? $params['objOrder']->total_paid_tax_incl : (isset($params['objOrder']->total_paid) ? $params['objOrder']->total_paid : 0.00)),
+                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
+                        )
+                ),
+                'sub_total' => $this->currencyConvertion(
+                        /*
+                         * 
+                         * .... to any one, reading this ....
+                         * 
+                         * sub total: 
+                         * the total amount of all products including tax 
+                         * (prestashop removes taxes automaticly if the configuration says so.)
+                         *
+                         * were total is the total of the order, product + tax + shipping - discount etc.. 
+                         * ... 
+                         * 
+                         * if i'm wrong about that, please enlighten me.
+                         * 
+                         */
+                        array(
+                            'price' => floatval($params['objOrder']->total_products_wt),
+                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
+                        )
+                ),
+                'tax' => $this->currencyConvertion(
+                        array(
+                            'price' => floatval($tax),
+                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
+                        )
+                ),
+                'order_shipping' => $this->currencyConvertion(
+                        array(
+                            'price' => floatval((isset($params['objOrder']->total_shipping_tax_incl) ? $params['objOrder']->total_shipping_tax_incl : (isset($params['objOrder']->total_shipping) ? $params['objOrder']->total_shipping : 0.00))),
+                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
+                        )
+                ),
+                'order_discount' => $this->currencyConvertion(
+                        array(
+                            'price' => (isset($params['objOrder']->total_discounts_tax_incl) ?
+                                    ($params['objOrder']->total_discounts_tax_incl > 0 ?
+                                            floatval($params['objOrder']->total_discounts_tax_incl) : false) : (isset($params['objOrder']->total_discounts) ?
+                                            ($params['objOrder']->total_discounts > 0 ?
+                                                    floatval($params['objOrder']->total_discounts) : false) : 0.00)),
+                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
+                        )
+                ),
+            );
+            $this->smartyAssign('OrderDetails', $ORDER_DETAILS);
+
+            // avoid double tracking on complete order.
+            self::$isOrder = TRUE;
+
+            // return the template for piwik tracking.
+            if ($piwikAsync)
+                return $this->display(__FILE__, 'piwikAsync.tpl');
+            else
+                return $this->display(__FILE__, 'jstracking.tpl');
+        }
+    }
+
+    /**
+     * hook into maintenance page.
+     * @param array $params
+     * @return string
+     */
+    public function hookdisplayMaintenance($params) {
+        $this->smartyAssign('MaintenanceTitle', $this->l('Maintenance mode'));
+        return $this->hookdisplayFooter($params);
+    }
+
+    /**
+     * if product is view in content only mode footer is not called
+     * @param mixed $param
+     * @return string $this->hookdisplayFooter($param);
+     */
+    public function hookdisplayRightColumnProduct($param) {
+        if ((int) Configuration::get(PiwikHelper::CPREFIX . 'SITEID') <= 0)
+            return "";
+        if ((int) Tools::getValue('content_only') > 0 && get_class($this->context->controller) == 'ProductController') {
+            return $this->hookdisplayFooter($param);
+        }
+    }
+
+    /**
+     * Search action
+     * @param array $param
+     */
+    public function hookactionSearch($param) {
+        if ((int) Configuration::get(PiwikHelper::CPREFIX . 'SITEID') <= 0)
+            return "";
+        $param['total'] = intval($param['total']);
+        /* if multi pages in search add page number of current if set!
+         * @todo maby add this as an option in config. like product id.!
+         */
+        $page = "";
+        if (Tools::getIsset('p')) {
+            $page = " (" . Tools::getValue('p') . ")";
+        }
+        // $param['expr'] is not the searched word if lets say search is 
+        // 'æøåü' then the value of $param['expr'] will be 'aeoau'
+        $expr = Tools::getIsset('search_query') ? htmlentities(Tools::getValue('search_query')) : $param['expr'];
+        $this->smartyAssign('IsSearch', true);
+        $this->smartyAssign('SearchWord', $expr . $page);
+        $this->smartyAssign('SearchTotal', $param['total']);
+    }
+
     /**
      * only checks that the module is registered in hook "footer", 
      * this why we only appent javescript to the end of the page!
@@ -124,6 +312,11 @@ class piwikanalytics extends Module {
             $this->registerHook('displayFooter');
     }
 
+    /**
+     * add Piwik tracking code to the footer
+     * @param type $params
+     * @return string html string for the footer
+     */
     public function hookdisplayFooter($params) {
 
         $piwikAsync = true;
@@ -141,6 +334,7 @@ class piwikanalytics extends Module {
             $CPREFIX . 'COOKIE_TIMEOUT',
             $CPREFIX . 'RCOOKIE_TIMEOUT',
             $CPREFIX . 'SESSION_TIMEOUT',
+            $CPREFIX . 'DNT',
         );
         $dbConfigValues = Configuration::getMultiple($dbConfigKeys);
 
@@ -154,13 +348,51 @@ class piwikanalytics extends Module {
         // get http protocol
         $protocol = Tools::getShopProtocol();
 
-        // set config variables for piwik tracking tamplet
-        
-        $this->smarty->assign('protocol', $protocol);
-        $this->smarty->assign('isOrder', FALSE);
-        $this->smarty->assign('idSite', (int) $dbConfigValues[$CPREFIX . 'SITEID']);
-        $this->smarty->assign('useProxy', (boolean) $dbConfigValues[$CPREFIX . 'USE_PROXY']);
-        $this->smarty->assign('piwikCookieDomain', $dbConfigValues[$CPREFIX . 'COOKIE_DOMAIN']);
+        $this->assignDefaults($dbConfigValues, $protocol);
+        $this->smartyAssign('IsOrder', FALSE);
+
+        // do 404 check.
+        $this->assign404();
+
+        // product view ??
+        $this->assignProductView();
+
+        /* category view ?? */
+        if (get_class($this->context->controller) == 'CategoryController') {
+            $category = $this->context->controller->getCategory();
+            if (Validate::isLoadedObject($category)) {
+                $this->smartyAssign('Category', $category->name);
+            }
+        }
+
+        /* cart tracking */
+        $this->assignCart();
+
+        // return the template for piwik tracking.
+        if ($piwikAsync)
+            return $this->display(__FILE__, 'piwikAsync.tpl');
+        else
+            return $this->display(__FILE__, 'jstracking.tpl');
+    }
+
+    /* ## Helpers ## */
+
+    private function assignDefaults($dbConfigValues, $protocol) {
+        $CPREFIX = PiwikHelper::CPREFIX;
+
+        // set config variables for piwik tracking template
+
+        $this->smartyAssign('Protocol', $protocol);
+        $this->smartyAssign('IdSite', (int) $dbConfigValues[$CPREFIX . 'SITEID']);
+        $this->smartyAssign('UseProxy', (boolean) $dbConfigValues[$CPREFIX . 'USE_PROXY']);
+        $this->smartyAssign('CookieDomain', $dbConfigValues[$CPREFIX . 'COOKIE_DOMAIN']);
+
+        // do not track
+        if ((bool) $dbConfigValues[$CPREFIX . 'DNT']) {
+            $this->smartyAssign('DNT', true);
+        }  else {
+            $this->smartyAssign('DNT', false);
+        }
 
         // setDomains
         $piwikSetDomains = $dbConfigValues[$CPREFIX . 'SET_DOMAINS'];
@@ -171,7 +403,7 @@ class piwikanalytics extends Module {
             else
                 $piwikSetDomains = "'{$sdArr[0]}'";
 
-            $this->smarty->assign('piwikSetDomains', $piwikSetDomains);
+            $this->smartyAssign('SetDomains', $piwikSetDomains);
 
             unset($sdArr);
         }
@@ -179,41 +411,234 @@ class piwikanalytics extends Module {
         // setVisitorCookieTimeout
         $pkvct = (int) $dbConfigValues[$CPREFIX . 'COOKIE_TIMEOUT'];
         if ($pkvct > 0 && $pkvct !== FALSE && ($pkvct != (int) (self::PK_VC_TIMEOUT))) {
-            $this->smarty->assign('piwikVisitorCookieTimeout', ($pkvct * 60));
+            $this->smartyAssign('VisitorCookieTimeout', ($pkvct * 60));
         }
         unset($pkvct);
 
         // setReferralCookieTimeout
         $pkrct = (int) $dbConfigValues[$CPREFIX . 'RCOOKIE_TIMEOUT'];
         if ($pkrct > 0 && $pkrct !== FALSE && ($pkrct != (int) (self::PK_RC_TIMEOUT))) {
-            $this->smarty->assign('piwikReferralCookieTimeout', ($pkrct * 60));
+            $this->smartyAssign('ReferralCookieTimeout', ($pkrct * 60));
         }
         unset($pkrct);
 
         // setSessionCookieTimeout
         $pksct = (int) $dbConfigValues[$CPREFIX . 'SESSION_TIMEOUT'];
         if ($pksct > 0 && $pksct !== FALSE && ($pksct != (int) (self::PK_SC_TIMEOUT))) {
-            $this->smarty->assign('piwikSessionCookieTimeout', ($pksct * 60));
+            $this->smartyAssign('SessionCookieTimeout', ($pksct * 60));
         }
         unset($pksct);
 
         // piwik url
         if ((bool) $dbConfigValues[$CPREFIX . 'USE_PROXY']) {
-            $this->smarty->assign('piwikHost', $dbConfigValues[$CPREFIX . 'PROXY_SCRIPT']);
+            $this->smartyAssign('Host', $dbConfigValues[$CPREFIX . 'PROXY_SCRIPT']);
         } else {
-            $this->smarty->assign('piwikHost', $dbConfigValues[$CPREFIX . 'HOST']);
-        }
-        
-        // customer id
-        if ($this->context->customer->isLogged()) {
-            $this->context->smarty->assign('userId', $this->context->customer->id);
+            $this->smartyAssign('Host', $dbConfigValues[$CPREFIX . 'HOST']);
         }
 
-        // return the template for piwik tracking.
-        if ($piwikAsync)
-            return $this->display(__FILE__, 'piwikAsync.tpl');
-        else
-            return $this->display(__FILE__, 'jstracking.tpl');
+        // customer id
+        if ($this->context->customer->isLogged()) {
+            $this->smartyAssign('UserId', $this->context->customer->id);
+        }
+    }
+
+    /**
+     * Track cart updates
+     */
+    private function assignCart() {
+        if (!$this->context->cookie->PiwikCartUpdateTime) {
+            $this->context->cookie->PiwikCartUpdateTime = strtotime($this->context->cart->date_upd) - 1;
+            $this->context->cookie->PiwikCartUProductsCount = 0;
+        }
+        if (strtotime($this->context->cart->date_upd) >= $this->context->cookie->PiwikCartUpdateTime) {
+            $this->context->cookie->PiwikCartUpdateTime = strtotime($this->context->cart->date_upd) + 1;
+            $smarty_ad = array();
+            $Currency = new Currency($this->context->cart->id_currency);
+            foreach ($this->context->cart->getProducts() as $product) {
+                if (!isset($product['id_product']) || !isset($product['name']) || !isset($product['total_wt']) || !isset($product['quantity'])) {
+                    continue;
+                }
+                $smarty_ad[] = array(
+                    'sku' => $this->parseProductSku($product['id_product'], (isset($product['id_product_attribute']) && $product['id_product_attribute'] > 0 ? $product['id_product_attribute'] : FALSE), (isset($product['reference']) ? $product['reference'] : FALSE)),
+                    /*
+                     * @todo give product name the same options as 'sku'
+                     */
+                    'name' => $product['name'] . (isset($product['attributes']) ? ' (' . $product['attributes'] . ')' : ''),
+                    'category' => $this->getCategoriesByProductId($product['id_product'], FALSE),
+                    'price' => $this->currencyConvertion(
+                            array(
+                                'price' => $product['total_wt'],
+                                'conversion_rate' => $Currency->conversion_rate,
+                            )
+                    ),
+                    'quantity' => $product['quantity'],
+                );
+            }
+            if (count($smarty_ad) > 0) {
+                $this->context->cookie->PiwikCartUProductsCount = count($smarty_ad);
+                $this->smartyAssign('IsCart', TRUE);
+                $this->smartyAssign('CartProducts', $smarty_ad);
+                $this->smartyAssign('CartTotal', $this->currencyConvertion(array(
+                            'price' => $this->context->cart->getOrderTotal(),
+                            'conversion_rate' => $Currency->conversion_rate,
+                )));
+            } else {
+                if ($this->context->cookie->PiwikCartUProductsCount > 0) {
+                    $this->context->cookie->PiwikCartUProductsCount = 0;
+                    // user deleted the entire cart, lets report this to piwik
+                    $this->smartyAssign('IsCart', TRUE);
+                    $this->smartyAssign('CartProducts', array());
+                    $this->smartyAssign('CartTotal', 0.00);
+                } else {
+                    $this->smartyAssign('IsCart', FALSE);
+                }
+            }
+        } else {
+            if ($this->context->cookie->PiwikCartUProductsCount > 0) {
+                $this->context->cookie->PiwikCartUProductsCount = 0;
+                // user deleted the entire cart, lets report this to piwik
+                $this->smartyAssign('IsCart', TRUE);
+                $this->smartyAssign('CartProducts', array());
+                $this->smartyAssign('CartTotal', 0.00);
+            } else {
+                $this->smartyAssign('IsCart', FALSE);
+            }
+        }
+    }
+
+    /**
+     * check if its a product page view page and assign the variables to smarty
+     */
+    private function assignProductView() {
+        if (get_class($this->context->controller) == 'ProductController') {
+            $smarty_ad = array();
+            $product = $this->context->controller->getProduct();
+            if (!empty($product) && $product !== false && Validate::isLoadedObject($product)) {
+                $categories = $this->getCategoriesByProductId($product->id, FALSE);
+                $smarty_ad[] = array(
+                    'sku' => $this->parseProductSku($product->id, FALSE, (isset($product->reference) ? $product->reference : FALSE)),
+                    /*
+                     * @todo give product name the same options as 'sku'
+                     */
+                    'name' => $product->name,
+                    'category' => $categories,
+                    'price' => $this->currencyConvertion(
+                            array(
+                                'price' => Product::getPriceStatic($product->id, true, false),
+                                'conversion_rate' => $this->context->currency->conversion_rate,
+                            )
+                    ),
+                );
+                $this->smartyAssign('Products', $smarty_ad);
+            }
+        }
+    }
+
+    /**
+     * check if its a 404 page and assign the 404 variable for smarty
+     */
+    private function assign404() {
+
+        $is404 = false;
+        if (!empty($this->context->controller->errors)) {
+            foreach ($this->context->controller->errors as $key => $value) {
+                if ($value == Tools::displayError('Product not found'))
+                    $is404 = true;
+                if ($value == Tools::displayError('This product is no longer available.'))
+                    $is404 = true;
+            }
+        }
+        if (
+                (strtolower(get_class($this->context->controller)) == 'pagenotfoundcontroller') ||
+                (isset($this->context->controller->php_self) && ($this->context->controller->php_self == '404')) ||
+                (isset($this->context->controller->page_name) && (strtolower($this->context->controller->page_name) == 'pagenotfound'))
+        ) {
+            $is404 = true;
+        }
+
+        $this->smartyAssign("404", $is404);
+    }
+
+    /**
+     * convert into default currentcy used in piwik
+     * @param array $params
+     * @return float
+     * @since 0.4
+     */
+    private function currencyConvertion($params) {
+        $pkc = Configuration::get(PiwikHelper::CPREFIX . 'DEFAULT_CURRENCY');
+        if (empty($pkc))
+            return (float) $params['price'];
+        if ($params['conversion_rate'] === FALSE || $params['conversion_rate'] == 0.00 || $params['conversion_rate'] == 1.00) {
+            //* shop default
+            return Tools::convertPrice((float) $params['price'], Currency::getCurrencyInstance((int) (Currency::getIdByIsoCode($pkc))));
+        } else {
+            $_shop_price = (float) ((float) $params['price'] / (float) $params['conversion_rate']);
+            return Tools::convertPrice($_shop_price, Currency::getCurrencyInstance((int) (Currency::getIdByIsoCode($pkc))));
+        }
+        return (float) $params['price'];
+    }
+
+    /**
+     * get category names by product id
+     * @param integer $id product id
+     * @param boolean $array get categories as PHP array (TRUE), or javascript (FAlSE)
+     * @return string|array
+     */
+    private function getCategoriesByProductId($id, $array = true) {
+        $_categories = Product::getProductCategoriesFull($id, $this->context->cookie->id_lang);
+        if (!is_array($_categories)) {
+            if ($array)
+                return array();
+            else
+                return "[]";
+        }
+
+        if ($array) {
+            $categories = array();
+            foreach ($_categories as $category) {
+                $categories[] = $category['name'];
+                if (count($categories) == 5)
+                    break;
+            }
+        } else {
+            $categories = '[';
+            $c = 0;
+            foreach ($_categories as $category) {
+                $c++;
+                $categories .= '"' . $category['name'] . '",';
+                if ($c == 5)
+                    break;
+            }
+            $categories = rtrim($categories, ',');
+            $categories .= ']';
+        }
+        return $categories;
+    }
+
+    private function parseProductSku($id, $attrid = FALSE, $ref = FALSE) {
+        if (Validate::isInt($id) && (!empty($attrid) && !is_null($attrid) && $attrid !== FALSE) && (!empty($ref) && !is_null($ref) && $ref !== FALSE)) {
+            $PIWIK_PRODID_V1 = Configuration::get(PiwikHelper::CPREFIX . 'PRODID_V1');
+            return str_replace(array('{ID}', '{ATTRID}', '{REFERENCE}'), array($id, $attrid, $ref), $PIWIK_PRODID_V1);
+        } elseif (Validate::isInt($id) && (!empty($ref) && !is_null($ref) && $ref !== FALSE)) {
+            $PIWIK_PRODID_V2 = Configuration::get(PiwikHelper::CPREFIX . 'PRODID_V2');
+            return str_replace(array('{ID}', '{REFERENCE}'), array($id, $ref), $PIWIK_PRODID_V2);
+        } elseif (Validate::isInt($id) && (!empty($attrid) && !is_null($attrid) && $attrid !== FALSE)) {
+            $PIWIK_PRODID_V3 = Configuration::get(PiwikHelper::CPREFIX . 'PRODID_V3');
+            return str_replace(array('{ID}', '{ATTRID}'), array($id, $attrid), $PIWIK_PRODID_V3);
+        } else {
+            return $id;
+        }
+    }
+
+    /**
+     * used to prefix all smarty variables with 'piwik', to avoid overriding any other variables from other modules
+     * @param string $key
+     * @param mixed $value
+     */
+    private function smartyAssign($key, $value) {
+        $smarty_prefix = "piwik";
+        $this->smarty->assign($smarty_prefix . $key, $value);
     }
 
     /* ## Install/Uninstall/Enable/Disable ## */
