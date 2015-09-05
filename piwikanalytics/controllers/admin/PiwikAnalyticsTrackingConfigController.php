@@ -48,7 +48,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
         $this->display = 'edit';
         $this->show_page_header_toolbar = true;
 
-        // force pd core to load default
+        // force ps core to load default
         $this->default_form_language = null;
     }
 
@@ -58,7 +58,14 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
 
         $this->toolbar_title = $this->l('Piwik TrackingCode Config', $this->name);
 
+        $this->page_header_toolbar_btn['update'] = array(
+            'icon' => 'process-icon-refresh',
+            'desc' => $this->l('Check for updates', $this->name),
+            'href' => '#'
+        );
+
         parent::initContent();
+
 
         $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki/Piwik-Analytics');
     }
@@ -178,9 +185,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             // update proxy script
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'PROXY_SCRIPT')) {
                 $PROXY_SCRIPT = str_replace(
-                        array("http://", "https://", '//'),
-                        '',
-                        preg_replace('/\s+/', '', Tools::getValue(PiwikHelper::CPREFIX . 'PROXY_SCRIPT'))
+                        array("http://", "https://", '//'), '', preg_replace('/\s+/', '', Tools::getValue(PiwikHelper::CPREFIX . 'PROXY_SCRIPT'))
                 );
                 Configuration::updateValue(PiwikHelper::CPREFIX . 'PROXY_SCRIPT', $PROXY_SCRIPT);
             }
@@ -189,12 +194,124 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
         }
     }
 
+    private $myHelperList = null;
+
+    public function renderLookupPiwikSiteForm() {
+
+        $piwik_sites = PiwikHelper::getSitesWithAdminAccess();
+        if (empty($piwik_sites)) {
+            // Failure is delay, not defeat - visit PiwikManager module
+            $this->displayWarning($this->l('No sites could be found using the settings from \'Site Manager\' module.', $this->name));
+            $this->displayWarning($this->l('if you don\'t have any sites in piwik you can open \'Site Manager\' module and create one, then return here to continue the configuration.', $this->name));
+        } else {
+
+            $this->myHelperList = new HelperList();
+            $this->myHelperList->module = $this->module;
+            $this->myHelperList->name_controller = $this->module->name;
+            $this->myHelperList->table = $this->name;
+            $this->myHelperList->identifier = 'idsite';
+            $this->myHelperList->token = Tools::getAdminTokenLite($this->name);
+            $this->myHelperList->default_form_language = (int) Configuration::get('PS_LANG_DEFAULT');
+            $this->myHelperList->allow_employee_form_lang = (int) Configuration::get('PS_LANG_DEFAULT');
+            $this->myHelperList->shopLinkType = false;
+            $this->myHelperList->show_toolbar = false;
+            $this->myHelperList->toolbar_scroll = false;
+            $this->myHelperList->simple_header = true;
+            $this->myHelperList->currentIndex = AdminController::$currentIndex;
+            $this->myHelperList->title = $this->module->displayName;
+
+            $this->myHelperList->actions[] = 'select';
+
+            $fields_list = array(
+                'idsite' => array(
+                    'title' => $this->l('ID'),
+                    'align' => 'center',
+                    'width' => 30
+                ),
+                'name' => array(
+                    'title' => $this->l('Name'),
+                    'width' => 'auto'
+                ),
+                'type' => array(
+                    'title' => $this->l('Type'),
+                    'width' => 'auto'
+                ),
+                'ecommerce' => array(
+                    'title' => $this->l('Ecommerce'),
+                    'width' => 'auto'
+                ),
+                'sitesearch' => array(
+                    'title' => $this->l('Site Search'),
+                    'width' => 'auto'
+                ),
+                'timezone' => array(
+                    'title' => $this->l('Timezone'),
+                    'width' => 'auto'
+                ),
+                'currency' => array(
+                    'title' => $this->l('Currency'),
+                    'width' => 'auto'
+                ),
+                'group' => array(
+                    'title' => $this->l('Group'),
+                    'width' => 'auto'
+                ),
+            );
+
+            $piwiksites = PiwikHelper::getSitesWithAdminAccess();
+            $this->displayErrorsFromPiwikHelper();
+
+            $list = array();
+            foreach ($piwiksites as $value)
+                $list[] = (array) $value;
+            return $this->myHelperList->generateList($list, $fields_list);
+        }
+    }
+
+    public function displaySelectLink($token = null, $id, $name = null) {
+        $tpl = $this->myHelperList->createTemplate('list_action_details.tpl');
+        $ajax_params = $this->myHelperList->ajax_params;
+        if (!is_array($ajax_params) || !isset($ajax_params['action'])) {
+            $ajax_params['action'] = 'select';
+        }
+
+        $tpl->assign(array(
+            'id' => $id,
+            'href' => $this->myHelperList->currentIndex . '&' . $this->myHelperList->identifier . '=' . $id . '&select' . $this->myHelperList->table . '&token=' . ($token != null ? $token : $this->myHelperList->token),
+            'controller' => str_replace('Controller', '', get_class($this->myHelperList->context->controller)),
+            'token' => $token != null ? $token : $this->myHelperList->token,
+            'action' => $this->l('Select', $this->name),
+            'params' => $ajax_params,
+            'json_params' => Tools::jsonEncode($ajax_params)
+        ));
+        return $tpl->fetch();
+    }
+
     public function renderForm() {
+        $this->multiple_fieldsets = true; // i choose the structure.!
+        // load piwik site select.
+        if (Tools::isSubmit('lookupPiwikSite')) {
+            return $this->renderLookupPiwikSiteForm();
+        }
+        // set selected site, from lookup
+        if (Tools::isSubmit('selectPiwikAnalyticsTrackingConfig') && Tools::getIsset('idsite')) {
+            // update site id.
+            if (Tools::getIsset('idsite')) {
+                $piwikSiteID = (int) Tools::getValue('idsite');
+                if (Validate::isInt($piwikSiteID) && $piwikSiteID > 0) {
+                    Configuration::updateValue(PiwikHelper::CPREFIX . 'SITEID', $piwikSiteID);
+                } else {
+                    $this->errors[] = Tools::displayError($this->l('Piwik site id is not valid, must be an integer and higher than 0', $this->name));
+                }
+            }
+        }
+
+        // show config options
+
         $this->processSubmitConfiguration();
 
         $this->addJqueryPlugin('tagify', _PS_JS_DIR_ . 'jquery/plugins/');
 
-        $this->multiple_fieldsets = true; // i choose the structure.!
 
         $PIWIK_PRODID_V1 = Configuration::get(PiwikHelper::CPREFIX . 'PRODID_V1');
         $PIWIK_PRODID_V2 = Configuration::get(PiwikHelper::CPREFIX . 'PRODID_V2');
@@ -220,6 +337,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             PiwikHelper::CPREFIX . 'USE_PROXY' => Configuration::get(PiwikHelper::CPREFIX . 'USE_PROXY'),
             PiwikHelper::CPREFIX . 'PROXY_SCRIPT' => empty($PIWIK_PROXY_SCRIPT) ? str_replace(array("http://", "https://"), '', Context::getContext()->link->getModuleLink($this->module->name, 'piwik')) : $PIWIK_PROXY_SCRIPT,
             PiwikHelper::CPREFIX . 'COOKIE_PATH' => Configuration::get(PiwikHelper::CPREFIX . 'COOKIE_PATH'),
+            PiwikHelper::CPREFIX . 'EXHTML' => Configuration::get(PiwikHelper::CPREFIX . 'EXHTML'),
         );
 
         $piwik_host = $this->fields_value[PiwikHelper::CPREFIX . 'HOST'];
@@ -230,9 +348,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             $piwik_site = PiwikHelper::getPiwikSite();
         } else {
             $this->errors[] = str_replace(
-                    array('{LINK}', '{/LINK}'), 
-                    array('<a href="' . Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager') . '">', "</a>"), 
-                    Tools::displayError($this->l("You need to configure Piwik Site ID and/or Auth token in {LINK}Site Manager{/LINK}", $this->name))
+                    array('{LINK}', '{/LINK}'), array('<a href="' . Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager') . '">', "</a>"), Tools::displayError($this->l("You need to configure Piwik Site ID and/or Auth token in {LINK}Site Manager{/LINK}", $this->name))
             );
         }
 
@@ -294,7 +410,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                     array(
                         'type' => 'html',
                         'name' => '<button'
-                        . ' onclick="alert(\'this functionality is not implemented yet, i apologise for the inconvenience\')"'
+                        . ' onclick="document.location=\'' . Context::getContext()->link->getAdminLink('PiwikAnalyticsTrackingConfig') . '&lookupPiwikSite\'"'
                         . ' name="btnLookupPKSite"'
                         . ' class="btn btn-default "'
                         . ' id="btnLookupPKSite"'

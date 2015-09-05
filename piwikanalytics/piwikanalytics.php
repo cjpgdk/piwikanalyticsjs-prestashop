@@ -154,6 +154,7 @@ class piwikanalytics extends Module {
                 $CPREFIX . 'RCOOKIE_TIMEOUT',
                 $CPREFIX . 'SESSION_TIMEOUT',
                 $CPREFIX . 'DNT',
+                $CPREFIX . 'EXHTML',
             );
             $dbConfigValues = Configuration::getMultiple($dbConfigKeys);
 
@@ -329,6 +330,7 @@ class piwikanalytics extends Module {
             $CPREFIX . 'RCOOKIE_TIMEOUT',
             $CPREFIX . 'SESSION_TIMEOUT',
             $CPREFIX . 'DNT',
+            $CPREFIX . 'EXHTML',
         );
         $dbConfigValues = Configuration::getMultiple($dbConfigKeys);
 
@@ -430,6 +432,11 @@ class piwikanalytics extends Module {
         // customer id
         if ($this->context->customer->isLogged()) {
             $this->smartyAssign('UserId', $this->context->customer->id);
+        }
+        
+        // extra html.
+        if (!empty($dbConfigValues[$CPREFIX . 'EXHTML'])) {
+            $this->smartyAssign('EXHTML', $dbConfigValues[$CPREFIX . 'EXHTML']);
         }
     }
 

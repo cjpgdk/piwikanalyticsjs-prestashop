@@ -108,8 +108,8 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
         $this->processUpdatePiwikAnalyticsSiteFormUpdate();
         if (Tools::isSubmit('submitAddPiwikAnalyticsSite'))
             $this->processAddNewSite();
+        
         $this->processlookupAuthToken();
-
 
         if (Tools::isSubmit('addPiwikAnalyticsSiteManager')) {
             $view .= $this->generateAddNewSiteForm($languages);
