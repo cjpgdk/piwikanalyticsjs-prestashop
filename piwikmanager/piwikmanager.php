@@ -46,12 +46,14 @@ class piwikmanager extends Module {
 
         $this->name = 'piwikmanager';
         $this->tab = 'administration';
-        $this->version = '1.0-dev59';
+        $this->version = '1.0-dev60';
         $this->author = 'Christian M. Jensen';
         $this->displayName = $this->l('Piwik Site Manager');
         $this->author_uri = 'http://cmjscripter.net';
         $this->url = 'http://cmjnisse.github.io/piwikanalyticsjs-prestashop/';
 
+        $this->ps_versions_compliancy = array('min' => '1.6.0.0', 'max' => '1.6.999.999');
+        
         $this->bootstrap = true;
 
         parent::__construct($name, $context);

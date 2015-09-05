@@ -68,7 +68,6 @@
             {/foreach}
         {/if}
             window.piwikTracker.trackEcommerceOrder("{$piwikOrderDetails.id}", '{$piwikOrderDetails.total}', '{$piwikOrderDetails.sub_total}', '{$piwikOrderDetails.tax}', '{$piwikOrderDetails.shipping}', '{$piwikOrderDetails.discount}');
-
     {/if}
     {if isset($piwikMaintenanceTitle)}
             window.piwikTracker.setDocumentTitle('{$piwikMaintenanceTitle}/' + document.title);

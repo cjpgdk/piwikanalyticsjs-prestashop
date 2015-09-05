@@ -69,9 +69,9 @@ class piwikanalytics extends Module {
         'actionSearch',
         'displayRightColumnProduct',
         'displayMaintenance',
-        'orderConfirmation'
+        'orderConfirmation',
     );
-    
+
     public function __construct($name = null, $context = null) {
 
         $this->_default_config_values[PiwikHelper::CPREFIX . 'COOKIE_DOMAIN'] = Tools::getShopDomain();
@@ -142,8 +142,6 @@ class piwikanalytics extends Module {
 
         $order = $params['objOrder'];
         if (Validate::isLoadedObject($order)) {
-            $piwikAsync = true;
-
             // get all the required data from db config
             $dbConfigKeys = array(
                 $CPREFIX . 'SITEID',
@@ -191,7 +189,7 @@ class piwikanalytics extends Module {
                 $tax = floatval($params['objOrder']->total_products_wt - $params['objOrder']->total_products);
             else
                 $tax = 0.00;
-            
+
             $ORDER_DETAILS = array(
                 'id' => $params['objOrder']->id,
                 'total' => $this->currencyConvertion(
@@ -249,10 +247,7 @@ class piwikanalytics extends Module {
             self::$isOrder = TRUE;
 
             // return the template for piwik tracking.
-            if ($piwikAsync)
-                return $this->display(__FILE__, 'piwikAsync.tpl');
-            else
-                return $this->display(__FILE__, 'jstracking.tpl');
+            return $this->display(__FILE__, 'piwikAsync.tpl');
         }
     }
 
@@ -319,7 +314,6 @@ class piwikanalytics extends Module {
      */
     public function hookdisplayFooter($params) {
 
-        $piwikAsync = true;
         // short code the config prefix
         $CPREFIX = PiwikHelper::CPREFIX;
 
@@ -369,10 +363,7 @@ class piwikanalytics extends Module {
         $this->assignCart();
 
         // return the template for piwik tracking.
-        if ($piwikAsync)
-            return $this->display(__FILE__, 'piwikAsync.tpl');
-        else
-            return $this->display(__FILE__, 'jstracking.tpl');
+        return $this->display(__FILE__, 'piwikAsync.tpl');
     }
 
     /* ## Helpers ## */
@@ -390,7 +381,7 @@ class piwikanalytics extends Module {
         // do not track
         if ((bool) $dbConfigValues[$CPREFIX . 'DNT']) {
             $this->smartyAssign('DNT', true);
-        }  else {
+        } else {
             $this->smartyAssign('DNT', false);
         }
 
