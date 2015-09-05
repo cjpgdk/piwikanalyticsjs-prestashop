@@ -230,7 +230,9 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             $piwik_site = PiwikHelper::getPiwikSite();
         } else {
             $this->errors[] = str_replace(
-                    array('{LINK}', '{/LINK}'), array('<a href="' . Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager') . '">', "</a>"), Tools::displayError($this->l("You need to configure Piwik Site ID and/or Auth token in {LINK}Site Manager{/LINK}", $this->name))
+                    array('{LINK}', '{/LINK}'), 
+                    array('<a href="' . Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager') . '">', "</a>"), 
+                    Tools::displayError($this->l("You need to configure Piwik Site ID and/or Auth token in {LINK}Site Manager{/LINK}", $this->name))
             );
         }
 

@@ -123,7 +123,7 @@ class PiwikHelper {
      * NOTE* make sure all values are url encoded, before caling this method
      * @param int $idSite
      * @param type $siteName
-     * @param string $urls a comma seperated string of urls, were the first url is the mail url for the site.
+     * @param string $urls a comma seperated string of urls, were the first url is the main url for the site.
      * @param type $ecommerce
      * @param type $siteSearch
      * @param type $searchKeywordParameters
@@ -193,13 +193,44 @@ class PiwikHelper {
             $url_params['keepURLFragments'] = ($keepURLFragments == 1 ? 1 : 0);
         //    $url .= "&keepURLFragments=" . urlencode($keepURLFragments);
         if ($type !== NULL)
-            $url_params['type'] = urlencode($type);
+            $url_params['type'] = $type;
         //    $url .= "&type=" . urlencode($type);
 
         if ($result = self::getAsJsonDecoded($url . http_build_query($url_params))) {
             $url2 = self::getBaseURL($idSite) . "&method=SitesManager.getSiteFromId&format=JSON";
             Cache::clean('PiwikHelper' . md5($url2)); // Clear cache for updated site
             return ($result->result == 'success' && $result->message == 'ok' ? TRUE : ($result->result != 'success' ? $result->message : FALSE));
+        } else
+            return FALSE;
+    }
+
+    /**
+     * get users token auth from Piwik
+     * NOTE: password is required either an md5 encoded password or a normal string
+     * @param string $userLogin the user name
+     * @param string $password password in clear text
+     * @param string $md5Password md5 encoded password
+     * @return string|boolean
+     */
+    public static function getTokenAuth($userLogin, $password = NULL, $md5Password = NULL) {
+        if ($password === null || empty($password)) {
+            $password = $md5Password;
+            if ($md5Password === NULL || empty($md5Password)) {
+                self::$error = self::l('A password is required for method PKHelper::getTokenAuth()!');
+                self::$errors[] = self::$error;
+                return FALSE;
+            }
+        } else
+            $password = md5($password);
+
+        $url = self::getBaseURL(0, NULL, NULL, 'API', NULL, '');
+        $url .= "&method=UsersManager.getTokenAuth&userLogin={$userLogin}&md5Password={$password}&format=JSON";
+        if ($result = self::getAsJsonDecoded($url)) {
+            if (isset($result->result)) {
+                self::$error = $result->message;
+                self::$errors[] = self::$error;
+            }
+            return isset($result->value) ? $result->value : FALSE;
         } else
             return FALSE;
     }

@@ -108,6 +108,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
         $this->processUpdatePiwikAnalyticsSiteFormUpdate();
         if (Tools::isSubmit('submitAddPiwikAnalyticsSite'))
             $this->processAddNewSite();
+        $this->processlookupAuthToken();
 
 
         if (Tools::isSubmit('addPiwikAnalyticsSiteManager')) {
@@ -128,11 +129,82 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
                 $idSite = Tools::getValue('idsite');
                 $view .= $this->deletePiwikAnalyticsSite($languages, $idSite);
             }
+        } else if (Tools::isSubmit('lookupAuthToken')) {
+            $view .= $this->generatelookupAuthTokenForm($languages);
         } else {
             $view .= $this->generateConfigForm($languages);
             $view .= $this->generateListForm($languages);
         }
         return implode(',', $this->messages) . $view;
+    }
+    private function processlookupAuthToken() {
+        if (Tools::isSubmit('submitLookupAuthToken') && Tools::getIsset('LookupUsername') && Tools::getIsset('LookupPassword')) {
+            $username = Tools::getIsset('LookupUsername');
+            $password = Tools::getIsset('LookupPassword');
+            $token = PiwikHelper::getTokenAuth($username, $password);
+            if ($token !== false && !empty($token)) {
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'TOKEN_AUTH', $token);
+                $this->displayInformation(sprintf($this->l('Based on the information you provided, your authentication token is \'%s\'', 'PiwikAnalyticsSiteManager'), $token));
+            }  else {
+                $this->displayWarning($this->l('Unable to get your authentication token', 'PiwikAnalyticsSiteManager'));
+            }
+        }
+    }
+
+    private function generatelookupAuthTokenForm($languages) {
+
+        $helper = new HelperForm();
+
+        $helper->languages = $languages;
+        $helper->module = $this->module;
+        $helper->name_controller = $this->module->name;
+        $helper->identifier = 'id_module';
+        $helper->token = Tools::getAdminTokenLite('PiwikAnalyticsSiteManager');
+        $helper->default_form_language = (int) Configuration::get('PS_LANG_DEFAULT');
+        $helper->allow_employee_form_lang = (int) Configuration::get('PS_LANG_DEFAULT');
+        $helper->show_toolbar = false;
+        $helper->toolbar_scroll = false;
+        $helper->override_folder = false;
+        $helper->currentIndex = AdminController::$currentIndex;
+        $helper->title = $this->module->displayName;
+        $helper->submit_action = 'submitLookupAuthToken';
+
+        $fields_form = array();
+        $fields_form[0]['form']['legend'] = array(
+            'title' => $this->l('Lokup Piwik Authentication token', 'PiwikAnalyticsSiteManager'),
+            'image' => $this->module->getPathUri() . 'logox22.png'
+        );
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'html',
+            'name' => $this->l('Enter your piwik username and password.', $this->name),
+        );
+
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'text',
+            'label' => $this->l('Username', 'PiwikAnalyticsSiteManager'),
+            'name' => 'LookupUsername',
+            'required' => true,
+            'autocomplete' => false,
+        );
+
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'password',
+            'label' => $this->l('Password', 'PiwikAnalyticsSiteManager'),
+            'name' => 'LookupPassword',
+            'required' => true,
+            'autocomplete' => false,
+        );
+
+        $fields_form[0]['form']['submit'] = array(
+            'title' => $this->l('Lookup'),
+            'class' => 'btn btn-default'
+        );
+        $helper->fields_value = array(
+            'LookupUsername' => 'username',
+            'LookupPassword' => 'password',
+        );
+
+        return $helper->generateForm($fields_form);
     }
 
 //    private function viewPiwikAnalyticsSite($languages, $idSite) {
@@ -950,7 +1022,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
         $fields_form[0]['form']['input'][] = array(
             'type' => 'html',
             'name' => '<button'
-            . ' onclick="alert(\'this functionality is not implemented yet, i apologise for the inconvenience\')"'
+            . ' onclick="document.location=\'' . Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager') . '&lookupAuthToken\'"'
             . ' name="btnLookupAuthToken"'
             . ' class="btn btn-default "'
             . ' id="btnLookupAuthToken"'
