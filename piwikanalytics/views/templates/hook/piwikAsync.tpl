@@ -87,4 +87,7 @@
         } catch (err) {
         }
     };
-</script>
+</script>       
+{if isset($piwikEXHTML)}
+    {$piwikEXHTML}
+{/if}
