@@ -1089,29 +1089,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
 
         return $helper->generateForm($fields_form);
     }
-
-    public function createTemplate($tpl_name) {
-        if ($this->override_folder) {
-            if ($this->context->controller instanceof ModuleAdminController)
-                $override_tpl_path = $this->context->controller->getTemplatePath() . $this->override_folder . $this->base_folder . $tpl_name;
-            else if ($this->module)
-                $override_tpl_path = _PS_MODULE_DIR_ . $this->module->name . '/views/templates/admin/_configure/' . $this->override_folder . $this->base_folder . $tpl_name;
-            else {
-                if (file_exists($this->context->smarty->getTemplateDir(1) . $this->override_folder . $this->base_folder . $tpl_name))
-                    $override_tpl_path = $this->context->smarty->getTemplateDir(1) . $this->override_folder . $this->base_folder . $tpl_name;
-                else if (file_exists($this->context->smarty->getTemplateDir(0) . 'controllers' . DIRECTORY_SEPARATOR . $this->override_folder . $this->base_folder . $tpl_name))
-                    $override_tpl_path = $this->context->smarty->getTemplateDir(0) . 'controllers' . DIRECTORY_SEPARATOR . $this->override_folder . $this->base_folder . $tpl_name;
-            }
-        }
-        else if ($this->module)
-            $override_tpl_path = _PS_MODULE_DIR_ . $this->module->name . '/views/templates/admin/_configure/' . $this->base_folder . $tpl_name;
-
-        if (isset($override_tpl_path) && file_exists($override_tpl_path))
-            return $this->context->smarty->createTemplate($override_tpl_path, $this->context->smarty);
-        else
-            return $this->context->smarty->createTemplate($this->base_folder . $tpl_name, $this->context->smarty);
-    }
-
+    
     public function displayConfirmation($string) {
         if (method_exists($this->module, 'displayConfirmation')) {
             return $this->module->displayConfirmation($string);

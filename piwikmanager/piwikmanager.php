@@ -46,7 +46,7 @@ class piwikmanager extends Module {
 
         $this->name = 'piwikmanager';
         $this->tab = 'administration';
-        $this->version = '1.0-dev60';
+        $this->version = '1.0';
         $this->author = 'Christian M. Jensen';
         $this->displayName = $this->l('Piwik Site Manager');
         $this->author_uri = 'http://cmjscripter.net';

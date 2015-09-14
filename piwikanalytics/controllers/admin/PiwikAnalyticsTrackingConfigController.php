@@ -187,7 +187,11 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                 $PROXY_SCRIPT = str_replace(
                         array("http://", "https://", '//'), '', preg_replace('/\s+/', '', Tools::getValue(PiwikHelper::CPREFIX . 'PROXY_SCRIPT'))
                 );
-                Configuration::updateValue(PiwikHelper::CPREFIX . 'PROXY_SCRIPT', $PROXY_SCRIPT);
+                if (PKTools::is_valid_url("http://" . $PROXY_SCRIPT)) {
+                    Configuration::updateValue(PiwikHelper::CPREFIX . 'PROXY_SCRIPT', $PROXY_SCRIPT);
+                } else {
+                    $this->errors[] = Tools::displayError($this->l('Proxy script url is not valid.', $this->name));
+                }
             }
 
             $this->confirmations[] = $this->l("Update process complete", $this->name);

@@ -1,0 +1,17 @@
+.simple-realtime-visitor-counter {
+    background-color: #f1f0eb;
+    border-radius: 10px;
+    display: inline-block;
+    margin: 0 0 1em;
+    padding: 3em;
+}
+.simple-realtime-visitor-counter > div {
+    color: #444;
+    font-size: 4em;
+    line-height: 18px;
+}
+.simple-realtime-metric {
+    color: #333;
+    font-style: italic;
+    font-weight: bold;
+}

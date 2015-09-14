@@ -62,15 +62,6 @@ class piwikanalytics extends Module {
 
     private $_default_config_values = array();
     private static $isOrder = FALSE;
-    // ||DEV|REMOVE||
-    private $_hooks = array(
-        'displayHeader',
-        'displayFooter',
-        'actionSearch',
-        'displayRightColumnProduct',
-        'displayMaintenance',
-        'orderConfirmation',
-    );
 
     public function __construct($name = null, $context = null) {
 
@@ -88,15 +79,11 @@ class piwikanalytics extends Module {
         $this->_default_config_values[PiwikHelper::CPREFIX . 'EXHTML'] = '';
         $this->_default_config_values[PiwikHelper::CPREFIX . 'COOKIE_PATH'] = '/';
 
-//        $this->_default_config_values[PiwikHelper::CPREFIX . 'DREPDATE'] = 'day|today';
-//        $this->_default_config_values[PiwikHelper::CPREFIX . 'USRNAME'] = '';
-//        $this->_default_config_values[PiwikHelper::CPREFIX . 'USRPASSWD'] = '';
-
         $this->dependencies[] = "piwikmanager";
 
         $this->name = 'piwikanalytics';
         $this->tab = 'analytics_stats';
-        $this->version = '1.0-dev16';
+        $this->version = '1.0';
         $this->author = 'Christian M. Jensen';
         $this->displayName = 'Piwik Analytics Tracking';
         $this->author_uri = 'http://cmjscripter.net';
@@ -118,12 +105,6 @@ class piwikanalytics extends Module {
 
         if (is_object($this->context->smarty) && (!is_object($this->smarty) || !($this->smarty instanceof Smarty_Data))) {
             $this->smarty = $this->context->smarty->createData($this->context->smarty);
-        }
-
-        // ||DEV|REMOVE||
-        foreach ($this->_hooks as $hook) {
-            if (!$this->isRegisteredInHook($hook))
-                $this->registerHook($hook);
         }
     }
 
@@ -225,13 +206,13 @@ class piwikanalytics extends Module {
                             'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
                         )
                 ),
-                'order_shipping' => $this->currencyConvertion(
+                'shipping' => $this->currencyConvertion(
                         array(
                             'price' => floatval((isset($params['objOrder']->total_shipping_tax_incl) ? $params['objOrder']->total_shipping_tax_incl : (isset($params['objOrder']->total_shipping) ? $params['objOrder']->total_shipping : 0.00))),
                             'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
                         )
                 ),
-                'order_discount' => $this->currencyConvertion(
+                'discount' => $this->currencyConvertion(
                         array(
                             'price' => (isset($params['objOrder']->total_discounts_tax_incl) ?
                                     ($params['objOrder']->total_discounts_tax_incl > 0 ?
@@ -433,7 +414,7 @@ class piwikanalytics extends Module {
         if ($this->context->customer->isLogged()) {
             $this->smartyAssign('UserId', $this->context->customer->id);
         }
-        
+
         // extra html.
         if (!empty($dbConfigValues[$CPREFIX . 'EXHTML'])) {
             $this->smartyAssign('EXHTML', $dbConfigValues[$CPREFIX . 'EXHTML']);
@@ -561,7 +542,6 @@ class piwikanalytics extends Module {
      * convert into default currentcy used in piwik
      * @param array $params
      * @return float
-     * @since 0.4
      */
     private function currencyConvertion($params) {
         $pkc = Configuration::get(PiwikHelper::CPREFIX . 'DEFAULT_CURRENCY');
@@ -667,7 +647,16 @@ class piwikanalytics extends Module {
             if (Configuration::getGlobalValue($key) === false)
                 Configuration::updateGlobalValue($key, $value);
         }
-        return parent::install() && $this->installTabs();
+
+        if ($this->registerHook('displayHeader') &&
+                $this->registerHook('displayFooter') &&
+                $this->registerHook('actionSearch') &&
+                $this->registerHook('displayRightColumnProduct') &&
+                $this->registerHook('displayMaintenance') &&
+                $this->registerHook('orderConfirmation'))
+            return parent::install() && $this->installTabs();
+        else 
+            return false;
     }
 
     /**
@@ -676,7 +665,8 @@ class piwikanalytics extends Module {
      */
     public function uninstall() {
         foreach ($this->_default_config_values as $key => $value) {
-            Configuration::deleteByName($key);
+            // delete only from the shop wee uninstall
+            Configuration::deleteFromContext($key);
         }
         // Tabs
         $idTabs = array();
