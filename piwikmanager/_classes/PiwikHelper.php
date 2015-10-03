@@ -216,7 +216,7 @@ class PiwikHelper {
         if ($password === null || empty($password)) {
             $password = $md5Password;
             if ($md5Password === NULL || empty($md5Password)) {
-                self::$error = self::l('A password is required for method PKHelper::getTokenAuth()!');
+                self::$error = self::l('A password is required for method self::getTokenAuth()!');
                 self::$errors[] = self::$error;
                 return FALSE;
             }
@@ -346,7 +346,7 @@ class PiwikHelper {
      */
     public static function getPiwikSite($idSite = 0) {
         if ($idSite == 0)
-            $idSite = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
+            $idSite = (int) Configuration::get(self::CPREFIX . 'SITEID');
         if (!self::baseTest() || ($idSite <= 0))
             return false;
 
@@ -389,7 +389,7 @@ class PiwikHelper {
      */
     public static function getPiwikSite2($idSite = 0) {
         if ($idSite == 0)
-            $idSite = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
+            $idSite = (int) Configuration::get(self::CPREFIX . 'SITEID');
         if ($result = self::getPiwikSite($idSite)) {
             $url = self::getBaseURL($idSite);
             $url .= "&method=SitesManager.getSiteUrlsFromId&format=JSON";
@@ -462,7 +462,7 @@ class PiwikHelper {
         else
             $lng = 'en';
 
-        $timeout = 5; // should go in module conf
+        $timeout = 10; // should go in module conf
 
         if (self::$httpAuthUsername == "" || self::$httpAuthUsername === false)
             self::$httpAuthUsername = Configuration::get(self::CPREFIX . 'PAUTHUSR');
@@ -623,7 +623,7 @@ class PiwikHelper {
         // $this->l('Unable to connect to api %s')
         // $this->l('E-commerce is not active for your site in piwik!')
         // $this->l('Site search is not active for your site in piwik!')
-        // $this->l('A password is required for method PKHelper::getTokenAuth()!')
+        // $this->l('A password is required for method self::getTokenAuth()!')
     }
 
 }

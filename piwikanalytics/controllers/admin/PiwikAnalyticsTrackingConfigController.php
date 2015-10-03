@@ -119,32 +119,32 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             // update extra html
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'EXHTML')) {
                 $piwikEXHTML = Tools::getValue(PiwikHelper::CPREFIX . 'EXHTML');
-                Configuration::updateValue(PKHelper::CPREFIX . 'EXHTML', $piwikEXHTML, TRUE);
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'EXHTML', $piwikEXHTML, TRUE);
             }
 
             // update report product id v1
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'PRODID_V1')) {
                 $PRODID_V1 = Tools::getValue(PiwikHelper::CPREFIX . 'PRODID_V1');
-                Configuration::updateValue(PKHelper::CPREFIX . 'PRODID_V1', $PRODID_V1);
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'PRODID_V1', $PRODID_V1);
             }
 
             // update report product id v2
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'PRODID_V2')) {
                 $PRODID_V2 = Tools::getValue(PiwikHelper::CPREFIX . 'PRODID_V2');
-                Configuration::updateValue(PKHelper::CPREFIX . 'PRODID_V2', $PRODID_V2);
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'PRODID_V2', $PRODID_V2);
             }
 
             // update report product id v3
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'PRODID_V3')) {
                 $PRODID_V3 = Tools::getValue(PiwikHelper::CPREFIX . 'PRODID_V3');
-                Configuration::updateValue(PKHelper::CPREFIX . 'PRODID_V3', $PRODID_V3);
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'PRODID_V3', $PRODID_V3);
             }
 
             // update session timout
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'SESSION_TIMEOUT')) {
                 $piwikSessionTimout = (int) Tools::getValue(PiwikHelper::CPREFIX . 'SESSION_TIMEOUT');
                 if (Validate::isInt($piwikSessionTimout) && $piwikSessionTimout > 0) {
-                    Configuration::updateValue(PKHelper::CPREFIX . 'SESSION_TIMEOUT', $piwikSessionTimout);
+                    Configuration::updateValue(PiwikHelper::CPREFIX . 'SESSION_TIMEOUT', $piwikSessionTimout);
                 } else {
                     $this->errors[] = Tools::displayError($this->l('Session Timout is not valid, must be an integer and higher than 0', $this->name));
                 }
@@ -154,7 +154,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'COOKIE_TIMEOUT')) {
                 $piwikCookieTimout = (int) Tools::getValue(PiwikHelper::CPREFIX . 'COOKIE_TIMEOUT');
                 if (Validate::isInt($piwikCookieTimout) && $piwikCookieTimout > 0) {
-                    Configuration::updateValue(PKHelper::CPREFIX . 'COOKIE_TIMEOUT', $piwikCookieTimout);
+                    Configuration::updateValue(PiwikHelper::CPREFIX . 'COOKIE_TIMEOUT', $piwikCookieTimout);
                 } else {
                     $this->errors[] = Tools::displayError($this->l('Cookie Timout is not valid, must be an integer and higher than 0', $this->name));
                 }
@@ -164,7 +164,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'RCOOKIE_TIMEOUT')) {
                 $piwikCookieTimout = (int) Tools::getValue(PiwikHelper::CPREFIX . 'RCOOKIE_TIMEOUT');
                 if (Validate::isInt($piwikCookieTimout) && $piwikCookieTimout > 0) {
-                    Configuration::updateValue(PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT', $piwikCookieTimout);
+                    Configuration::updateValue(PiwikHelper::CPREFIX . 'RCOOKIE_TIMEOUT', $piwikCookieTimout);
                 } else {
                     $this->errors[] = Tools::displayError($this->l('Referral Cookie Timout is not valid, must be an integer and higher than 0', $this->name));
                 }
@@ -310,13 +310,16 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             }
         }
 
-        // show config options
+        // check hooks
+        foreach ($this->module->piwik_hooks as $key => $value)
+            if (!$this->module->isRegisteredInHook($value) && !Configuration::get(PiwikHelper::CPREFIX . 'IGNORE' . $key))
+                $this->warnings[] = sprintf($this->l('Hooks: \'%s\' is not registered', $this->name), $value);
 
+        // process configuration update
         $this->processSubmitConfiguration();
 
         $this->addJqueryPlugin('tagify', _PS_JS_DIR_ . 'jquery/plugins/');
-
-
+        // show config options
         $PIWIK_PRODID_V1 = Configuration::get(PiwikHelper::CPREFIX . 'PRODID_V1');
         $PIWIK_PRODID_V2 = Configuration::get(PiwikHelper::CPREFIX . 'PRODID_V2');
         $PIWIK_PRODID_V3 = Configuration::get(PiwikHelper::CPREFIX . 'PRODID_V3');

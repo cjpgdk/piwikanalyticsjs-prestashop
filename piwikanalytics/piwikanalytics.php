@@ -63,6 +63,20 @@ class piwikanalytics extends Module {
     private $_default_config_values = array();
     private static $isOrder = FALSE;
 
+    /**
+     * the default hooks to install
+     * @var array
+     */
+    public $piwik_hooks = array(
+        'displayHeader',
+        'displayFooter',
+        'actionSearch',
+        'displayRightColumnProduct',
+        'displayMaintenance',
+        /* 'orderConfirmation', ///retro name */
+        'displayOrderConfirmation',
+    );
+
     public function __construct($name = null, $context = null) {
 
         $this->_default_config_values[PiwikHelper::CPREFIX . 'COOKIE_DOMAIN'] = Tools::getShopDomain();
@@ -106,6 +120,12 @@ class piwikanalytics extends Module {
         if (is_object($this->context->smarty) && (!is_object($this->smarty) || !($this->smarty instanceof Smarty_Data))) {
             $this->smarty = $this->context->smarty->createData($this->context->smarty);
         }
+
+        if (Configuration::getGlobalValue('PIWIKHOOKSFAIL')) {
+            Configuration::deleteByName('PIWIKHOOKSFAIL');
+            if (!$this->installHooks())
+                $this->warning .= $this->l('some or all hooks faild to register..');
+        }
     }
 
     public function getContent() {
@@ -115,6 +135,11 @@ class piwikanalytics extends Module {
 
     /* ## HOOKs ## */
 
+    public function hookdisplayOrderConfirmation($params) {
+        return $this->hookOrderConfirmation($params);
+    }
+
+    // retro name
     public function hookOrderConfirmation($params) {
         // short code the config prefix
         $CPREFIX = PiwikHelper::CPREFIX;
@@ -633,6 +658,19 @@ class piwikanalytics extends Module {
         return parent::enable($force_all);
     }
 
+    public function isConfigured() {
+        if (!Module::isInstalled('piwikmanager') || !Module::isEnabled('piwikmanager')) {
+            return false;
+        }
+        $piwik_sites = PiwikHelper::getSitesWithAdminAccess();
+        if (empty($piwik_sites)) {
+            return false;
+        }
+        if ((int) Configuration::get(PiwikHelper::CPREFIX . 'SITEID') <= 0)
+            return false;
+        return true;
+    }
+
     /**
      * Install the module
      * @return boolean false on install error
@@ -648,15 +686,36 @@ class piwikanalytics extends Module {
                 Configuration::updateGlobalValue($key, $value);
         }
 
-        if ($this->registerHook('displayHeader') &&
-                $this->registerHook('displayFooter') &&
-                $this->registerHook('actionSearch') &&
-                $this->registerHook('displayRightColumnProduct') &&
-                $this->registerHook('displayMaintenance') &&
-                $this->registerHook('orderConfirmation'))
-            return parent::install() && $this->installTabs();
-        else 
-            return false;
+        // we try here, if fail we try again in construct when loaded,
+        // if still not in the required hooks we isset a warning
+        if (!$this->installHooks())
+            Configuration::updateGlobalValue('PIWIKHOOKSFAIL', 1);
+
+        return parent::install() && $this->installTabs();
+    }
+
+    /**
+     * check if all hooks are installed, (if not set to ignore)
+     * @return boolean
+     */
+    public function checkHooks() {
+        $ret = true;
+        foreach ($this->piwik_hooks as $key => $value)
+            if (!$this->isRegisteredInHook($value) && !Configuration::get(PiwikHelper::CPREFIX . 'IGNORE' . $key))
+                $ret = false;
+        return $ret;
+    }
+
+    /**
+     * intall/register hooks
+     * @return boolean
+     */
+    public function installHooks() {
+        $ret = true;
+        foreach ($this->piwik_hooks as $value)
+            if (!$this->registerHook($value))
+                $ret = false;
+        return $ret;
     }
 
     /**
