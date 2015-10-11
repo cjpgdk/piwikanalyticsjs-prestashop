@@ -20,6 +20,7 @@
     {else}
             window.piwikTracker = Piwik.getTracker(u + 'piwik.php', {$piwikIdSite});
     {/if}
+            window.piwikTracker.enableJSErrorTracking();
     {hook h="piwikTrackerStart"}
     {if $piwikDNT eq true}
             window.piwikTracker.setDoNotTrack(true);
@@ -39,7 +40,7 @@
     {if isset($piwikSessionCookieTimeout) && $piwikSessionCookieTimeout != ""}
             window.piwikTracker.setSessionCookieTimeout({$piwikSessionCookieTimeout});
     {/if}
-            window.piwikTracker.enableLinkTracking();
+            window.piwikTracker.enableLinkTracking(true);
     {if isset($piwikUserId)}
             window.piwikTracker.setUserId('{$piwikUserId}');
     {/if}
@@ -84,9 +85,13 @@
         {hook h="piwikTrackerPageView"}
             window.piwikTracker.trackPageView();
     {/if}
+            if (typeof piwikTrackerLoaded == 'function') {
+                piwikTrackerLoaded();
+            }
         } catch (err) {
         }
     };
+    
 </script>       
 {if isset($piwikEXHTML)}
     {$piwikEXHTML}

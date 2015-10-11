@@ -162,8 +162,12 @@
                                                     }
                                                     actionsHtml += '" ';
                                                     actionsHtml += 'src="{$protocol}{$piwik_host}' + data[i].actionDetails[actionI].icon + '" /> {l s='Revenue:' mod='piwikdashboard'} {$piwik_currency_prefix}' + data[i].actionDetails[actionI].revenue + ' {$piwik_currency_sign}{$piwik_currency_suffix}</span>';
-                                                } else {
+                                                } else if(data[i].actionDetails[actionI].type === 'event') {
                                                     // new type or just some thing i over looked ;\
+                                                    actionsHtml += '<a target="_blank" href="' + data[i].actionDetails[actionI].url + '">';
+                                                    actionsHtml += '<img title="' + data[i].actionDetails[actionI].eventCategory + ' - ' + data[i].actionDetails[actionI].eventAction + ' - ' + data[i].actionDetails[actionI].eventName + '" src="{$protocol}{$piwik_host}' + data[i].actionDetails[actionI].icon + '">';
+                                                    actionsHtml += '</a>';
+                                                } else {
                                                     console.log(data[i].actionDetails[actionI]);
                                                 }
 
@@ -183,7 +187,9 @@
                                                 innerHtml += '&nbsp;<img title="' + data[i].country + ', {l s='Provider' mod='piwikdashboard'} ' + data[i].providerName + '" src="{$protocol}{$piwik_host}' + data[i].countryFlag + '">';
                                                 innerHtml += '&nbsp;<img title="' + data[i].browser + ', {l s='Plugins:' mod='piwikdashboard'} ' + data[i].plugins + '" src="{$protocol}{$piwik_host}' + data[i].browserIcon + '">';
                                                 innerHtml += '&nbsp;<img title="' + data[i].operatingSystem + ', ' + data[i].resolution + '" src="{$protocol}{$piwik_host}' + data[i].operatingSystemIcon + '">';
-                                                innerHtml += '&nbsp;<img title="' + data[i].visitorType + '" src="{$protocol}{$piwik_host}' + data[i].visitorTypeIcon + '">';
+                                                if (typeof data[i].visitorTypeIcon  !== 'undefined' && data[i].visitorTypeIcon !== null) {
+                                                    innerHtml += '&nbsp;<img title="' + data[i].visitorType + '" src="{$protocol}{$piwik_host}' + data[i].visitorTypeIcon + '">';
+                                                }
                                                 innerHtml += '<br><span title="{l s='Visitor ID:' mod='piwikdashboard'} ' + data[i].visitorId + '">{l s='IP:' mod='piwikdashboard'} ' + data[i].visitIp + (data[i].visitIpHost !== undefined && data[i].visitIpHost !==  "" ? ' ('+data[i].visitIpHost+')':'' ) + '</span>';
                                                 
                                                 if(data[i].referrerType === 'website'){
