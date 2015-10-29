@@ -119,8 +119,14 @@ class PiwikAnalyticsPiwikModuleFrontController extends ModuleFrontController {
                 continue;
             $url .= urlencode($key) . '=' . urlencode($value) . '&';
         }
-        $this->sendHeader("Content-Type: image/gif");
-        die(file_get_contents($url, false, $http_context));
+        // check for redirect, integration with piwik content tracking
+        if (!Tools::getIsset('redirecturl')) {
+            $this->sendHeader("Content-Type: image/gif");
+            die(file_get_contents($url, false, $http_context));
+        }  else {
+            @file_get_contents($url, false, $http_context);
+            Tools::redirect(Tools::getValue('redirecturl'));
+        }
     }
 
     private function getVisitIp() {

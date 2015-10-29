@@ -77,6 +77,7 @@
     {if isset($piwik404) && $piwik404 eq true}
             window.piwikTracker.setDocumentTitle('404/URL = ' + encodeURIComponent(document.location.pathname + document.location.search) + '/From = ' + encodeURIComponent(document.referrer));
     {/if}
+            window.piwikTracker.trackAllContentImpressions();
     {hook h="piwikTrackerEnd"}
     {if isset($piwikIsSearch) && $piwikIsSearch eq true}
         {hook h="piwikTrackerSiteSearch"}
