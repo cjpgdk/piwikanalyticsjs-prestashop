@@ -63,7 +63,7 @@ class PiwikHelper {
      * DO NOT log == 0
      * log will be saved to [PS ROOT]/log/YYYYMMDD_piwik.debug.log
      */
-    private static $DEBUGLOG = 1;
+    private static $DEBUGLOG = 0;
 
     /** @var FileLogger */
     private static $_debug_logger = NULL;
@@ -97,26 +97,93 @@ class PiwikHelper {
         self::$_debug_logger->logDebug($message);
     }
 
-    /*
-     * SitesManager.addSite(
-     *     * siteName, 
-     *     * urls, 
-     *     * ecommerce = '', 
-     *     * siteSearch = '', 
-     *     * searchKeywordParameters = '',
-     *     * searchCategoryParameters = '', 
-     *     * excludedIps = '',
-     *     * excludedQueryParameters = '', 
-     *     * timezone = '', 
-     *     * currency = '', 
-     *     - group = '', 
-     *     - startDate = '', 
-     *     * excludedUserAgents = '', 
-     *     * keepURLFragments = '', 
-     *     - type = '', 
-     *     - settings = ''
-     * )
+    // SitesManager.deleteSite (idSite)
+    public static function deletePiwikSite($idSite) {
+        if (!self::baseTest() || ($idSite <= 0))
+            return false;
+        $url = self::getBaseURL($idSite);
+        $url .= "&method=SitesManager.deleteSite&format=JSON&";
+
+        if ($result = self::getAsJsonDecoded($url)) {
+            return $result;
+        }
+        return FALSE;
+    }
+
+    /**
+     * adds a new site to piwik
+     * @param type $siteName
+     * @param type $urls
+     * @param type $ecommerce
+     * @param type $siteSearch
+     * @param type $searchKeywordParameters
+     * @param type $searchCategoryParameters
+     * @param type $excludedIps
+     * @param type $excludedQueryParameters
+     * @param type $timezone
+     * @param type $currency
+     * @param type $group
+     * @param type $startDate
+     * @param type $excludedUserAgents
+     * @param type $keepURLFragments
+     * @param type $type
+     * @param type $settings
+     * @return int|boolean boolean false on error, new siteid on success
      */
+    public static function addPiwikSite($siteName, $urls, $ecommerce = 1, $siteSearch = 1, $searchKeywordParameters = '', $searchCategoryParameters = '', $excludedIps = '', $excludedQueryParameters = '', $timezone = 'UTC', $currency = '', $group = '', $startDate = '', $excludedUserAgents = '', $keepURLFragments = 0, $type = 'website', $settings = '') {
+        if (!self::baseTest())
+            return false;
+        $url = self::getBaseURL(0);
+        $url .= "&method=SitesManager.addSite&format=JSON&";
+
+        $url_params = array();
+        if ($siteName !== NULL)
+            $url_params['siteName'] = $siteName;
+        if ($urls !== NULL) {
+            foreach (explode(',', $urls) as $value) {
+                if (!empty($value))
+                    $url_params['urls'][] = trim($value);
+            }
+        }
+        if ($ecommerce !== NULL && !empty($ecommerce))
+            $url_params['ecommerce'] = intval($ecommerce) > 0 ? 1 : 0;
+        if ($siteSearch !== NULL && !empty($siteSearch))
+            $url_params['siteSearch'] = intval($siteSearch) > 0 ? 1 : 0;
+        if ($searchKeywordParameters !== NULL && !empty($searchKeywordParameters))
+            $url_params['searchKeywordParameters'] = $searchKeywordParameters;
+        if ($searchCategoryParameters !== NULL && !empty($searchCategoryParameters))
+            $url_params['searchCategoryParameters'] = $searchCategoryParameters;
+        if ($excludedIps !== NULL && !empty($excludedIps))
+            $url_params['excludedIps'] = $excludedIps;
+        if ($excludedQueryParameters !== NULL && !empty($excludedQueryParameters))
+            $url_params['excludedQueryParameters'] = $excludedQueryParameters;
+        if ($timezone !== NULL && !empty($timezone))
+            $url_params['timezone'] = $timezone;
+        if ($currency !== NULL && !empty($currency))
+            $url_params['currency'] = $currency;
+        if ($group !== NULL && !empty($group))
+            $url_params['group'] = $group;
+        if ($startDate !== NULL && !empty($startDate))
+            $url_params['startDate'] = $startDate;
+        if ($excludedUserAgents !== NULL && !empty($excludedUserAgents))
+            $url_params['excludedUserAgents'] = $excludedUserAgents;
+        if ($keepURLFragments !== NULL && !empty($keepURLFragments))
+            $url_params['keepURLFragments'] = $keepURLFragments;
+        if ($type !== NULL && !empty($type))
+            $url_params['type'] = $type;
+        if ($settings !== NULL && !empty($settings))
+            $url_params['settings'] = $settings;
+
+        if ($result = self::getAsJsonDecoded($url . http_build_query($url_params))) {
+            if (isset($result->result)) {
+                self::$error = self::l(sprintf('Unknown response from Piwik API: [%s]', $result->result)) . ' - message: ' . isset($result->message) ? $result->message : '';
+                self::$errors[] = self::$error;
+            } else if (isset($result->value)) {
+                return $result->value;
+            }
+        }
+        return FALSE;
+    }
 
     /**
      * update a piwik site.
@@ -216,7 +283,7 @@ class PiwikHelper {
         if ($password === null || empty($password)) {
             $password = $md5Password;
             if ($md5Password === NULL || empty($md5Password)) {
-                self::$error = self::l('A password is required for method self::getTokenAuth()!');
+                self::$error = self::l('A password is required for method PiwikHelper::getTokenAuth()!');
                 self::$errors[] = self::$error;
                 return FALSE;
             }
@@ -257,18 +324,18 @@ class PiwikHelper {
         $url = self::getBaseURL();
         $url .= "&method=SitesManager.getImageTrackingCode&format=JSON";
         $url .= "&piwikUrl=" . urlencode(rtrim($piwikUrl, '/'));
-        
+
         if ($actionName != NULL)
             $url .= "&actionName=" . urlencode($actionName);
-        
-        if(!empty($idGoal))
+
+        if (!empty($idGoal))
             $url .= "&idGoal=" . urlencode($idGoal);
-        
-        if(!empty($revenue))
+
+        if (!empty($revenue))
             $url .= "&revenue=" . urlencode($revenue);
 
         $md5Url = md5($url);
-        
+
         if (!Cache::isStored('PiwikHelper' . $md5Url)) {
             if ($result = self::getAsJsonDecoded($url))
                 Cache::store('PiwikHelper' . $md5Url, $result->value);
@@ -604,7 +671,7 @@ class PiwikHelper {
             $url_params['module'] = $pkModule;
         if ($isoCode !== FALSE)
             $url_params['language'] = $isoCode;
-        if ($idSite !== FALSE)
+        if ($idSite !== FALSE && (int) $idSite > 0)
             $url_params['idSite'] = $idSite;
         if ($tokenAuth !== FALSE)
             $url_params['token_auth'] = $tokenAuth;
@@ -624,6 +691,7 @@ class PiwikHelper {
         // $this->l('E-commerce is not active for your site in piwik!')
         // $this->l('Site search is not active for your site in piwik!')
         // $this->l('A password is required for method self::getTokenAuth()!')
+        // $this->l('Unknown response from Piwik API: [%s]')
     }
 
 }

@@ -95,7 +95,10 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
 
     public function renderView() {
         $this->processlookupAuthToken();
-        
+
+        if (Tools::isSubmit('submitAddPiwikAnalyticsSite'))
+            $this->processAddNewSite();
+
         $view = parent::renderView();
 
         $tpl_folder = _PS_MODULE_DIR_ . $this->module->name . '/views/templates/admin/PiwikAnalyticsSiteManager/';
@@ -109,8 +112,6 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
 
 
         $this->processUpdatePiwikAnalyticsSiteFormUpdate();
-        if (Tools::isSubmit('submitAddPiwikAnalyticsSite'))
-            $this->processAddNewSite();
 
 
         if (Tools::isSubmit('addPiwikAnalyticsSiteManager')) {
@@ -130,6 +131,9 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
             if (Tools::isSubmit('deletePiwikAnalyticsSiteManager')) {
                 $idSite = Tools::getValue('idsite');
                 $view .= $this->deletePiwikAnalyticsSite($languages, $idSite);
+                // we just display a message from 'deletePiwikAnalyticsSite'
+                $view .= $this->generateConfigForm($languages);
+                $view .= $this->generateListForm($languages);
             }
         } else if (Tools::isSubmit('lookupAuthToken')) {
             $view .= $this->generatelookupAuthTokenForm($languages);
@@ -244,24 +248,65 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
 //    }
 
     private function deletePiwikAnalyticsSite($languages, $idSite) {
-        //die("delete, site: " . Tools::getValue('idsite'));
-        $this->displayInformation('Delete Site: Not yet sorry..');
+        $result = PiwikHelper::deletePiwikSite($idSite);
+        if (is_object($result) && isset($result->result)) {
+            if (strtolower($result->result) == 'success') {
+                $this->messages[] = $this->displayConfirmation(sprintf($this->l('Site id %s deleted'), $idSite) . (isset($result->message) ? ' - ' . $result->message : ''));
+            } else if (strtolower($result->result) == 'error' && isset($result->message)) {
+                $this->errors[] = Tools::displayError($result->message);
+            } else {
+                $this->errors[] = Tools::displayError($this->l('Something went wrong or we got unknown response from Piwik API'));
+            }
+        } else if (is_string($result) && $result !== FALSE) {
+            $this->displayInformation($result);
+        }
     }
 
     private function processAddNewSite() {
-        $this->displayInformation('Add New Site: Not yet sorry..');
-
-
         $addons = PKClassLoader::LoadAddons(array('controller' => & $this));
         foreach ($addons as $addon) {
             if (method_exists($addon, 'CreateSiteSubmitForm'))
                 $addon->CreateSiteSubmitForm();
         }
+
+        $siteName = Tools::getValue('PKNewSiteName');
+        $urls = Tools::getValue('PKNewMainUrl') . ',' . Tools::getValue('PKNewAddtionalUrls');
+        $ecommerce = Tools::getValue('PKNewEcommerce', 1);
+        $siteSearch = Tools::getValue('PKNewSiteSearch', 1);
+        $searchKeywordParameters = Tools::getValue('PKNewSearchKeywordParameters', '');
+        $searchCategoryParameters = Tools::getValue('PKNewSearchCategoryParameters', '');
+        $excludedIps = Tools::getValue('PKNewExcludedIps', '');
+        $excludedQueryParameters = Tools::getValue('PKNewExcludedQueryParameters', '');
+        $timezone = Tools::getValue('PKNewTimezone', 'UTC');
+        $currency = Tools::getValue('PKNewCurrency', 'EUR');
+        $group = Tools::getValue('PKNewSiteGroup', '');
+        $startDate = Tools::getValue('PKNewSiteStartDate', '');
+        $excludedUserAgents = Tools::getValue('PKNewExcludedUserAgents', '');
+        $keepURLFragments = Tools::getValue('PKNewKeepURLFragments', 0);
+        $type = Tools::getValue('PKNewSiteType', 'website');
+        $settings = Tools::getValue('PKNewSiteSettings', '');
+
+        $idSite = 0;
+        $newSiteResult = PiwikHelper::addPiwikSite($siteName, $urls, $ecommerce, $siteSearch, $searchKeywordParameters, $searchCategoryParameters, $excludedIps, $excludedQueryParameters, $timezone, $currency, $group, $startDate, $excludedUserAgents, $keepURLFragments, $type, $settings);
+        if ($newSiteResult !== false && (int) $newSiteResult > 0) {
+            $idSite = (int) $newSiteResult;
+            $newSiteResult = 'OK';
+            $this->messages[] = $this->displayConfirmation(sprintf($this->l('Site created successfully with id %s'), $idSite));
+        } else {
+            /* message about this comes from piwik */
+            $newSiteResult = 'ERROR';
+        }
+
+        foreach ($addons as $addon) {
+            if (method_exists($addon, 'CreateSiteSubmitFormAfter'))
+                $addon->CreateSiteSubmitFormAfter($idSite, $newSiteResult);
+        }
     }
 
     private function generateAddNewSiteForm($languages) {
 
-        $this->addJqueryPlugin('tagify', _PS_JS_DIR_ . 'jquery/plugins/');
+        $this->addJqueryUi('ui.widget');
+        $this->addJqueryPlugin('tagify');
 
         $helper = new HelperForm();
 
@@ -337,7 +382,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
                     'name' => 'PKNewMainUrl',
                 ),
                 array(
-                    'type' => 'tags',
+                    'type' => 'tagsurls',
                     'label' => $this->l('Addtional Urls', 'PiwikAnalyticsSiteManager'),
                     'name' => 'PKNewAddtionalUrls',
                 ),
@@ -379,24 +424,24 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
                     ),
                 ),
                 array(
-                    'type' => 'tags',
+                    'type' => 'tagskeyword',
                     'label' => $this->l('Search Keyword Parameters', 'PiwikAnalyticsSiteManager'),
                     'name' => 'PKNewSearchKeywordParameters',
                     'desc' => "<strong>tag</strong> and <strong>search_query</strong> " . $this->l('keywords parameters must be excluded to avoid normal page views to be interpreted as searches (the tracking code will see them and make the required postback to Piwik if it is a real search), if you are only using PrestaShop with this site setting this to empty, will be sufficient', 'PiwikAnalyticsSiteManager'),
                 ),
                 array(
-                    'type' => 'tags',
+                    'type' => 'tagsparameters',
                     'label' => $this->l('Search Category Parameters', 'PiwikAnalyticsSiteManager'),
                     'name' => 'PKNewSearchCategoryParameters',
                 ),
                 array(
-                    'type' => 'tags',
+                    'type' => 'tagsip',
                     'label' => $this->l('Excluded ip addresses', 'PiwikAnalyticsSiteManager'),
                     'name' => 'PKNewExcludedIps',
                     'desc' => $this->l('ip addresses excluded from tracking, separated by comma ","', 'PiwikAnalyticsSiteManager'),
                 ),
                 array(
-                    'type' => 'tags',
+                    'type' => 'tagsparameters',
                     'label' => $this->l('Excluded Query Parameters', 'PiwikAnalyticsSiteManager'),
                     'name' => 'PKNewExcludedQueryParameters',
                     'desc' => $this->l('please read: http://piwik.org/faq/how-to/faq_81/', 'PiwikAnalyticsSiteManager'),
@@ -558,7 +603,9 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
 
     private function generateUpdatePiwikAnalyticsSiteForm($languages, $idSite) {
 
-        $this->addJqueryPlugin('tagify', _PS_JS_DIR_ . 'jquery/plugins/');
+        $this->addJqueryUi('ui.widget');
+        $this->addJqueryPlugin('tagify');
+        
 
         $pkSite = PiwikHelper::getPiwikSite2($idSite);
         $this->displayErrorsFromPiwikHelper();
@@ -568,12 +615,6 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
             return false;
         }
 
-        /**
-          [idsite] => 14
-          [ts_created] => 2014-04-08 00:00:00
-          [group] =>
-          [type] => website
-         */
         $urls = explode(',', $pkSite['main_url']);
         $main_url = $urls[0];
         $addtional_urls = "";
@@ -679,7 +720,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
                     'name' => 'PKMainUrl',
                 ),
                 array(
-                    'type' => 'tags',
+                    'type' => 'tagsurls',
                     'label' => $this->l('Addtional Urls', 'PiwikAnalyticsSiteManager'),
                     'name' => 'PKAddtionalUrls',
                 ),
@@ -721,24 +762,24 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
                     ),
                 ),
                 array(
-                    'type' => 'tags',
+                    'type' => 'tagskeyword',
                     'label' => $this->l('Search Keyword Parameters', 'PiwikAnalyticsSiteManager'),
                     'name' => 'PKSearchKeywordParameters',
                     'desc' => "<strong>tag</strong> and <strong>search_query</strong> " . $this->l('keywords parameters must be excluded to avoid normal page views to be interpreted as searches (the tracking code will see them and make the required postback to Piwik if it is a real search), if you are only using PrestaShop with this site setting this to empty, will be sufficient', 'PiwikAnalyticsSiteManager'),
                 ),
                 array(
-                    'type' => 'tags',
+                    'type' => 'tagsparameters',
                     'label' => $this->l('Search Category Parameters', 'PiwikAnalyticsSiteManager'),
                     'name' => 'PKSearchCategoryParameters',
                 ),
                 array(
-                    'type' => 'tags',
+                    'type' => 'tagsip',
                     'label' => $this->l('Excluded ip addresses', 'PiwikAnalyticsSiteManager'),
                     'name' => 'PKExcludedIps',
                     'desc' => $this->l('ip addresses excluded from tracking, separated by comma ","', 'PiwikAnalyticsSiteManager'),
                 ),
                 array(
-                    'type' => 'tags',
+                    'type' => 'tagsparameters',
                     'label' => $this->l('Excluded Query Parameters', 'PiwikAnalyticsSiteManager'),
                     'name' => 'PKExcludedQueryParameters',
                     'desc' => $this->l('please read: http://piwik.org/faq/how-to/faq_81/', 'PiwikAnalyticsSiteManager'),

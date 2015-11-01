@@ -41,6 +41,70 @@
 
     {else if $input.type == 'html'}
         {$input.name}
+    {else if $input.type == 'tagsurls'}
+        {* set it this way to give a more meaning full translation insted of Add tag *}
+        {literal}
+            <script type="text/javascript">
+                $().ready(function () {
+                    var input_id = '{/literal}{if isset($input.id)}{$input.id}{else}{$input.name}{/if}{literal}';
+                    $('#' + input_id).tagify({delimiters: [13, 44], addTagPrompt: '{/literal}{l s='Add Url'}{literal}'});
+                    $({/literal}'#{$table}{literal}_form').submit(function () {
+                        $(this).find('#' + input_id).val($('#' + input_id).tagify('serialize'));
+                    });
+                });
+            </script>
+        {/literal}
+        {$input.class = 'tagify'}
+        {$input.type = 'text'}
+        {$smarty.block.parent}
+    {else if $input.type == 'tagskeyword'}
+        {* set it this way to give a more meaning full translation insted of Add tag *}
+        {literal}
+            <script type="text/javascript">
+                $().ready(function () {
+                    var input_id = '{/literal}{if isset($input.id)}{$input.id}{else}{$input.name}{/if}{literal}';
+                    $('#' + input_id).tagify({delimiters: [13, 44], addTagPrompt: '{/literal}{l s='Add Keyword'}{literal}'});
+                    $({/literal}'#{$table}{literal}_form').submit(function () {
+                        $(this).find('#' + input_id).val($('#' + input_id).tagify('serialize'));
+                    });
+                });
+            </script>
+        {/literal}
+        {$input.class = 'tagify'}
+        {$input.type = 'text'}
+        {$smarty.block.parent}
+    {else if $input.type == 'tagsparameters'}
+        {* set it this way to give a more meaning full translation insted of Add tag *}
+        {literal}
+            <script type="text/javascript">
+                $().ready(function () {
+                    var input_id = '{/literal}{if isset($input.id)}{$input.id}{else}{$input.name}{/if}{literal}';
+                    $('#' + input_id).tagify({delimiters: [13, 44], addTagPrompt: '{/literal}{l s='Add Parameter'}{literal}'});
+                    $({/literal}'#{$table}{literal}_form').submit(function () {
+                        $(this).find('#' + input_id).val($('#' + input_id).tagify('serialize'));
+                    });
+                });
+            </script>
+        {/literal}
+        {$input.class = 'tagify'}
+        {$input.type = 'text'}
+        {$smarty.block.parent}
+    {else if $input.type == 'tagsip'}
+        {* set it this way to give a more meaning full translation insted of Add tag *}
+        {literal}
+            <script type="text/javascript">
+                $().ready(function () {
+                    var input_id = '{/literal}{if isset($input.id)}{$input.id}{else}{$input.name}{/if}{literal}';
+                    $('#' + input_id).tagify({delimiters: [13, 44], addTagPrompt: '{/literal}{l s='Add IP'}{literal}'});
+                    $({/literal}'#{$table}{literal}_form').submit(function () {
+                        $(this).find('#' + input_id).val($('#' + input_id).tagify('serialize'));
+                    });
+                });
+            </script>
+        {/literal}
+        {$input.class = 'tagify'}
+        {$input.type = 'text'}
+        {$smarty.block.parent}
     {else}
         {$smarty.block.parent}
     {/if}

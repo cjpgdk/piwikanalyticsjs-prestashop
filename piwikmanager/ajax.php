@@ -27,6 +27,9 @@
  * 
  * UNTESTED, NOT SURE IF NEEDED..
  */
+
+die('UNTESTED: Disabled for security');
+
 include(dirname(__FILE__) . '/../../config/config.inc.php');
 include(dirname(__FILE__) . '/../../init.php');
 

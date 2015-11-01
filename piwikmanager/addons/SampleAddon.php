@@ -60,7 +60,7 @@ class SampleAddon {
     
 
     /**
-     * Called when create new site is submitted
+     * Called when create new site form is submitted, before the site details are sent to piwik
      * after default create method
      */
     public function CreateSiteSubmitForm() {
@@ -69,7 +69,49 @@ class SampleAddon {
         if (Tools::isSubmit('submitAddPiwikAnalyticsSite')) {
             
             // @see SiteEditSubmitForm
+            /*
+             * to override data before we send the data to piwik
+             */
+            //[PKNewSiteName] => Webshop - Prestashop '1.6.0.1'
+            //[PKNewMainUrl] => my-domain.tld
+            //[PKNewAddtionalUrls] => catalog.my-domain.tld
+            //[PKNewEcommerce] => 1 --- MUST BE '1' or '0'
+            //[PKNewSiteSearch] => 1 --- MUST BE '1' or '0'
+            //[PKNewSearchKeywordParameters] => search_query2,tag2
+            //[PKNewSearchCategoryParameters] => cParameter,cParameter2,cParameter3
+            //[PKNewExcludedIps] => 192.168.1.32,54.32.84.56
+            //[PKNewExcludedQueryParameters] => qParam,qParam2,qParam3
+            //[PKNewTimezone] => UTC
+            //[PKNewCurrency] => EUR
+            //[PKNewExcludedUserAgents] => 
+            //[PKNewKeepURLFragments] => 0 --- MUST BE '1' or '0'
+            //
+            // NOT ISSET BUT SUPPORTED
+            // set them via $_POST eg. "$_POST['PKNewSiteGroup'] = 'SampleAddonGroup';"
+            // 
+            //  - PKNewSiteGroup
+            //  - PKNewSiteStartDate
+            //  - PKNewSiteSettings
+            //  - PKNewSiteType         : defaults to website if not isset
+            //
+            $_POST['PKNewSiteName'] = $_POST['PKNewSiteName'] . ' (Modyfied by SampleAddon)';
             
+            /*
+             * i do not set a group name from my code 
+             * how ever if your addon makes use of groups you can set the group like this
+             */
+            $_POST['PKNewSiteGroup'] = 'SampleAddonGroup';
+            
+            
+        }
+    }
+    // same as above but after the site is created in piwik
+    public function CreateSiteSubmitFormAfter($idSite, $result) {
+        return; // we don't want to load samples
+        if ($result == 'OK') {
+            // new site created with id $idSite
+        }else if ($result == 'ERROR') {
+            // no new site created or responce from api was unknown ($idSite == 0)
         }
     }
 

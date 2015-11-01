@@ -69,13 +69,11 @@ class CustomOptOut {
                 $customCss = Tools::getValue('PKCustomCss');
                 $siteId = Tools::getValue('idSite');
                 $result = PiwikPluginCustomOptOut::SaveSite($siteId, $customCss, $customCssFile);
-                //die('<pre>'.print_r($result, true));
             }
         }
     }
 
     public function SiteEditForm($idSite, & $helper, & $fields_form) {
-
         // add suport for Piwik plugin 'CustomOptOut'
         if (PiwikHelper::isPluginActive('CustomOptOut')) {
             PiwikPluginCustomOptOut::initialize();
