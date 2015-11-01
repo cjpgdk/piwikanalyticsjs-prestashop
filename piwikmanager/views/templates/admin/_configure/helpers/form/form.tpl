@@ -39,6 +39,8 @@
                    {if isset($input.required) && $input.required } required="required" {/if} />
         </div>
 
+    {else if $input.type == 'html'}
+        {$input.name}
     {else}
         {$smarty.block.parent}
     {/if}

@@ -29,13 +29,12 @@ PiwikHelper::initialize();
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  */
-
 class piwikmanager extends Module {
 
     private $_default_config_values = array();
-    
+
     public function __construct($name = null, $context = null) {
-        
+
         $this->_default_config_values[PiwikHelper::CPREFIX . 'CRHTTPS'] = 0;
         $this->_default_config_values[PiwikHelper::CPREFIX . 'DEBUG'] = 0;
         $this->_default_config_values[PiwikHelper::CPREFIX . 'USE_CURL'] = 0;
@@ -53,7 +52,7 @@ class piwikmanager extends Module {
         $this->url = 'http://cmjnisse.github.io/piwikanalyticsjs-prestashop/';
 
         $this->ps_versions_compliancy = array('min' => '1.6.0.0', 'max' => '1.6.999.999');
-        
+
         $this->bootstrap = true;
 
         parent::__construct($name, $context);
@@ -66,14 +65,14 @@ class piwikmanager extends Module {
             $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You need to configure the auth token');
         if ($this->id && !Configuration::get(PiwikHelper::CPREFIX . 'HOST'))
             $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You need to configure the Piwik server url');
-        
     }
+
     public function getIdentifier() {
         return $this->identifier;
     }
 
     public function getContent() {
-        header('Location: index.php?controller=PiwikAnalyticsSiteManager&token=' .  Tools::getAdminTokenLite('PiwikAnalyticsSiteManager'));
+        header('Location: index.php?controller=PiwikAnalyticsSiteManager&token=' . Tools::getAdminTokenLite('PiwikAnalyticsSiteManager'));
         exit;
     }
 
@@ -123,7 +122,7 @@ class piwikmanager extends Module {
         if (!parent::uninstall()) {
             return false;
         }
-        
+
         foreach ($this->_default_config_values as $key => $value) {
             Configuration::deleteByName($key);
         }
@@ -142,8 +141,14 @@ class piwikmanager extends Module {
     }
 
     public function hookDisplayBackOfficeHeader() {
-        if (method_exists($this->context->controller, 'addCSS'))
-            $this->context->controller->addCSS($this->_path . 'css/admin.css', 'all');
+        if (method_exists($this->context->controller, 'addCSS')) {
+            if (version_compare(_PS_VERSION_, '1.6.0.1', '<=')) {
+                /* using old icon font */
+                $this->context->controller->addCSS($this->_path . 'css/admin_old.css', 'all');
+            } else {
+                $this->context->controller->addCSS($this->_path . 'css/admin.css', 'all');
+            }
+        }
     }
 
     private function installTabs() {

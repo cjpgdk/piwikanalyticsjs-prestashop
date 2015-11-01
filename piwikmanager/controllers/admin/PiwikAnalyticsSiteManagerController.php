@@ -66,7 +66,8 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
         if (Tools::isSubmit('updatePiwikAnalyticsSiteManager') ||
                 Tools::isSubmit('deletePiwikAnalyticsSiteManager') ||
                 Tools::isSubmit('viewPiwikAnalyticsSiteManager') ||
-                Tools::isSubmit('addPiwikAnalyticsSiteManager')) {
+                Tools::isSubmit('addPiwikAnalyticsSiteManager') ||
+                Tools::isSubmit('lookupAuthToken')) {
 
             $this->page_header_toolbar_btn['backparent'] = array(
                 'href' => Context::getContext()->link->getAdminLink('PiwikAnalyticsSiteManager'),
@@ -93,6 +94,8 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
     }
 
     public function renderView() {
+        $this->processlookupAuthToken();
+        
         $view = parent::renderView();
 
         $tpl_folder = _PS_MODULE_DIR_ . $this->module->name . '/views/templates/admin/PiwikAnalyticsSiteManager/';
@@ -108,8 +111,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
         $this->processUpdatePiwikAnalyticsSiteFormUpdate();
         if (Tools::isSubmit('submitAddPiwikAnalyticsSite'))
             $this->processAddNewSite();
-        
-        $this->processlookupAuthToken();
+
 
         if (Tools::isSubmit('addPiwikAnalyticsSiteManager')) {
             $view .= $this->generateAddNewSiteForm($languages);
@@ -137,16 +139,34 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
         }
         return implode(',', $this->messages) . $view;
     }
+
     private function processlookupAuthToken() {
         if (Tools::isSubmit('submitLookupAuthToken') && Tools::getIsset('LookupUsername') && Tools::getIsset('LookupPassword')) {
-            $username = Tools::getIsset('LookupUsername');
-            $password = Tools::getIsset('LookupPassword');
-            $token = PiwikHelper::getTokenAuth($username, $password);
-            if ($token !== false && !empty($token)) {
-                Configuration::updateValue(PiwikHelper::CPREFIX . 'TOKEN_AUTH', $token);
-                $this->displayInformation(sprintf($this->l('Based on the information you provided, your authentication token is \'%s\'', 'PiwikAnalyticsSiteManager'), $token));
-            }  else {
-                $this->displayWarning($this->l('Unable to get your authentication token', 'PiwikAnalyticsSiteManager'));
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'HOST')) {
+                $tmp = Tools::getValue(PiwikHelper::CPREFIX . 'HOST', '');
+                if (!empty($tmp)) {
+                    $tmp = str_replace(array('http://', 'https://'), "", $tmp);
+                    if (substr($tmp, 0, 2) == '//')
+                        $tmp = substr($tmp, 2);
+                    if (PKTools::is_valid_url('http://' . $tmp)) {
+                        if (substr($tmp, -1) != "/")
+                            $tmp .= "/";
+                        Configuration::updateValue(PiwikHelper::CPREFIX . 'HOST', $tmp);
+                    } else
+                        $this->errors[] = Tools::displayError($this->l('Piwik host url is not valid', 'PiwikAnalyticsSiteManager'));
+                } else
+                    $this->errors[] = Tools::displayError($this->l('Piwik host cannot be empty', 'PiwikAnalyticsSiteManager'));
+            }
+            if (count($this->errors) <= 0) {
+                $username = Tools::getValue('LookupUsername');
+                $password = Tools::getValue('LookupPassword');
+                $token = PiwikHelper::getTokenAuth($username, $password);
+                if ($token !== false && !empty($token)) {
+                    Configuration::updateValue(PiwikHelper::CPREFIX . 'TOKEN_AUTH', $token);
+                    $this->displayInformation(sprintf($this->l("Based on the information you provided, your authentication token is '%s'", 'PiwikAnalyticsSiteManager'), $token));
+                } else {
+                    $this->displayWarning($this->l('Unable to get your authentication token', 'PiwikAnalyticsSiteManager'));
+                }
             }
         }
     }
@@ -171,13 +191,25 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
 
         $fields_form = array();
         $fields_form[0]['form']['legend'] = array(
-            'title' => $this->l('Lokup Piwik Authentication token', 'PiwikAnalyticsSiteManager'),
+            'title' => $this->l('Lookup Piwik Authentication token', 'PiwikAnalyticsSiteManager'),
             'image' => $this->module->getPathUri() . 'logox22.png'
         );
         $fields_form[0]['form']['input'][] = array(
             'type' => 'html',
             'name' => $this->l('Enter your piwik username and password.', $this->name),
         );
+
+        $piwikHost = Configuration::get(PiwikHelper::CPREFIX . 'HOST');
+        if ($piwikHost === false || !PKTools::is_valid_url('http://' . $piwikHost)) {
+            $fields_form[0]['form']['input'][] = array(
+                'type' => 'text',
+                'label' => $this->l('Piwik Host'),
+                'name' => PiwikHelper::CPREFIX . 'HOST',
+                'desc' => $this->l('Example: www.example.com/piwik/ (without protocol and with / at the end!)', 'PiwikAnalyticsSiteManager'),
+                'hint' => $this->l('The host where piwik is installed.!', 'PiwikAnalyticsSiteManager'),
+                'required' => true
+            );
+        }
 
         $fields_form[0]['form']['input'][] = array(
             'type' => 'text',
@@ -1089,7 +1121,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
 
         return $helper->generateForm($fields_form);
     }
-    
+
     public function displayConfirmation($string) {
         if (method_exists($this->module, 'displayConfirmation')) {
             return $this->module->displayConfirmation($string);
