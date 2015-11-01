@@ -26,8 +26,14 @@
  * Piwik - free/libre analytics platform
  * Piwik Proxy Hide URL
  *
+ * @link https://github.com/piwik/tracker-proxy/tree/b7743435f98f93dee72d8ccede7eeca8302cb2b8 Last revision of the Original proxy tracker script merged with this
  * @link http://piwik.org/faq/how-to/#faq_132
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ * 
+ * 
+ * @todo move timeout into module admin.
+ * @todo add cURL stuff here or simply just use Piwik helper class??
+ * 
  */
 
 if (!defined('_PS_VERSION_'))
@@ -79,8 +85,12 @@ class PiwikAnalyticsPiwikModuleFrontController extends ModuleFrontController {
         // 1) PIWIK.JS PROXY: No _GET parameter, we serve the JS file
         if (
                 (count($_GET) == 3 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc')) ||
+                (count($_GET) == 4 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc') && (Tools::getIsset('id_lang') || Tools::getIsset('isolang'))) ||
                 (count($_GET) == 5 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc') && Tools::getIsset('id_lang') && Tools::getIsset('isolang'))
         ) {
+            
+            
+            
             $modifiedSince = false;
             if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
                 $modifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'];
@@ -94,17 +104,18 @@ class PiwikAnalyticsPiwikModuleFrontController extends ModuleFrontController {
 
             // set HTTP response headers
             $this->sendHeader('Vary: Accept-Encoding');
-
+            
             // Returns 304 if not modified since
             if (!empty($modifiedSince) && $modifiedSince < $lastModified) {
                 $this->sendHeader(sprintf("%s 304 Not Modified", $_SERVER['SERVER_PROTOCOL']));
             } else {
                 $this->sendHeader('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
                 $this->sendHeader('Content-Type: application/javascript; charset=UTF-8');
-                if ($piwikJs = file_get_contents($PIWIK_URL . 'piwik.js', false, $http_context)) {
+                // Silent fail: hide Warning in 'piwik.js' response
+                if ($piwikJs = @file_get_contents($PIWIK_URL . 'piwik.js', false, $http_context)) {
                     die($piwikJs);
                 } else {
-                    $this->sendHeader($_SERVER['SERVER_PROTOCOL'] . '505 Internal server error');
+                    echo '/* there was an error loading piwik.js */';
                 }
             }
             die();
@@ -120,28 +131,39 @@ class PiwikAnalyticsPiwikModuleFrontController extends ModuleFrontController {
             $url .= urlencode($key) . '=' . urlencode($value) . '&';
         }
         // check for redirect, integration with piwik content tracking
+        /*
+         * this fix may just be because the ***** don't really understand the Piwik content tracking :0/
+         */
         if (!Tools::getIsset('redirecturl')) {
             $this->sendHeader("Content-Type: image/gif");
             die(file_get_contents($url, false, $http_context));
-        }  else {
+        } else {
             @file_get_contents($url, false, $http_context);
             Tools::redirect(Tools::getValue('redirecturl'));
         }
     }
 
     private function getVisitIp() {
-        $matchIp = '/^([0-9]{1,3}\.){3}[0-9]{1,3}$/';
-        $ipKeys = array(
-            'HTTP_X_FORWARDED_FOR',
-            'HTTP_CLIENT_IP',
-            'HTTP_CF_CONNECTING_IP',
-        );
-        foreach ($ipKeys as $ipKey) {
-            if (isset($_SERVER[$ipKey]) && preg_match($matchIp, $_SERVER[$ipKey])) {
-                return $_SERVER[$ipKey];
-            }
+        if (getenv('HTTP_CLIENT_IP')) {
+            $ip = getenv('HTTP_CLIENT_IP');
+        } elseif (getenv('HTTP_X_FORWARDED_FOR')) {
+            $ip = getenv('HTTP_X_FORWARDED_FOR');
+        } elseif (getenv('HTTP_X_FORWARDED')) {
+            $ip = getenv('HTTP_X_FORWARDED');
+        } elseif (getenv('HTTP_FORWARDED_FOR')) {
+            $ip = getenv('HTTP_FORWARDED_FOR');
+        } elseif (getenv('HTTP_FORWARDED')) {
+            $ip = getenv('HTTP_FORWARDED');
+        } elseif (getenv('HTTP_VIA')) {
+            $ip = getenv('HTTP_VIA');
+        } elseif (getenv('HTTP_X_COMING_FROM')) {
+            $ip = getenv('HTTP_X_COMING_FROM');
+        } elseif (getenv('HTTP_COMING_FROM')) {
+            $ip = getenv('HTTP_COMING_FROM');
+        } else {
+            $ip = $_SERVER['REMOTE_ADDR'];
         }
-        return $this->arrayValue($_SERVER, 'REMOTE_ADDR');
+        return $ip;
     }
 
     private function sendHeader($header, $replace = true) {
