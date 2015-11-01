@@ -868,7 +868,6 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
             if (method_exists($addon, 'SiteEditForm'))
                 $addon->SiteEditForm($idSite, $helper, $fields_form);
         }
-
         return $helper->generateForm($fields_form);
     }
 

@@ -353,10 +353,10 @@ class PiwikHelper {
      * @param string $name name of the plugin
      * @return boolean
      */
-    public static function isPluginActive($name = "CustomOptOut") {
+    public static function isPluginActive($name = "CustomOptOut", $idSite=0) {
         if (!self::baseTest())
             return array();
-        $url = self::getBaseURL();
+        $url = self::getBaseURL($idSite);
         $url .= "&method=API.isPluginActivated&pluginName={$name}&format=JSON";
         $md5Url = md5($url);
         if (!Cache::isStored('PiwikHelper' . $md5Url)) {

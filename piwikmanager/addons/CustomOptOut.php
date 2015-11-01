@@ -75,7 +75,7 @@ class CustomOptOut {
 
     public function SiteEditForm($idSite, & $helper, & $fields_form) {
         // add suport for Piwik plugin 'CustomOptOut'
-        if (PiwikHelper::isPluginActive('CustomOptOut')) {
+        if (PiwikHelper::isPluginActive('CustomOptOut', $idSite)) {
             PiwikPluginCustomOptOut::initialize();
 
             $PiwikPluginCustomOptOut = PiwikPluginCustomOptOut::GetSiteDataId($idSite);
@@ -84,7 +84,6 @@ class CustomOptOut {
                     (is_object($PiwikPluginCustomOptOut[0]) && !empty($PiwikPluginCustomOptOut[0])) ) ? (array) $PiwikPluginCustomOptOut[0] : array();
 
             if (!empty($PiwikPluginCustomOptOut)) {
-
                 $this->controller->addCSS($this->module->getPathUri() . 'css/3party/CodeMirror/codemirror.css');
                 $this->controller->addCSS($this->module->getPathUri() . 'css/3party/CodeMirror/show-hint.css');
                 $this->controller->addJS($this->module->getPathUri() . 'js/3party/CodeMirror/codemirror.js');
@@ -92,17 +91,16 @@ class CustomOptOut {
                 $this->controller->addJS($this->module->getPathUri() . 'js/3party/CodeMirror/show-hint.js');
                 $this->controller->addJS($this->module->getPathUri() . 'js/3party/CodeMirror/css-hint.js');
 
-                if (isset($PiwikPluginCustomOptOut['custom_css']) || isset($PiwikPluginCustomOptOut['custom_css_file'])) {
 
-                    $helper->fields_value['CustomOptOut'] = 1;
-                    $fields_form[0]['form']['input'][] = array(
-                        'type' => 'hidden',
-                        'name' => 'CustomOptOut',
-                    );
-                    $fields_form[0]['form']['input'][] = array(
-                        'type' => 'html',
-                        'name' => "<strong>{$this->l('Piwik Plugin \'CustomOptOut\'')}</strong>"
-                        . '<script>
+                $helper->fields_value['CustomOptOut'] = 1;
+                $fields_form[0]['form']['input'][] = array(
+                    'type' => 'hidden',
+                    'name' => 'CustomOptOut',
+                );
+                $fields_form[0]['form']['input'][] = array(
+                    'type' => 'html',
+                    'name' => "<strong>{$this->l('Piwik Plugin \'CustomOptOut\'')}</strong>"
+                    . '<script>
 $(document).ready(function () {
     var CodeMirrorEditor = CodeMirror.fromTextArea(document.getElementById("PKCustomCss"), {
         extraKeys: {"Ctrl-Space": "autocomplete"},
@@ -110,35 +108,30 @@ $(document).ready(function () {
 });
 </script>
 <style>.CodeMirror {background: #f8f8f8;}</style>'
-                    );
-                }
-                if (isset($PiwikPluginCustomOptOut['custom_css'])) {
+                );
 
-                    $helper->fields_value['PKCustomCss'] = $PiwikPluginCustomOptOut['custom_css'];
+                $helper->fields_value['PKCustomCss'] = $PiwikPluginCustomOptOut['custom_css'];
 
-                    $fields_form[0]['form']['input'][] = array(
-                        'type' => 'textarea',
-                        'rows' => 10,
-                        'cols' => 50,
-                        'label' => $this->l('Custom CSS'),
-                        'name' => 'PKCustomCss',
-                        'desc' => $this->l('Custom css'),
-                        'required' => false,
-                    );
-                }
-                if (isset($PiwikPluginCustomOptOut['custom_css_file'])) {
+                $fields_form[0]['form']['input'][] = array(
+                    'type' => 'textarea',
+                    'rows' => 10,
+                    'cols' => 50,
+                    'label' => $this->l('Custom CSS'),
+                    'name' => 'PKCustomCss',
+                    'desc' => $this->l('Custom css'),
+                    'required' => false,
+                );
 
-                    $helper->fields_value['PKCustomCssFile'] = $PiwikPluginCustomOptOut['custom_css_file'];
+                $helper->fields_value['PKCustomCssFile'] = $PiwikPluginCustomOptOut['custom_css_file'];
 
-                    $fields_form[0]['form']['input'][] = array(
-                        'type' => 'text',
-                        'label' => $this->l('Custom CSS File'),
-                        'name' => 'PKCustomCssFile',
-                        'desc' => $this->l('Custom css file'),
-                        'required' => false,
-                        'autocomplete' => false,
-                    );
-                }
+                $fields_form[0]['form']['input'][] = array(
+                    'type' => 'text',
+                    'label' => $this->l('Custom CSS File'),
+                    'name' => 'PKCustomCssFile',
+                    'desc' => $this->l('Custom css file'),
+                    'required' => false,
+                    'autocomplete' => false,
+                );
             }
         }
     }
