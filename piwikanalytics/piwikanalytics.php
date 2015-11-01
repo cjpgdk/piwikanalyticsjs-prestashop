@@ -5,18 +5,15 @@
  * 
  * hooks:
  * 
- * - executed from smarty template, can be used by other modules to extend the piwik tracking code
+ * - can be used by other modules to extend the piwik tracking code
  * 
  * piwikTrackerStart      : executed after getTracker() method call
  * piwikTrackerEnd        : executed before trackPageView() and before trackSiteSearch()
  * piwikTrackerPageView   : executed before trackPageView() method call 
  * piwikTrackerSiteSearch : executed before trackSiteSearch() method call 
  * 
- * 
- * 
- * 
- * my NOTE:::
- *  - remember (PiwikHelper::CPREFIX . 'IGNORE' )
+ * my NOTE to ME :)
+ *  - remember (PiwikHelper::CPREFIX . 'IGNORE...' )
  */
 
 if (!defined('_PS_VERSION_'))
@@ -167,7 +164,11 @@ class piwikanalytics extends Module {
                 $CPREFIX . 'SESSION_TIMEOUT',
                 $CPREFIX . 'DNT',
                 $CPREFIX . 'EXHTML',
+                $CPREFIX . 'JSERRTRACKING',
+                $CPREFIX . 'HeartBeatTimer',
+                $CPREFIX . 'HeartBeatTimerDelay',
             );
+
             $dbConfigValues = Configuration::getMultiple($dbConfigKeys);
 
             // get http protocol
@@ -308,6 +309,7 @@ class piwikanalytics extends Module {
         $this->smartyAssign('IsSearch', true);
         $this->smartyAssign('SearchWord', $expr . $page);
         $this->smartyAssign('SearchTotal', $param['total']);
+        $this->smartyAssign('HookTrackerSiteSearch', Hook::exec('piwikTrackerSiteSearch', array('piwikanalytics' => & $this)));
     }
 
     /**
@@ -343,6 +345,9 @@ class piwikanalytics extends Module {
             $CPREFIX . 'SESSION_TIMEOUT',
             $CPREFIX . 'DNT',
             $CPREFIX . 'EXHTML',
+            $CPREFIX . 'JSERRTRACKING',
+            $CPREFIX . 'HeartBeatTimer',
+            $CPREFIX . 'HeartBeatTimerDelay',
         );
         $dbConfigValues = Configuration::getMultiple($dbConfigKeys);
 
@@ -391,6 +396,9 @@ class piwikanalytics extends Module {
         $this->smartyAssign('IdSite', (int) $dbConfigValues[$CPREFIX . 'SITEID']);
         $this->smartyAssign('UseProxy', (boolean) $dbConfigValues[$CPREFIX . 'USE_PROXY']);
         $this->smartyAssign('CookieDomain', $dbConfigValues[$CPREFIX . 'COOKIE_DOMAIN']);
+        $this->smartyAssign('EnableJSErrorTracking', (boolean) $dbConfigValues[$CPREFIX . 'JSERRTRACKING']);
+        $this->smartyAssign('EnableHeartBeatTimer', (boolean) $dbConfigValues[$CPREFIX . 'HeartBeatTimer']);
+        $this->smartyAssign('HeartBeatTimerDelay', (int) $dbConfigValues[$CPREFIX . 'HeartBeatTimerDelay']);
 
         // do not track
         if ((bool) $dbConfigValues[$CPREFIX . 'DNT']) {
@@ -450,6 +458,9 @@ class piwikanalytics extends Module {
         if (!empty($dbConfigValues[$CPREFIX . 'EXHTML'])) {
             $this->smartyAssign('EXHTML', $dbConfigValues[$CPREFIX . 'EXHTML']);
         }
+        $this->smartyAssign('HookTrackerStart', Hook::exec('piwikTrackerStart', array('piwikanalytics' => & $this)));
+        $this->smartyAssign('HookTrackerEnd', Hook::exec('piwikTrackerEnd', array('piwikanalytics' => & $this)));
+        $this->smartyAssign('HookTrackerPageView', Hook::exec('piwikTrackerPageView', array('piwikanalytics' => & $this)));
     }
 
     /**
@@ -500,7 +511,7 @@ class piwikanalytics extends Module {
                     $this->smartyAssign('IsCart', FALSE);
                 }
             }
-        } else if ($this->context->cookie->PiwikCartUProductsCount > 0 && (CartCore::getNbProducts($this->context->cart->id)<=0)) {
+        } else if ($this->context->cookie->PiwikCartUProductsCount > 0 && (CartCore::getNbProducts($this->context->cart->id) <= 0)) {
             $this->context->cookie->PiwikCartUProductsCount = 0;
             // user deleted the entire cart, lets report this to piwik
             $this->smartyAssign('IsCart', TRUE);

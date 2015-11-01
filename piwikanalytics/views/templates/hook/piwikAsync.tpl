@@ -20,8 +20,13 @@
     {else}
             window.piwikTracker = Piwik.getTracker(u + 'piwik.php', {$piwikIdSite});
     {/if}
-{hook h="piwikTrackerStart" mod="piwikanalytics"}
+{$piwikHookTrackerStart}
+    {if $piwikEnableJSErrorTracking eq true}
             window.piwikTracker.enableJSErrorTracking();
+    {/if}
+    {if $piwikEnableHeartBeatTimer eq true}
+            window.piwikTracker.enableHeartBeatTimer( {$piwikHeartBeatTimerDelay} );
+    {/if}
     {if $piwikDNT eq true}
             window.piwikTracker.setDoNotTrack(true);
     {/if}
@@ -76,14 +81,12 @@
     {if isset($piwik404) && $piwik404 eq true}
             window.piwikTracker.setDocumentTitle('404/URL = ' + encodeURIComponent(document.location.pathname + document.location.search) + '/From = ' + encodeURIComponent(document.referrer));
     {/if}
-            window.piwikTracker.trackAllContentImpressions();
-{assign var="piwik_vars" value=['DNT'=>$piwikDNT, 'idSite'=>$piwikIdSite, 'userId'=>$piwikUserId, 'isCart'=>$piwikIsCart, 'isOrder'=>$piwikIsOrder, 'is404'=>$piwik404, 'isSearch'=>$piwikIsSearch]}
-{hook h="piwikTrackerEnd" mod="piwikanalytics" piwikvars=$piwik_vars}
+{$piwikHookTrackerEnd}
     {if isset($piwikIsSearch) && $piwikIsSearch eq true}
-{hook h="piwikTrackerSiteSearch" mod="piwikanalytics" piwikvars=$piwik_vars}
+{$piwikHookTrackerSiteSearch}
             window.piwikTracker.trackSiteSearch('{$piwikSearchWord}', false, '{$piwikSearchTotal}');
     {else}
-{hook h="piwikTrackerPageView" mod="piwikanalytics" piwikvars=$piwik_vars}
+{$piwikHookTrackerPageView}
             window.piwikTracker.trackPageView();
     {/if}
             if (typeof piwikTrackerLoaded == 'function') {

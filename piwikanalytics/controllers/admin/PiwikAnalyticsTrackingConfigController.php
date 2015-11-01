@@ -193,6 +193,22 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                     $this->errors[] = Tools::displayError($this->l('Proxy script url is not valid.', $this->name));
                 }
             }
+            // enable / disable JavaScript error tracking
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'JSERRTRACKING')) {
+                $JSERRTRACKING = Tools::getValue(PiwikHelper::CPREFIX . 'JSERRTRACKING');
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'JSERRTRACKING', ($JSERRTRACKING == 1 ? 1 : 0));
+            }
+            
+            // enable / disable Heart Beat Timer
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'HeartBeatTimer')) {
+                $HeartBeatTimer = Tools::getValue(PiwikHelper::CPREFIX . 'HeartBeatTimer');
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'HeartBeatTimer', ($HeartBeatTimer == 1 ? 1 : 0));
+            }
+            // Heart Beat Timer Delay
+            if (Tools::getIsset(PiwikHelper::CPREFIX . 'HeartBeatTimerDelay')) {
+                $HeartBeatTimerDelay = Tools::getValue(PiwikHelper::CPREFIX . 'HeartBeatTimerDelay');
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'HeartBeatTimerDelay', (int)$HeartBeatTimerDelay);
+            }
 
             $this->confirmations[] = $this->l("Update process complete", $this->name);
         }
@@ -346,6 +362,9 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             PiwikHelper::CPREFIX . 'PROXY_SCRIPT' => empty($PIWIK_PROXY_SCRIPT) ? str_replace(array("http://", "https://"), '', Context::getContext()->link->getModuleLink($this->module->name, 'piwik')) : $PIWIK_PROXY_SCRIPT,
             PiwikHelper::CPREFIX . 'COOKIE_PATH' => Configuration::get(PiwikHelper::CPREFIX . 'COOKIE_PATH'),
             PiwikHelper::CPREFIX . 'EXHTML' => Configuration::get(PiwikHelper::CPREFIX . 'EXHTML'),
+            PiwikHelper::CPREFIX . 'JSERRTRACKING' => Configuration::get(PiwikHelper::CPREFIX . 'JSERRTRACKING'),
+            PiwikHelper::CPREFIX . 'HeartBeatTimerDelay' => Configuration::get(PiwikHelper::CPREFIX . 'HeartBeatTimerDelay'),
+            PiwikHelper::CPREFIX . 'HeartBeatTimer' => Configuration::get(PiwikHelper::CPREFIX . 'HeartBeatTimer'),
         );
 
         $piwik_host = $this->fields_value[PiwikHelper::CPREFIX . 'HOST'];
@@ -537,19 +556,9 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
 
         // 'Advanced' form (extra options)
 
-        $this->fields_form[1]['form'] = array(
-            'legend' => array(
-                'title' => $this->l('Piwik TrackingCode Advanced Options', $this->name),
-                'image' => $this->module->getPathUri() . 'logox22.png'
-            ),
-            'input' => array(
-                array(
-                    'type' => 'html',
-                    'name' => $this->l('In this section you can modify certain aspects of the way this plugin sends products, searches, category view etc.. to piwik', $this->name)
-                ),
-                array(
-                    'type' => 'html',
-                    'name' => "<strong>{$this->l('Product id', $this->name)}</strong>"
+
+        $advMessage01 = $this->l('In this section you can modify certain aspects of the way this plugin sends products, searches, category view etc.. to piwik', $this->name);
+        $advMessage02 = "<strong>{$this->l('Product id', $this->name)}</strong>"
                     . '<br />'
                     . $this->l('in the next few inputs you can set how the product id is passed on to piwik', $this->name)
                     . '<br />'
@@ -561,7 +570,72 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                     . '<br />'
                     . $this->l('{ATTRID} : this variable is replaced with id the product attribute', $this->name)
                     . '<br />'
-                    . $this->l('in cases where only the product id is available it be parsed as ID and nothing else', $this->name),
+                    . $this->l('in cases where only the product id is available it be parsed as ID and nothing else', $this->name);
+        $advMessage03 = "<strong>{$this->l('Piwik Cookies', $this->name)}</strong>";
+        $advMessage04 = "<strong>{$this->l('Piwik Proxy Script', $this->name)}</strong>";
+        if (version_compare(_PS_VERSION_, '1.6.0.3', '<=')) {
+            $this->fields_value['advMessage01'] = $advMessage01;
+            $this->fields_value['advMessage02'] = $advMessage02;
+            $this->fields_value['advMessage03'] = $advMessage03;
+            $this->fields_value['advMessage04'] = $advMessage04;
+        }
+
+        $this->fields_form[1]['form'] = array(
+            'legend' => array(
+                'title' => $this->l('Piwik TrackingCode Advanced Options', $this->name),
+                'image' => $this->module->getPathUri() . 'logox22.png'
+            ),
+            'input' => array(
+                array(
+                    'type' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'free' : 'html',
+                    'name' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'advMessage01' : $advMessage01,
+                ),
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Enable JS Error Tracking', $this->name),
+                    'name' => PiwikHelper::CPREFIX . 'JSERRTRACKING',
+                    'desc' => $this->l('Whether or not to enable JS Error Tracking', $this->name),
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => 1,
+                            'label' => $this->l('Enabled', $this->name)
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => 0,
+                            'label' => $this->l('Disabled', $this->name)
+                        )
+                    ),
+                ),
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Heart Beat Timer', $this->name),
+                    'name' => PiwikHelper::CPREFIX . 'HeartBeatTimer',
+                    'desc' => $this->l('Install a Heart beat timer that will regularly send requests to Piwik in order to better measure the time spent on the page.', $this->name),
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => 1,
+                            'label' => $this->l('Enabled', $this->name)
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => 0,
+                            'label' => $this->l('Disabled', $this->name)
+                        )
+                    ),
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Heart Beat Timer delay', $this->name),
+                    'name' => PiwikHelper::CPREFIX . 'HeartBeatTimerDelay',
+                    'desc' => $this->l('delay in seconds', $this->name),
+                    'required' => false
+                ),
+                array(
+                    'type' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'free' : 'html',
+                    'name' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'advMessage02' : $advMessage02,
                 ),
                 array(
                     'type' => 'text',
@@ -585,8 +659,8 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                     'required' => false
                 ),
                 array(
-                    'type' => 'html',
-                    'name' => "<strong>{$this->l('Piwik Cookies', $this->name)}</strong>"
+                    'type' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'free' : 'html',
+                    'name' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'advMessage03' : $advMessage03,
                 ),
                 array(
                     'type' => 'text',
@@ -619,8 +693,8 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                     'desc' => $this->l('Piwik Referral Cookie timeout, the default is 6 months (262974 minutes)', $this->name),
                 ),
                 array(
-                    'type' => 'html',
-                    'name' => "<strong>{$this->l('Piwik Proxy Script', $this->name)}</strong>",
+                    'type' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'free' : 'html',
+                    'name' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'advMessage04' : $advMessage04,
                 ),
                 array(
                     'type' => 'switch',
