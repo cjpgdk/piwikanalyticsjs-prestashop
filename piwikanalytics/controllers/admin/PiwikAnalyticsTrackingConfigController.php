@@ -313,12 +313,13 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
         // check hooks
         foreach ($this->module->piwik_hooks as $key => $value)
             if (!$this->module->isRegisteredInHook($value) && !Configuration::get(PiwikHelper::CPREFIX . 'IGNORE' . $key))
-                $this->warnings[] = sprintf($this->l('Hooks: \'%s\' is not registered', $this->name), $value);
+                $this->warnings[] = sprintf($this->l('Hook: \'%s\' is not registered', $this->name), $value);
 
         // process configuration update
         $this->processSubmitConfiguration();
 
-        $this->addJqueryPlugin('tagify', _PS_JS_DIR_ . 'jquery/plugins/');
+        $this->addJqueryUi('ui.widget');
+        $this->addJqueryPlugin('tagify');
         // show config options
         $PIWIK_PRODID_V1 = Configuration::get(PiwikHelper::CPREFIX . 'PRODID_V1');
         $PIWIK_PRODID_V2 = Configuration::get(PiwikHelper::CPREFIX . 'PRODID_V2');
@@ -371,8 +372,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
 
         // do stuff with valid site
         $piwik_currency = $this->l('unknown', $this->name);
-        $piwik_image_url = "";
-        $piwik_image_url_proxy = "";
+        $piwik_image_url_proxy = $piwik_image_url = $this->l('I need site id and Piwik authentication token, in order to get the image tracking code');
         if ($piwik_site !== false) {
             $piwik_currency = $piwik_site[0]->currency;
             $piwik_image_url = '&lt;noscript&gt;' . htmlentities(PiwikHelper::getImageTrackingCode()) . '&lt;/noscript&gt;';
@@ -407,6 +407,31 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
 
         // main form.
 
+        $btnLookupPKSite = '<button'
+                . ' onclick="document.location=\'' . Context::getContext()->link->getAdminLink('PiwikAnalyticsTrackingConfig') . '&lookupPiwikSite\'"'
+                . ' name="btnLookupPKSite"'
+                . ' class="btn btn-default "'
+                . ' id="btnLookupPKSite"'
+                . ' type="button">'
+                . '<i class="icon-search"></i> '
+                . $this->l('Lookup - Piwik site', $this->name)
+                . '</button>&nbsp;&nbsp;';
+        $PiwikHostInput = '<strong>' . $this->l('Piwik Host:', $this->name) . '</strong> ' . $piwik_host;
+        $PiwikAuthtokenInput = '<strong>' . $this->l('Piwik Auth token:', $this->name) . '</strong> ' . $piwik_token;
+        $extrahtmlMessageInput = $this->l('Piwik image tracking code append one of them to field "Extra HTML" this will add images tracking code to all your pages', $this->name) . "<br>"
+                . "<strong>" . $this->l('default', $this->name) . "</strong>:<br /><i>{$piwik_image_url}</i><br>"
+                . "<strong>" . $this->l('using proxy script', $this->name) . "</strong>:<br /><i>{$piwik_image_url_proxy}</i><br>"
+                . (version_compare(_PS_VERSION_, '1.6.0.7', '>=') ?
+                        "<br><strong>{$this->l("Before you add the image tracking code make sure the HTMLPurifier library isn't in use, check the settings in 'Preferences => General', you can enable the HTMLPurifier again after you made your changes", $this->name)}</strong>" :
+                        ""
+                );
+        if (version_compare(_PS_VERSION_, '1.6.0.3', '<=')) {
+            $this->fields_value['btnLookupPKSite'] = $btnLookupPKSite;
+            $this->fields_value['piwikHostInput'] = $PiwikHostInput;
+            $this->fields_value['piwikAuthtokenInput'] = $PiwikAuthtokenInput;
+            $this->fields_value['extrahtmlMessage'] = $extrahtmlMessageInput;
+        }
+
         $this->fields_form[0] = array(
             'form' => array(
                 'legend' => array(
@@ -415,24 +440,16 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                 ),
                 'input' => array(
                     array(
-                        'type' => 'html',
-                        'name' => '<button'
-                        . ' onclick="document.location=\'' . Context::getContext()->link->getAdminLink('PiwikAnalyticsTrackingConfig') . '&lookupPiwikSite\'"'
-                        . ' name="btnLookupPKSite"'
-                        . ' class="btn btn-default "'
-                        . ' id="btnLookupPKSite"'
-                        . ' type="button">'
-                        . '<i class="icon-search"></i> '
-                        . $this->l('Lookup - Piwik site', $this->name)
-                        . '</button>&nbsp;&nbsp;'
+                        'type' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'free' : 'html',
+                        'name' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'btnLookupPKSite' : $btnLookupPKSite,
                     ),
                     array(
-                        'type' => 'html',
-                        'name' => '<strong>' . $this->l('Piwik Host:', $this->name) . '</strong> ' . $piwik_host,
+                        'type' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'free' : 'html',
+                        'name' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'piwikHostInput' : $PiwikHostInput,
                     ),
                     array(
-                        'type' => 'html',
-                        'name' => '<strong>' . $this->l('Piwik Auth token:', $this->name) . '</strong> ' . $piwik_token,
+                        'type' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'free' : 'html',
+                        'name' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'piwikAuthtokenInput' : $PiwikAuthtokenInput,
                     ),
                     array(
                         'type' => 'text',
@@ -499,14 +516,8 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                         ),
                     ),
                     array(
-                        'type' => 'html',
-                        'name' => $this->l('Piwik image tracking code append one of them to field "Extra HTML" this will add images tracking code to all your pages', $this->name) . "<br>"
-                        . "<strong>" . $this->l('default', $this->name) . "</strong>:<br /><i>{$piwik_image_url}</i><br>"
-                        . "<strong>" . $this->l('using proxy script', $this->name) . "</strong>:<br /><i>{$piwik_image_url_proxy}</i><br>"
-                        . (version_compare(_PS_VERSION_, '1.6.0.7', '>=') ?
-                                "<br><strong>{$this->l("Before you add the image tracking code make sure the HTMLPurifier library isn't in use, check the settings in 'Preferences => General', you can enable the HTMLPurifier again after you made your changes", $this->name)}</strong>" :
-                                ""
-                        )
+                        'type' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'free' : 'html',
+                        'name' => version_compare(_PS_VERSION_, '1.6.0.3', '<=') ? 'extrahtmlMessage' : $extrahtmlMessageInput,
                     ),
                     array(
                         'type' => 'textarea',

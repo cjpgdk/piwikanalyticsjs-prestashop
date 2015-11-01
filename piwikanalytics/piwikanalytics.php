@@ -11,12 +11,18 @@
  * piwikTrackerEnd        : executed before trackPageView() and before trackSiteSearch()
  * piwikTrackerPageView   : executed before trackPageView() method call 
  * piwikTrackerSiteSearch : executed before trackSiteSearch() method call 
+ * 
+ * 
+ * 
+ * 
+ * my NOTE:::
+ *  - remember (PiwikHelper::CPREFIX . 'IGNORE' )
  */
 
 if (!defined('_PS_VERSION_'))
     exit;
 
-include dirname(__FILE__) . '/../piwikmanager/PKClassLoader.php';
+include_once dirname(__FILE__) . '/../piwikmanager/PKClassLoader.php';
 PKClassLoader::LoadStatic(array('PiwikHelper', 'PKTools'));
 PiwikHelper::initialize();
 
@@ -482,10 +488,7 @@ class piwikanalytics extends Module {
                 $this->context->cookie->PiwikCartUProductsCount = count($smarty_ad);
                 $this->smartyAssign('IsCart', TRUE);
                 $this->smartyAssign('CartProducts', $smarty_ad);
-                $this->smartyAssign('CartTotal', $this->currencyConvertion(array(
-                            'price' => $this->context->cart->getOrderTotal(),
-                            'conversion_rate' => $Currency->conversion_rate,
-                )));
+                $this->smartyAssign('CartTotal', $this->currencyConvertion(array('price' => $this->context->cart->getOrderTotal(), 'conversion_rate' => $Currency->conversion_rate)));
             } else {
                 if ($this->context->cookie->PiwikCartUProductsCount > 0) {
                     $this->context->cookie->PiwikCartUProductsCount = 0;
@@ -497,16 +500,14 @@ class piwikanalytics extends Module {
                     $this->smartyAssign('IsCart', FALSE);
                 }
             }
+        } else if ($this->context->cookie->PiwikCartUProductsCount > 0 && (CartCore::getNbProducts($this->context->cart->id)<=0)) {
+            $this->context->cookie->PiwikCartUProductsCount = 0;
+            // user deleted the entire cart, lets report this to piwik
+            $this->smartyAssign('IsCart', TRUE);
+            $this->smartyAssign('CartProducts', array());
+            $this->smartyAssign('CartTotal', 0.00);
         } else {
-            if ($this->context->cookie->PiwikCartUProductsCount > 0) {
-                $this->context->cookie->PiwikCartUProductsCount = 0;
-                // user deleted the entire cart, lets report this to piwik
-                $this->smartyAssign('IsCart', TRUE);
-                $this->smartyAssign('CartProducts', array());
-                $this->smartyAssign('CartTotal', 0.00);
-            } else {
-                $this->smartyAssign('IsCart', FALSE);
-            }
+            $this->smartyAssign('IsCart', FALSE);
         }
     }
 
@@ -542,7 +543,6 @@ class piwikanalytics extends Module {
      * check if its a 404 page and assign the 404 variable for smarty
      */
     private function assign404() {
-
         $is404 = false;
         if (!empty($this->context->controller->errors)) {
             foreach ($this->context->controller->errors as $key => $value) {
@@ -572,7 +572,7 @@ class piwikanalytics extends Module {
         $pkc = Configuration::get(PiwikHelper::CPREFIX . 'DEFAULT_CURRENCY');
         if (empty($pkc))
             return (float) $params['price'];
-        if ($params['conversion_rate'] === FALSE || $params['conversion_rate'] == 0.00 || $params['conversion_rate'] == 1.00) {
+        if ($params['conversion_rate'] === FALSE || ((float) $params['conversion_rate']) == 0.00 || ((float) $params['conversion_rate']) == 1.00) {
             //* shop default
             return Tools::convertPrice((float) $params['price'], Currency::getCurrencyInstance((int) (Currency::getIdByIsoCode($pkc))));
         } else {
@@ -679,6 +679,9 @@ class piwikanalytics extends Module {
         if (Shop::isFeatureActive()) {
             Shop::setContext(Shop::CONTEXT_ALL);
         }
+        if (!parent::install() || !$this->installTabs()) {
+            return false;
+        }
         /* default values */
         foreach ($this->_default_config_values as $key => $value) {
             /* only set if not isset, compatibility with module 'piwikanalyticsjs' */
@@ -690,8 +693,11 @@ class piwikanalytics extends Module {
         // if still not in the required hooks we isset a warning
         if (!$this->installHooks())
             Configuration::updateGlobalValue('PIWIKHOOKSFAIL', 1);
-
-        return parent::install() && $this->installTabs();
+        /*
+         * no need to check, if parent::install() fails nothing is installed
+         * if hooks fails we try again next time module is loaded, and isset warnings
+         */
+        return true;
     }
 
     /**

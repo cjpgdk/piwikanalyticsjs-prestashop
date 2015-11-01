@@ -86,18 +86,10 @@
 							var mytab = new Array();
 							for (var i = 0; i < data.length; i++)
 								mytab[mytab.length] = { data: data[i], value: data[i].cname + ' > ' + data[i].pname };
-                                                            
-                                                        {* console.log('typeof window.piwikTracker: ' +  typeof window.piwikTracker); *}
-                                                        if (typeof window.piwikTracker != 'undefined' && window.piwikTracker !== null) {
-                                                            {*
-                                                            console.log('keyword: '+ $("#search_query_{$blocksearch_type}").val());
-                                                            console.log('category: ');
-                                                            console.log('resultsCount: ' + data.length);
-                                                            console.log('customData: {ldelim}{rdelim}');
-                                                            //window.piwikTracker.logSiteSearch($("#search_query_{$blocksearch_type}").val(), '', data.length, {ldelim}{rdelim}/*customData*/);
-                                                            *}
-                                                            window.piwikTracker.trackSiteSearch($("#search_query_{$blocksearch_type}").val(), false, data.length);
-                                                        }
+							/* tell piwik we have a site search.. */
+							if (typeof window.piwikTracker != 'undefined' && window.piwikTracker !== null) {
+								window.piwikTracker.trackSiteSearch($("#search_query_{$blocksearch_type}").val(), false, data.length);
+							}
 							return mytab;
 						},
 						extraParams: {
