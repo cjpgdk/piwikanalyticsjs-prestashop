@@ -31,20 +31,12 @@
 					},
 					dataType: 'html',
 					type: 'POST',
-                                        {*
-                                         * ....not tested....
-                                        beforeSend: function( jqXHR, settings ){
-                                            if (typeof window.piwikTracker != 'undefined' && window.piwikTracker !== null) {
-                                                window.piwikTracker.trackSiteSearch($("#search_query_{$blocksearch_type}").val(), false, 0);
-                                            }
-                                        },
-                                        *}
 					success: function(data){
 						if($("#search_query_{$blocksearch_type}").val().length > 0)
 						{
 							tryToCloseInstantSearch();
 							$('#center_column').attr('id', 'old_center_column');
-							$('#old_center_column').after('<div id="center_column" class="' + $('#old_center_column').attr('class') + '"><section class="main-container col2-left-layout"><article class="main-container-inner">'+data+'</article></section></div>');
+							$('#old_center_column').after('<div id="center_column" class="' + $('#old_center_column').attr('class') + '">'+data+'</div>');
 							$('#old_center_column').hide();
 							// Button override
 							ajaxCart.overrideButtonsInThePage();
@@ -52,6 +44,12 @@
 								$("#search_query_{$blocksearch_type}").val('');
 								return tryToCloseInstantSearch();
 							});
+							{* tell piwik we have a site search.. *}
+							if (typeof window.piwikTracker != 'undefined' && window.piwikTracker !== null) {
+								window.piwikTracker.trackSiteSearch($("#search_query_{$blocksearch_type}").val(), false, $('#center_column').find('ul.product_list').children().length);
+							}
+                                                         
+                                                        
 							return false;
 						}
 						else
@@ -75,7 +73,7 @@
 					'{if $search_ssl == 1}{$link->getPageLink('search', true)|addslashes}{else}{$link->getPageLink('search')|addslashes}{/if}', {
 						minChars: 3,
 						max: 10,
-						width: 500,
+						width: 271,
 						selectFirst: false,
 						scroll: false,
 						dataType: "json",
@@ -85,8 +83,8 @@
 						parse: function(data) {
 							var mytab = new Array();
 							for (var i = 0; i < data.length; i++)
-								mytab[mytab.length] = { data: data[i], value: data[i].cname + ' > ' + data[i].pname };
-							/* tell piwik we have a site search.. */
+								mytab[mytab.length] = { data: data[i], value: data[i].cname + ' > ' + '<strong>'+data[i].pname+'</strong>' };
+							{* tell piwik we have a site search.. *}
 							if (typeof window.piwikTracker != 'undefined' && window.piwikTracker !== null) {
 								window.piwikTracker.trackSiteSearch($("#search_query_{$blocksearch_type}").val(), false, data.length);
 							}

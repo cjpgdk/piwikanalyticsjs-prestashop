@@ -76,12 +76,6 @@ class PiwikAnalyticsPiwikModuleFrontController extends ModuleFrontController {
         );
         $http_context = stream_context_create($http_options);
 
-        /*
-         * ?fc=module&module=piwikanalytics&controller=piwik
-         * MULTI Lanugage shop
-         * ?fc=module&module=piwikanalytics&controller=piwik&id_lang=2&isolang=da
-         */
-
         // 1) PIWIK.JS PROXY: No _GET parameter, we serve the JS file
         if (
                 (count($_GET) == 3 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc')) ||
@@ -160,6 +154,8 @@ class PiwikAnalyticsPiwikModuleFrontController extends ModuleFrontController {
             $ip = getenv('HTTP_X_COMING_FROM');
         } elseif (getenv('HTTP_COMING_FROM')) {
             $ip = getenv('HTTP_COMING_FROM');
+        } elseif (getenv('HTTP_CF_CONNECTING_IP')) {
+            $ip = getenv('HTTP_CF_CONNECTING_IP');
         } else {
             $ip = $_SERVER['REMOTE_ADDR'];
         }

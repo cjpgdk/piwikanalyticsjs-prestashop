@@ -690,7 +690,7 @@ class PiwikHelper {
         // $this->l('Unable to connect to api %s')
         // $this->l('E-commerce is not active for your site in piwik!')
         // $this->l('Site search is not active for your site in piwik!')
-        // $this->l('A password is required for method self::getTokenAuth()!')
+        // $this->l('A password is required for method PiwikHelper::getTokenAuth()!')
         // $this->l('Unknown response from Piwik API: [%s]')
     }
 

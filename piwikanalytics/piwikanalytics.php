@@ -95,6 +95,10 @@ class piwikanalytics extends Module {
         $this->_default_config_values[PiwikHelper::CPREFIX . 'DNT'] = 0;
         $this->_default_config_values[PiwikHelper::CPREFIX . 'EXHTML'] = '';
         $this->_default_config_values[PiwikHelper::CPREFIX . 'COOKIE_PATH'] = '/';
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'JSERRTRACKING'] = 0;
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'HeartBeatTimer'] = 0;
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'HeartBeatTimerDelay'] = 10;
+
 
         $this->dependencies[] = "piwikmanager";
 
@@ -167,6 +171,7 @@ class piwikanalytics extends Module {
                 $CPREFIX . 'JSERRTRACKING',
                 $CPREFIX . 'HeartBeatTimer',
                 $CPREFIX . 'HeartBeatTimerDelay',
+                $CPREFIX . 'COOKIE_PATH',
             );
 
             $dbConfigValues = Configuration::getMultiple($dbConfigKeys);
@@ -275,6 +280,11 @@ class piwikanalytics extends Module {
         return $this->hookdisplayFooter($params);
     }
 
+    // left col of product added for theme support
+    public function hookdisplayLeftColumnProduct($param) {
+        return $this->hookdisplayRightColumnProduct($param);
+    }
+
     /**
      * if product is view in content only mode footer is not called
      * @param mixed $param
@@ -348,6 +358,7 @@ class piwikanalytics extends Module {
             $CPREFIX . 'JSERRTRACKING',
             $CPREFIX . 'HeartBeatTimer',
             $CPREFIX . 'HeartBeatTimerDelay',
+            $CPREFIX . 'COOKIE_PATH',
         );
         $dbConfigValues = Configuration::getMultiple($dbConfigKeys);
 
@@ -399,13 +410,10 @@ class piwikanalytics extends Module {
         $this->smartyAssign('EnableJSErrorTracking', (boolean) $dbConfigValues[$CPREFIX . 'JSERRTRACKING']);
         $this->smartyAssign('EnableHeartBeatTimer', (boolean) $dbConfigValues[$CPREFIX . 'HeartBeatTimer']);
         $this->smartyAssign('HeartBeatTimerDelay', (int) $dbConfigValues[$CPREFIX . 'HeartBeatTimerDelay']);
+        $this->smartyAssign('CookiePath', $dbConfigValues[$CPREFIX . 'COOKIE_PATH']);
 
         // do not track
-        if ((bool) $dbConfigValues[$CPREFIX . 'DNT']) {
-            $this->smartyAssign('DNT', true);
-        } else {
-            $this->smartyAssign('DNT', false);
-        }
+        $this->smartyAssign('DNT', isset($dbConfigValues[$CPREFIX . 'DNT']) ? ((bool) $dbConfigValues[$CPREFIX . 'DNT']) : false);
 
         // setDomains
         $piwikSetDomains = $dbConfigValues[$CPREFIX . 'SET_DOMAINS'];
@@ -415,9 +423,7 @@ class piwikanalytics extends Module {
                 $piwikSetDomains = "['" . trim(implode("','", $sdArr), ",'") . "']";
             else
                 $piwikSetDomains = "'{$sdArr[0]}'";
-
             $this->smartyAssign('SetDomains', $piwikSetDomains);
-
             unset($sdArr);
         }
 
@@ -655,6 +661,23 @@ class piwikanalytics extends Module {
         $this->smarty->assign($smarty_prefix . $key, $value);
     }
 
+    /**
+     * check if this module is configured and able to operate.
+     * @return boolean
+     */
+    public function isConfigured() {
+        if (!Module::isInstalled('piwikmanager') || !Module::isEnabled('piwikmanager')) {
+            return false;
+        }
+        $piwik_sites = PiwikHelper::getSitesWithAdminAccess();
+        if (empty($piwik_sites)) {
+            return false;
+        }
+        if ((int) Configuration::get(PiwikHelper::CPREFIX . 'SITEID') <= 0)
+            return false;
+        return true;
+    }
+
     /* ## Install/Uninstall/Enable/Disable ## */
 
     /**
@@ -667,19 +690,6 @@ class piwikanalytics extends Module {
             return false;
         }
         return parent::enable($force_all);
-    }
-
-    public function isConfigured() {
-        if (!Module::isInstalled('piwikmanager') || !Module::isEnabled('piwikmanager')) {
-            return false;
-        }
-        $piwik_sites = PiwikHelper::getSitesWithAdminAccess();
-        if (empty($piwik_sites)) {
-            return false;
-        }
-        if ((int) Configuration::get(PiwikHelper::CPREFIX . 'SITEID') <= 0)
-            return false;
-        return true;
     }
 
     /**
@@ -717,9 +727,13 @@ class piwikanalytics extends Module {
      */
     public function checkHooks() {
         $ret = true;
-        foreach ($this->piwik_hooks as $key => $value)
-            if (!$this->isRegisteredInHook($value) && !Configuration::get(PiwikHelper::CPREFIX . 'IGNORE' . $key))
+        foreach ($this->piwik_hooks as $key => $value) {
+            if ($value == 'displayRightColumnProduct') {
+                if (!$this->isRegisteredInHook($value) && !$this->isRegisteredInHook('displayLeftColumnProduct'))
+                    $ret = false; /* suppports both so both must fail to be an error */
+            }else if (!$this->isRegisteredInHook($value) && !Configuration::get(PiwikHelper::CPREFIX . 'IGNORE' . $key))
                 $ret = false;
+        }
         return $ret;
     }
 

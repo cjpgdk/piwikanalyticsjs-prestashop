@@ -110,9 +110,7 @@ class PiwikAnalyticsSiteManagerController extends ModuleAdminController {
             $languages[$languages_key]['is_default'] = ($languages_value['id_lang'] == (int) Configuration::get('PS_LANG_DEFAULT') ? true : false);
         }
 
-
         $this->processUpdatePiwikAnalyticsSiteFormUpdate();
-
 
         if (Tools::isSubmit('addPiwikAnalyticsSiteManager')) {
             $view .= $this->generateAddNewSiteForm($languages);

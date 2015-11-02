@@ -325,11 +325,15 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                 }
             }
         }
-
+        
         // check hooks
-        foreach ($this->module->piwik_hooks as $key => $value)
-            if (!$this->module->isRegisteredInHook($value) && !Configuration::get(PiwikHelper::CPREFIX . 'IGNORE' . $key))
+        foreach ($this->module->piwik_hooks as $key => $value){
+            if ($value == 'displayRightColumnProduct') {
+                if (!$this->module->isRegisteredInHook($value) && !$this->module->isRegisteredInHook('displayLeftColumnProduct'))
+                $this->warnings[] = sprintf($this->l('Hook: \'%s\' is not registered', $this->name), $value . ' or displayLeftColumnProduct');
+            }else if (!$this->module->isRegisteredInHook($value) && !Configuration::get(PiwikHelper::CPREFIX . 'IGNORE' . $key))
                 $this->warnings[] = sprintf($this->l('Hook: \'%s\' is not registered', $this->name), $value);
+        }
 
         // process configuration update
         $this->processSubmitConfiguration();

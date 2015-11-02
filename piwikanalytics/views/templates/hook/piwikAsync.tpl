@@ -1,3 +1,52 @@
+{*
+* this files uses the Piwik async init function attached to the window object
+* to extend the Piwik tracker you can use the following in your theme
+* or you can simply override this file in your theme directory.
+*  - themes/myTheme99/modules/piwikanalytics/views/hook/piwikAsync.tpl
+*       (if that file exists it is used instead of this one.!)
+* 
+* Piwik tracker object
+*
+* window.piwikTracker
+* - this object holds the current Piwik tracker.
+*   to use this object from your theme do check the object is initialized first to avoid JavaScript errors
+* 
+*   /* track a search */
+*   if (typeof window.piwikTracker != 'undefined' && window.piwikTracker !== null) {
+*       /* okay the Piwik object is initialized */
+*       window.piwikTracker.trackSiteSearch(keyword, category, resultsCount);
+*   }
+* ---
+*
+* you also have the option to create modules that will be called when attached to one of the following 4 hook names
+* NOTE: Hooks are a new introduction to this module that was needed on a special project, so the placement
+*       and the data available from the hooks may be completely wrong for you, in that case don't hesitate to
+*       contact me with information on where and how you like the hooks to be implemented, so we can get a 
+*       good and smooth integration with Piwik and PrestaShop, thanks
+*
+* - piwikTrackerStart      : appended after getTracker()
+* - piwikTrackerEnd        : appended before trackPageView() and before trackSiteSearch()
+* - piwikTrackerPageView   : appended before trackPageView()
+* - piwikTrackerSiteSearch : appended before trackSiteSearch()
+* 
+* ---
+* 
+* lastly i also added a function check that can be set any where in your theme
+* this function is called once the Piwik object is loaded.
+*
+* function: piwikTrackerLoaded();
+* 
+* To use this function simply place it any where in your theme
+* 
+* function piwikTrackerLoaded() {
+*   alert("Piwik is now loaded and ready.");
+*   /* now that we know the object is initialized we do all the theme required piwik stuff */
+*   window.piwikTracker.setDocumentTitle(" My title override ");
+* }
+*
+*
+*}
+
 <script type="text/javascript">
     (function () {
         var d = document, g = d.createElement("script"), s = d.getElementsByTagName("script")[0];
@@ -20,18 +69,21 @@
     {else}
             window.piwikTracker = Piwik.getTracker(u + 'piwik.php', {$piwikIdSite});
     {/if}
-{$piwikHookTrackerStart}
+    {$piwikHookTrackerStart}
     {if $piwikEnableJSErrorTracking eq true}
             window.piwikTracker.enableJSErrorTracking();
     {/if}
     {if $piwikEnableHeartBeatTimer eq true}
-            window.piwikTracker.enableHeartBeatTimer( {$piwikHeartBeatTimerDelay} );
+            window.piwikTracker.enableHeartBeatTimer({$piwikHeartBeatTimerDelay});
     {/if}
     {if $piwikDNT eq true}
             window.piwikTracker.setDoNotTrack(true);
     {/if}
     {if isset($piwikCookieDomain) && $piwikCookieDomain != ""}
             window.piwikTracker.setCookieDomain('{$piwikCookieDomain}');
+    {/if}
+    {if isset($piwikCookiePath) && $piwikCookiePath != "" && $piwikCookiePath != "/"}
+            window.piwikTracker.setCookiePath({$piwikCookiePath});
     {/if}
     {if isset($piwikSetDomains) && $piwikSetDomains != ""}
             window.piwikTracker.setDomains({$piwikSetDomains});
@@ -81,12 +133,12 @@
     {if isset($piwik404) && $piwik404 eq true}
             window.piwikTracker.setDocumentTitle('404/URL = ' + encodeURIComponent(document.location.pathname + document.location.search) + '/From = ' + encodeURIComponent(document.referrer));
     {/if}
-{$piwikHookTrackerEnd}
+    {$piwikHookTrackerEnd}
     {if isset($piwikIsSearch) && $piwikIsSearch eq true}
-{$piwikHookTrackerSiteSearch}
+        {$piwikHookTrackerSiteSearch}
             window.piwikTracker.trackSiteSearch('{$piwikSearchWord}', false, '{$piwikSearchTotal}');
     {else}
-{$piwikHookTrackerPageView}
+        {$piwikHookTrackerPageView}
             window.piwikTracker.trackPageView();
     {/if}
             if (typeof piwikTrackerLoaded == 'function') {
