@@ -517,7 +517,7 @@ class piwikanalytics extends Module {
                     $this->smartyAssign('IsCart', FALSE);
                 }
             }
-        } else if ($this->context->cookie->PiwikCartUProductsCount > 0 && (CartCore::getNbProducts($this->context->cart->id) <= 0)) {
+        } else if ($this->context->cookie->PiwikCartUProductsCount > 0 && (Cart::getNbProducts($this->context->cart->id) <= 0)) {
             $this->context->cookie->PiwikCartUProductsCount = 0;
             // user deleted the entire cart, lets report this to piwik
             $this->smartyAssign('IsCart', TRUE);

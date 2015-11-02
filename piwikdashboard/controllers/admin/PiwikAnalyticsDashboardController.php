@@ -91,7 +91,7 @@ class PiwikAnalyticsDashboardController extends ModuleAdminController {
             $this->tpl_view_vars['piwik_reportdate'] = $period . '|' . $date;
             $this->tpl_view_vars['piwik_date'] = $date;
             $this->tpl_view_vars['piwik_period'] = $period;
-            $lng = new LanguageCore($this->context->cookie->id_lang);
+            $lng = new Language($this->context->cookie->id_lang);
             $this->tpl_view_vars['iso_code'] = $lng->iso_code;
 
             // http Auth
