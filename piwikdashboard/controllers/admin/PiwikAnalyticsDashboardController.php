@@ -34,7 +34,7 @@ if (!class_exists('PiwikDashboardHelper', false)) {
     PiwikDashboardHelper::initialize();
 }
 
-class PiwikAnalyticsDashboardController extends ModuleAdminController {
+class PiwikAnalyticsDashboardController extends ModuleAdminControllerCore {
 
     public $name = "PiwikAnalyticsDashboard";
 
@@ -59,9 +59,9 @@ class PiwikAnalyticsDashboardController extends ModuleAdminController {
         }
         // init dashboard view
         if (!$this->ajax && $this->display == 'view') {
-            
+
             $this->addCSS($this->module->getPathUri() . 'css/admin.css');
-            
+
             $this->toolbar_title = $this->l('Piwik Dashboard', $this->name);
 
             $this->tpl_view_vars['protocol'] = ((bool) Configuration::get(PiwikHelper::CPREFIX . 'CRHTTPS') ? 'https://' : 'http://');
@@ -124,7 +124,7 @@ class PiwikAnalyticsDashboardController extends ModuleAdminController {
                 );
             } else {
                 $this->page_header_toolbar_btn['stats'] = array(
-                    'href' => $this->tpl_view_vars['protocol'] . $this->tpl_view_vars['piwik_host'] . 'index.php',
+                    'href' => $this->tpl_view_vars['protocol'] . $this->tpl_view_vars['piwik_host'] . 'index.php?idSite='.$this->tpl_view_vars['piwik_siteid'],
                     'desc' => $this->l('Piwik'),
                     'target' => true
                 );
@@ -285,7 +285,10 @@ class PiwikAnalyticsDashboardController extends ModuleAdminController {
         $helper->identifier = "id_module";
         $helper->module = $this->module;
 
-        $helper->tpl_vars = $this->getTemplateViewVars();
+        if (method_exists($this, 'getTemplateViewVars'))
+            $helper->tpl_vars = $this->getTemplateViewVars();
+        else
+            $helper->tpl_vars = $this->tpl_view_vars;
         $helper->base_tpl = Configuration::get(PiwikHelper::CPREFIX . 'DEFAULTVIEW') . '.tpl';
         $view = $helper->generateView();
 
@@ -320,7 +323,7 @@ class PiwikAnalyticsDashboardController extends ModuleAdminController {
             }
         }
         die(Tools::jsonEncode($result));
-        
+
 //        $result = file_get_contents(((bool) Configuration::get(PiwikHelper::CPREFIX . 'CRHTTPS') ? 'https://' : 'http://').Configuration::get(PiwikHelper::CPREFIX . 'HOST').'index.php?date='.$date.'&module=Live&action=getLastVisitsStart&segment=&idSite='.$idSite.'&period='.$period.'&token_auth='.Configuration::get(PiwikHelper::CPREFIX . 'TOKEN_AUTH'));
 //        $result = str_replace('plugins/Live/images/', ((bool) Configuration::get(PiwikHelper::CPREFIX . 'CRHTTPS') ? 'https://' : 'http://').Configuration::get(PiwikHelper::CPREFIX . 'HOST').'plugins/Live/images/', $result);
 //        $result = str_replace('plugins/UserCountry/images/', ((bool) Configuration::get(PiwikHelper::CPREFIX . 'CRHTTPS') ? 'https://' : 'http://').Configuration::get(PiwikHelper::CPREFIX . 'HOST').'plugins/UserCountry/images/', $result);

@@ -163,11 +163,11 @@
                                                     actionsHtml += '" ';
                                                     actionsHtml += 'src="{$protocol}{$piwik_host}' + data[i].actionDetails[actionI].icon + '" /> {l s='Revenue:' mod='piwikdashboard'} {$piwik_currency_prefix}' + data[i].actionDetails[actionI].revenue + ' {$piwik_currency_sign}{$piwik_currency_suffix}</span>';
                                                 } else if(data[i].actionDetails[actionI].type === 'event') {
-                                                    // new type or just some thing i over looked ;\
                                                     actionsHtml += '<a target="_blank" href="' + data[i].actionDetails[actionI].url + '">';
                                                     actionsHtml += '<img title="' + data[i].actionDetails[actionI].eventCategory + ' - ' + data[i].actionDetails[actionI].eventAction + ' - ' + data[i].actionDetails[actionI].eventName + '" src="{$protocol}{$piwik_host}' + data[i].actionDetails[actionI].icon + '">';
                                                     actionsHtml += '</a>';
                                                 } else {
+                                                    // new type or just some thing i over looked ;\
                                                     console.log(data[i].actionDetails[actionI]);
                                                 }
 
