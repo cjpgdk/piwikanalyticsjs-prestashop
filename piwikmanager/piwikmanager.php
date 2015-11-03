@@ -142,7 +142,7 @@ class piwikmanager extends Module {
 
     public function hookDisplayBackOfficeHeader() {
         if (method_exists($this->context->controller, 'addCSS')) {
-            if (version_compare(_PS_VERSION_, '1.6.0.3', '<=')) {
+            if (version_compare(_PS_VERSION_, '1.6.1.0', '<')) {
                 /* using old icon font */
                 $this->context->controller->addCSS($this->_path . 'css/admin_old.css', 'all');
             } else {

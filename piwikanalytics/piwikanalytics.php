@@ -82,7 +82,7 @@ class piwikanalytics extends Module {
 
     public function __construct($name = null, $context = null) {
 
-        $this->_default_config_values[PiwikHelper::CPREFIX . 'COOKIE_DOMAIN'] = Tools::getShopDomain();
+        $this->_default_config_values[PiwikHelper::CPREFIX . 'COOKIE_DOMAIN'] = '.'.Tools::getShopDomain();
         $this->_default_config_values[PiwikHelper::CPREFIX . 'COOKIE_TIMEOUT'] = self::PK_VC_TIMEOUT;
         $this->_default_config_values[PiwikHelper::CPREFIX . 'SESSION_TIMEOUT'] = self::PK_SC_TIMEOUT;
         $this->_default_config_values[PiwikHelper::CPREFIX . 'RCOOKIE_TIMEOUT'] = self::PK_RC_TIMEOUT;
@@ -731,10 +731,14 @@ class piwikanalytics extends Module {
             if ($value == 'displayRightColumnProduct') {
                 if (!$this->isRegisteredInHook($value) && !$this->isRegisteredInHook('displayLeftColumnProduct'))
                     $ret = false; /* suppports both so both must fail to be an error */
+            }else if ($value == 'displayHeader') {
+                if (!$this->isRegisteredInHook($value) && !$this->isRegisteredInHook('Header'))
+                    $ret = false; /* suppports both so both must fail to be an error */
             }else if (!$this->isRegisteredInHook($value) && !Configuration::get(PiwikHelper::CPREFIX . 'IGNORE' . $key))
                 $ret = false;
         }
         return $ret;
+        //  , 
     }
 
     /**

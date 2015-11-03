@@ -198,7 +198,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                 $JSERRTRACKING = Tools::getValue(PiwikHelper::CPREFIX . 'JSERRTRACKING');
                 Configuration::updateValue(PiwikHelper::CPREFIX . 'JSERRTRACKING', ($JSERRTRACKING == 1 ? 1 : 0));
             }
-            
+
             // enable / disable Heart Beat Timer
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'HeartBeatTimer')) {
                 $HeartBeatTimer = Tools::getValue(PiwikHelper::CPREFIX . 'HeartBeatTimer');
@@ -207,7 +207,7 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
             // Heart Beat Timer Delay
             if (Tools::getIsset(PiwikHelper::CPREFIX . 'HeartBeatTimerDelay')) {
                 $HeartBeatTimerDelay = Tools::getValue(PiwikHelper::CPREFIX . 'HeartBeatTimerDelay');
-                Configuration::updateValue(PiwikHelper::CPREFIX . 'HeartBeatTimerDelay', (int)$HeartBeatTimerDelay);
+                Configuration::updateValue(PiwikHelper::CPREFIX . 'HeartBeatTimerDelay', (int) $HeartBeatTimerDelay);
             }
 
             $this->confirmations[] = $this->l("Update process complete", $this->name);
@@ -325,12 +325,15 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
                 }
             }
         }
-        
+
         // check hooks
-        foreach ($this->module->piwik_hooks as $key => $value){
+        foreach ($this->module->piwik_hooks as $key => $value) {
             if ($value == 'displayRightColumnProduct') {
                 if (!$this->module->isRegisteredInHook($value) && !$this->module->isRegisteredInHook('displayLeftColumnProduct'))
-                $this->warnings[] = sprintf($this->l('Hook: \'%s\' is not registered', $this->name), $value . ' or displayLeftColumnProduct');
+                    $this->warnings[] = sprintf($this->l('Hook: \'%s\' is not registered', $this->name), $value . ' or displayLeftColumnProduct');
+            }else if ($value == 'displayHeader') {
+                if (!$this->module->isRegisteredInHook($value) && !$this->module->isRegisteredInHook('Header'))
+                    $this->warnings[] = sprintf($this->l('Hook: \'%s\' is not registered', $this->name), $value . ' or Header');
             }else if (!$this->module->isRegisteredInHook($value) && !Configuration::get(PiwikHelper::CPREFIX . 'IGNORE' . $key))
                 $this->warnings[] = sprintf($this->l('Hook: \'%s\' is not registered', $this->name), $value);
         }
@@ -563,18 +566,18 @@ class PiwikAnalyticsTrackingConfigController extends ModuleAdminController {
 
         $advMessage01 = $this->l('In this section you can modify certain aspects of the way this plugin sends products, searches, category view etc.. to piwik', $this->name);
         $advMessage02 = "<strong>{$this->l('Product id', $this->name)}</strong>"
-                    . '<br />'
-                    . $this->l('in the next few inputs you can set how the product id is passed on to piwik', $this->name)
-                    . '<br />'
-                    . $this->l('there are three variables you can use:', $this->name)
-                    . '<br />'
-                    . $this->l('{ID} : this variable is replaced with id of product in prestashop', $this->name)
-                    . '<br />'
-                    . $this->l('{REFERENCE} : this variable is replaced with the unique reference you set for the product', $this->name)
-                    . '<br />'
-                    . $this->l('{ATTRID} : this variable is replaced with id the product attribute', $this->name)
-                    . '<br />'
-                    . $this->l('in cases where only the product id is available it be parsed as ID and nothing else', $this->name);
+                . '<br />'
+                . $this->l('in the next few inputs you can set how the product id is passed on to piwik', $this->name)
+                . '<br />'
+                . $this->l('there are three variables you can use:', $this->name)
+                . '<br />'
+                . $this->l('{ID} : this variable is replaced with id of product in prestashop', $this->name)
+                . '<br />'
+                . $this->l('{REFERENCE} : this variable is replaced with the unique reference you set for the product', $this->name)
+                . '<br />'
+                . $this->l('{ATTRID} : this variable is replaced with id the product attribute', $this->name)
+                . '<br />'
+                . $this->l('in cases where only the product id is available it be parsed as ID and nothing else', $this->name);
         $advMessage03 = "<strong>{$this->l('Piwik Cookies', $this->name)}</strong>";
         $advMessage04 = "<strong>{$this->l('Piwik Proxy Script', $this->name)}</strong>";
         if (version_compare(_PS_VERSION_, '1.6.0.3', '<=')) {
