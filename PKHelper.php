@@ -84,7 +84,7 @@ class PKHelper {
      * DO NOT log == 0
      * log will be saved to [PS ROOT]/log/YYYYMMDD_piwik.debug.log
      */
-    const DEBUGLOG = 1;
+    const DEBUGLOG = 0;
 
     /** @var FileLogger */
     private static $_debug_logger = NULL;
