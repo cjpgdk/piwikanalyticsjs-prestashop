@@ -61,7 +61,7 @@
     {if $PIWIK_CART eq true}
         {if is_array($PIWIK_CART_PRODUCTS)}
             {foreach from=$PIWIK_CART_PRODUCTS item=_product}
-                _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME}', {$_product.CATEGORY}, '{$_product.PRICE}', '{$_product.QUANTITY}']);
+                _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME|escape:'quotes'}', {$_product.CATEGORY}, '{$_product.PRICE}', '{$_product.QUANTITY}']);
             {/foreach}
         {/if}
         {if isset($PIWIK_CART_TOTAL)}
