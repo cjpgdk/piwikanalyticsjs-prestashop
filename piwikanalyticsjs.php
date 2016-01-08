@@ -469,8 +469,7 @@ class piwikanalyticsjs extends Module {
                     array('str' => 'month|today', 'name' => $this->l('Current Month')),
                     array('str' => 'year|today', 'name' => $this->l('Current Year')),
                 ),
-                'id' => 'str',
-                'name' => 'name'
+                'id' => 'str', 'name' => 'name'
             ),
         );
 
@@ -479,16 +478,14 @@ class piwikanalyticsjs extends Module {
             'label' => $this->l('Piwik User name'),
             'name' => PKHelper::CPREFIX . 'USRNAME',
             'desc' => $this->l('You can store your Username for Piwik here to make it easy to open piwik interface from your stats page with automatic login'),
-            'required' => false,
-            'autocomplete' => false,
+            'required' => false, 'autocomplete' => false,
         );
         $fields_form[0]['form']['input'][] = array(
             'type' => 'password',
             'label' => $this->l('Piwik User password'),
             'name' => PKHelper::CPREFIX . 'USRPASSWD',
             'desc' => $this->l('You can store your Password for Piwik here to make it easy to open piwik interface from your stats page with automatic login'),
-            'required' => false,
-            'autocomplete' => false,
+            'required' => false, 'autocomplete' => false,
         );
 
         $fields_form[0]['form']['submit'] = array(
@@ -580,6 +577,17 @@ class piwikanalyticsjs extends Module {
                     'label' => $this->l('Searches'),
                     'name' => PKHelper::CPREFIX . 'SEARCH_QUERY',
                     'desc' => $this->l('Template to use when a multipage search is made'),
+                    'required' => false
+                ),
+                array(
+                    'type' => 'html',
+                    'name' => "<strong>{$this->l('Proxy script')}</strong>"
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Timeout'),
+                    'name' => PKHelper::CPREFIX . 'PROXY_TIMEOUT',
+                    'desc' => $this->l('the maximum time in seconds to wait for proxied request to piwik'),
                     'required' => false
                 ),
                 array(
@@ -963,6 +971,7 @@ class piwikanalyticsjs extends Module {
             PKHelper::CPREFIX . 'DREPDATE' => Configuration::get(PKHelper::CPREFIX . 'DREPDATE'),
             PKHelper::CPREFIX . 'USE_CURL' => Configuration::get(PKHelper::CPREFIX . 'USE_CURL'),
             PKHelper::CPREFIX . 'SEARCH_QUERY' => Configuration::get(PKHelper::CPREFIX . "SEARCH_QUERY"),
+            PKHelper::CPREFIX . 'PROXY_TIMEOUT' => Configuration::get(PKHelper::CPREFIX . "PROXY_TIMEOUT"),
             /* stuff thats isset by ajax calls to Piwik API ---(here to avoid not isset warnings..!)--- */
             'PKAdminSiteName' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->name : ''),
             'PKAdminEcommerce' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->ecommerce : ''),
@@ -1085,6 +1094,15 @@ class piwikanalyticsjs extends Module {
                 $tmp = (int) Tools::getValue(PKHelper::CPREFIX . 'SESSION_TIMEOUT', self::PK_SC_TIMEOUT);
                 $tmp = (int) ($tmp * 60); //* convert to seconds
                 Configuration::updateValue(PKHelper::CPREFIX . 'SESSION_TIMEOUT', $tmp);
+            }
+            // proxy script timeout
+            if (Tools::getIsset(PKHelper::CPREFIX . 'PROXY_TIMEOUT')) {
+                $tmp = (int) Tools::getValue(PKHelper::CPREFIX . 'PROXY_TIMEOUT', 5);
+                if ($tmp <= 0){
+                    $_html .= $this->displayError($this->l('Piwik proxy timeout must be an integer and larger than 0 (zero)'));
+                    $tmp = 5;
+                }
+                Configuration::updateValue(PKHelper::CPREFIX . 'PROXY_TIMEOUT', $tmp);
             }
             /*
              * @todo VALIDATE!!!, YES VALIDATE!!! thank you ...
@@ -1217,14 +1235,12 @@ class piwikanalyticsjs extends Module {
         $expr = Tools::getIsset('search_query') ? htmlentities(Tools::getValue('search_query')) : $param['expr'];
         /* if multi pages in search add page number of current if set! */
         $search_tpl = Configuration::get(PKHelper::CPREFIX . 'SEARCH_QUERY');
-        if ($search_tpl === false) {
+        if ($search_tpl === false)
             $search_tpl = "{QUERY} ({PAGE})";
-        }
         if (Tools::getIsset('p')) {
             $search_tpl = str_replace('{QUERY}', $expr, $search_tpl);
             $expr = str_replace('{PAGE}', Tools::getValue('p'), $search_tpl);
         }
-        
 
         $this->context->smarty->assign(array(
             PKHelper::CPREFIX . 'SITE_SEARCH' => "_paq.push(['trackSiteSearch',\"{$expr}\",false,{$param['total']}]);"

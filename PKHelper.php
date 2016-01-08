@@ -41,7 +41,7 @@ class PKHelper {
         'getPiwikSite2' => array('required' => array('idSite'), 'optional' => array(''), 'order' => array('idSite'),),
         'getSitesGroups' => array('required' => array(), 'optional' => array(), 'order' => array(),),
         'getSitesWithViewAccess' => array('required' => array(), 'optional' => array(), 'order' => array(),),
-        'getSitesWithAdminAccess' => array('required' => array(), 'optional' => array('fetchAliasUrls','getBaseURLParams'), 'order' => array('fetchAliasUrls','getBaseURLParams'),),
+        'getSitesWithAdminAccess' => array('required' => array(), 'optional' => array('fetchAliasUrls', 'getBaseURLParams'), 'order' => array('fetchAliasUrls', 'getBaseURLParams'),),
         'getTokenAuth' => array(
             'required' => array('userLogin'),
             'optional' => array('password', 'md5Password'),
@@ -297,14 +297,14 @@ class PKHelper {
 //                if ((_PS_VERSION_ < '1.5'))
 //                    self::$error = self::l('E-commerce is not active for your site in piwik!');
 //                else
-                    self::$error = self::l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page');
+                self::$error = self::l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page');
                 self::$errors[] = self::$error;
             }
             if (((bool) self::$_cachedResults[$md5Url][0]->sitesearch) === false || self::$_cachedResults[$md5Url][0]->sitesearch == 0) {
 //                if ((_PS_VERSION_ < '1.5'))
 //                    self::$error = self::l('Site search is not active for your site in piwik!');
 //                else
-                    self::$error = self::l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page');
+                self::$error = self::l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page');
                 self::$errors[] = self::$error;
             }
             return self::$_cachedResults[$md5Url];
@@ -489,7 +489,10 @@ class PKHelper {
         else
             $lng = 'en';
 
-        $timeout = 5; // should go in module conf
+        if (Configuration::hasKey(PKHelper::CPREFIX . 'PROXY_TIMEOUT'))
+            $timeout = Configuration::get(PKHelper::CPREFIX . 'PROXY_TIMEOUT');
+        if ((int) $timeout <= 0)
+            $timeout = 5;
 
         if (self::$httpAuthUsername == "" || self::$httpAuthUsername === false)
             self::$httpAuthUsername = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');

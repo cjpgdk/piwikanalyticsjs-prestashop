@@ -31,5 +31,7 @@
 function upgrade_module_0_8_4($module) {
     if (!Configuration::hasKey('PIWIK_SEARCH_QUERY'))
         Configuration::updateValue('PIWIK_SEARCH_QUERY', '{QUERY} ({PAGE})');
+    if (!Configuration::hasKey(PKHelper::CPREFIX . 'PROXY_TIMEOUT'))
+        Configuration::updateValue('PROXY_TIMEOUT', 5);
     return true;
 }
