@@ -5,6 +5,8 @@ Version: 0.8.4 (un-released)
 
     * add template for multipage searches
 
+    * add proposed fix for issue #20
+
 Version: 0.8.3
     * Seriously improve the world crappiest configuration wizard, :)
     - it has been completely redesigned with usability in mind
