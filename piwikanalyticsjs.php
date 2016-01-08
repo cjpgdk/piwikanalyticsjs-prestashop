@@ -304,54 +304,6 @@ class piwikanalyticsjs extends Module {
             'required' => true
         );
         $fields_form[0]['form']['input'][] = array(
-            'type' => 'switch',
-            'is_bool' => true, //retro compat 1.5
-            'label' => $this->l('Use proxy script'),
-            'name' => PKHelper::CPREFIX . 'USE_PROXY',
-            'desc' => $this->l('Whether or not to use the proxy insted of Piwik Host'),
-            'values' => array(
-                array(
-                    'id' => 'active_on',
-                    'value' => 1,
-                    'label' => $this->l('Enabled')
-                ),
-                array(
-                    'id' => 'active_off',
-                    'value' => 0,
-                    'label' => $this->l('Disabled')
-                )
-            ),
-        );
-        $fields_form[0]['form']['input'][] = array(
-            'type' => 'text',
-            'label' => $this->l('Proxy script'),
-            'name' => PKHelper::CPREFIX . 'PROXY_SCRIPT',
-            'hint' => $this->l('Example: www.example.com/pkproxy.php'),
-            'desc' => sprintf($this->l('the FULL path to proxy script to use, build-in: [%s]'), self::getModuleLink($this->name, 'piwik')),
-            'required' => false
-        );
-        if (function_exists('curl_version')) {
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'switch',
-                'is_bool' => true,
-                'label' => $this->l('Use cURL'),
-                'name' => PKHelper::CPREFIX . 'USE_CURL',
-                'desc' => $this->l('Whether or not to use cURL in Piwik API and proxy requests?'),
-                'values' => array(
-                    array(
-                        'id' => 'active_on',
-                        'value' => 1,
-                        'label' => $this->l('Enabled')
-                    ),
-                    array(
-                        'id' => 'active_off',
-                        'value' => 0,
-                        'label' => $this->l('Disabled')
-                    )
-                ),
-            );
-        }
-        $fields_form[0]['form']['input'][] = array(
             'type' => 'text',
             'label' => $this->l('Piwik site id'),
             'name' => PKHelper::CPREFIX . 'SITEID',
@@ -591,6 +543,52 @@ class piwikanalyticsjs extends Module {
                     'required' => false
                 ),
                 array(
+                    'type' => 'switch',
+                    'is_bool' => true, //retro compat 1.5
+                    'label' => $this->l('Use proxy script'),
+                    'name' => PKHelper::CPREFIX . 'USE_PROXY',
+                    'desc' => $this->l('Whether or not to use the proxy insted of Piwik Host'),
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => 1,
+                            'label' => $this->l('Enabled')
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => 0,
+                            'label' => $this->l('Disabled')
+                        )
+                    ),
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Proxy script'),
+                    'name' => PKHelper::CPREFIX . 'PROXY_SCRIPT',
+                    'hint' => $this->l('Example: www.example.com/pkproxy.php'),
+                    'desc' => sprintf($this->l('the FULL path to proxy script to use, build-in: [%s]'), self::getModuleLink($this->name, 'piwik')),
+                    'required' => false
+                ),
+                array(
+                    'type' => 'switch',
+                    'is_bool' => true,
+                    'label' => $this->l('Use cURL'),
+                    'name' => PKHelper::CPREFIX . 'USE_CURL',
+                    'desc' => $this->l('Whether or not to use cURL in Piwik API and proxy requests?'),
+                    'disabled' => (function_exists('curl_version')) ? false : true,
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => 1,
+                            'label' => $this->l('Enabled'),
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => 0,
+                            'label' => $this->l('Disabled'),
+                        )
+                    ),
+                ), array(
                     'type' => 'html',
                     'name' => "<strong>{$this->l('Piwik Cookies')}</strong>"
                 ),
@@ -1098,7 +1096,7 @@ class piwikanalyticsjs extends Module {
             // proxy script timeout
             if (Tools::getIsset(PKHelper::CPREFIX . 'PROXY_TIMEOUT')) {
                 $tmp = (int) Tools::getValue(PKHelper::CPREFIX . 'PROXY_TIMEOUT', 5);
-                if ($tmp <= 0){
+                if ($tmp <= 0) {
                     $_html .= $this->displayError($this->l('Piwik proxy timeout must be an integer and larger than 0 (zero)'));
                     $tmp = 5;
                 }

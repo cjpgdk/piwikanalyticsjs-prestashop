@@ -9,6 +9,8 @@ Version: 0.8.4 (un-released)
 
     * add option for proxy script timeout, default to 5 sec.
 
+    * move all proxy settings to advanced section
+
 Version: 0.8.3
     * Seriously improve the world crappiest configuration wizard, :)
     - it has been completely redesigned with usability in mind
