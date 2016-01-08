@@ -93,241 +93,72 @@ class piwikanalyticsjs extends Module {
     }
 
     public function generateWizardForm($step = 1, & $fields_form, & $helperform) {
-        $username = $password = $piwikhost = $usernamehttp = $passwordhttp = false;
-        if (Tools::getIsset('usePiwikSite') && ((int) Tools::getValue('usePiwikSite') != 0)) {
-            $pksiteid = (int) Tools::getValue('usePiwikSite');
-            if ($pksite = PKHelper::getPiwikSite2($pksiteid)) {
-                if (isset($pksite[0]) && is_object($pksite[0])) {
-                    PKHelper::updatePiwikSite($pksiteid /* $idSite */, $pksite[0]->name /* $siteName */, $pksite[0]->main_url /* $urls */, 1 /* $ecommerce */, 1 /* $siteSearch */, $pksite[0]->sitesearch_keyword_parameters /* $searchKeywordParameters */, $pksite[0]->sitesearch_category_parameters /* $searchCategoryParameters */, $pksite[0]->excluded_ips /* $excludedIps */, $pksite[0]->excluded_parameters /* $excludedQueryParameters */, $pksite[0]->timezone /* $timezone */, $pksite[0]->currency /* $currency */, $pksite[0]->group /* $group */, $pksite[0]->ts_created /* $startDate */, $pksite[0]->excluded_user_agents /* $excludedUserAgents */, $pksite[0]->keep_url_fragment /* $keepURLFragments */, $pksite[0]->type /* $type */);
-                    PKHelper::$error = PKHelper::$errors = null; // don't need them, we redirect
-                    // save site id
-                    Configuration::updateValue(PKHelper::CPREFIX . 'SITEID', $pksiteid);
-                    Tools::redirectAdmin(str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'));
-                } else {
-                    $this->_errors[] = $this->displayError(sprintf($this->l("I encountered an unknown error while trying to get the selected site, id#%s"), $pksiteid));
-                    $password = Configuration::get(PKHelper::CPREFIX . "USRPASSWD");
-                    $username = Configuration::get(PKHelper::CPREFIX . "USRNAME");
-                    $usernamehttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
-                    $passwordhttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
-                    $piwikhost = Configuration::get(PKHelper::CPREFIX . 'HOST');
-                }
-            } else {
-                $this->_errors[] = $this->displayError(sprintf($this->l("I'm unable, to get admin access to the selected site id #%s"), $pksiteid));
-                $password = Configuration::get(PKHelper::CPREFIX . "USRPASSWD");
-                $username = Configuration::get(PKHelper::CPREFIX . "USRNAME");
-                $usernamehttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
-                $passwordhttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
-                $piwikhost = Configuration::get(PKHelper::CPREFIX . 'HOST');
-            }
-        }
-        if (Tools::getIsset(PKHelper::CPREFIX . 'USRNAME_WIZARD'))
-            $username = Tools::getValue(PKHelper::CPREFIX . 'USRNAME_WIZARD');
-        if (Tools::getIsset(PKHelper::CPREFIX . 'USRPASSWD_WIZARD'))
-            $password = Tools::getValue(PKHelper::CPREFIX . 'USRPASSWD_WIZARD');
-        if (Tools::getIsset(PKHelper::CPREFIX . 'HOST_WIZARD'))
-            $piwikhost = Tools::getValue(PKHelper::CPREFIX . 'HOST_WIZARD');
-        if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHUSR_WIZARD'))
-            $usernamehttp = Tools::getValue(PKHelper::CPREFIX . 'PAUTHUSR_WIZARD', 0);
-        if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHPWD_WIZARD'))
-            $passwordhttp = Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD_WIZARD', 0);
+        // set translations
+        PiwikWizardHelper::$strings['821dc1363c6c3a23185ea0cf3bee5261'] = $this->l("Select a site.");
+        PiwikWizardHelper::$strings['4ddd9129714e7146ed2215bcbd559335'] = $this->l("I encountered an unknown error while trying to get the selected site, id#%s");
+        PiwikWizardHelper::$strings['e41246ca9fd83a123022c5c5b7a6f866'] = $this->l("I'm unable, to get admin access to the selected site id #%s");
+        PiwikWizardHelper::$strings['ea4788705e6873b424c65e91c2846b19'] = $this->l("Cancel");
+        PiwikWizardHelper::$strings['00617256bf279d54780075598d7e958c'] = $this->l('Create new Site');
+        PiwikWizardHelper::$strings['3c68005461c0d81c1626c01c9aa400e0'] = $this->l("Unable to get a list of websites from Piwik, if you dont have any sites in piwik yet click 'Create new Site' button.");
+        PiwikWizardHelper::$strings['10ac3d04253ef7e1ddc73e6091c0cd55'] = $this->l('Next');
+        PiwikWizardHelper::$strings['11552a6e511d4ab1ee43f2e0ab9d623f'] = $this->l('this field along with username can be used if piwik installation is protected by HTTP Basic Authorization');
+        PiwikWizardHelper::$strings['e4a1b909bb1918a40f18d8dfb013fd28'] = $this->l('HTTP Auth Password');
+        PiwikWizardHelper::$strings['4b3e9319a9c0c328221080116e0d5104'] = $this->l('HTTP Auth Username');
+        PiwikWizardHelper::$strings['7965ca87322fb45ebc60071041580e8f'] = $this->l("HTTP Basic Authorization");
+        PiwikWizardHelper::$strings['b9f5c797ebbf55adccdd8539a65a0241'] = $this->l('Disabled');
+        PiwikWizardHelper::$strings['00d23a76e43b46dae9ec7aa9dcbebb32'] = $this->l('Enabled');
+        PiwikWizardHelper::$strings['3b6761cfe4215c632072f87259970d84'] = $this->l('Whether or not to save the username and password, saving the username and password will enable quick(automatic) login to piwik from the integrated stats page');
+        PiwikWizardHelper::$strings['ea88860b951ee567e988d794ef0ca090'] = $this->l('Save username and password');
+        PiwikWizardHelper::$strings['47f896968366f1688c401fece093c2d1'] = $this->l('Enter your password for Piwik, we need this in order to fetch your api authentication token');
+        PiwikWizardHelper::$strings['3eb1a362b1cfc065415c6f31730bfd84'] = $this->l('Piwik User password');
+        PiwikWizardHelper::$strings['8e70216e1e56d8d2f7e3cd229171ba1f'] = $this->l('Enter your username for Piwik, we need this in order to fetch your api authentication token');
+        PiwikWizardHelper::$strings['4081cf3a3e78277c30f0acd948082cb8'] = $this->l('Piwik User name');
+        PiwikWizardHelper::$strings['6fbd6e012c9a1a4b2f0796196d060e6d'] = $this->l('The full url to your piwik installation.!');
+        PiwikWizardHelper::$strings['6752ab12af9a9878bf9d08c751ac2aa5'] = $this->l('Example: http://www.example.com/piwik/');
+        PiwikWizardHelper::$strings['3c6805325f65f0ee32244920e46aac39'] = $this->l('Piwik Host');
+
+        PiwikWizardHelper::setUsePiwikSite($helperform);
+        PiwikWizardHelper::getFormValuesInternal();
+        // get and set errors "PiwikWizardHelper::$errors"
+        foreach (PiwikWizardHelper::$errors as $value)
+            $this->_errors[] = $value;
+        PiwikWizardHelper::$errors = array();
+
         $pkToken = false;
         $pkSites = array();
-        if ($step == 2) {
-            PKHelper::$httpAuthUsername = ($usernamehttp !== false ? $usernamehttp : '');
-            PKHelper::$httpAuthPassword = ($passwordhttp !== false ? $passwordhttp : '');
-            PKHelper::$piwikHost = str_replace(array('http://', 'https://'), '', $piwikhost);
-            $pkToken = PKHelper::getTokenAuth($username, $password);
-            if (!empty(PKHelper::$error)) {
-                foreach (PKHelper::$errors as $key => $value) {
-                    $this->_errors[] = $this->displayError($value);
-                }
-                $step = 1;
-            } else {
-                if ($pkToken !== false) {
-                    // wee need to saved the token to avoid errore from PKHelper class
-                    // @todo allow token overide 'PKHelper::getSitesWithAdminAccess' (skip missing error)
-                    Configuration::updateValue(PKHelper::CPREFIX . 'TOKEN_AUTH', $pkToken);
-                    if ($_pkSites = PKHelper::getSitesWithAdminAccess(false, array(
-                                'idSite' => 0, 'pkHost' => PKHelper::$piwikHost,
-                                'https' => (strpos($piwikhost, 'https://') !== false),
-                                'pkModule' => 'API', 'isoCode' => NULL, 'tokenAuth' => $pkToken))) {
-                        if (!empty($_pkSites)) {
-                            foreach ($_pkSites as $value) {
-                                $pkSites[] = array(
-                                    'idsite' => $value->idsite,
-                                    'name' => $value->name,
-                                    'main_url' => $value->main_url,
-                                );
-                            }
-                        }
-                    }
-                    if (!empty(PKHelper::$error)) {
-                        foreach (PKHelper::$errors as $key => $value) {
-                            $this->_errors[] = $this->displayError($value);
-                        }
-                        $step = 1;
-                    }
-                }
-            }
-        }
-        if ($step == 2 && is_array($pkSites) && !empty($pkSites)) {
 
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'html',
-                'name' => "<strong>{$this->l("Select a site.")}</strong>"
-            );
-            foreach ($pkSites as $key => $value) {
-                $fields_form[0]['form']['input'][] = array(
-                    'name' => '', /* avoid not isset error */
-                    'type' => 'myBtn',
-                    'href' => $helperform->currentIndex . '&usePiwikSite=' . $value['idsite'] . "&token=" . Tools::getAdminTokenLite('AdminModules'),
-                    /* 'class'=>'', */
-                    'id' => 'slectedpksid_' . $value['idsite'],
-                    /* 'extraattr' => ' onclick="return false;"', */
-                    'icon' => 'icon-chevron-right',
-                    'title' => '#' . $value['idsite'] . ' - ' . $value['name'] . ' [<strong>' . $value['main_url'] . '</strong>]',
-                );
-            }
-            $fields_form[0]['form']['buttons'][] = array(
-                'title' => $this->l('Cancel'),
-                'icon' => 'process-icon-cancel',
-                'class' => ' donotdisable',
-                'ps15style' => 'font-size: 14px; padding: 5px 10px;',
-                'type' => 'button',
-                'href' => str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'),
-                'id' => 'btnCreateNewSite',
-                'name' => 'btnCreateNewSite',
-            );
-            $fields_form[0]['form']['buttons'][] = array(
-                'title' => $this->l('Create new Site'),
-                'icon' => 'process-icon-new',
-                'class' => '  pull-right donotdisable',
-                'type' => 'button',
-                'id' => 'btnCreateNewSite',
-                'name' => 'btnCreateNewSite',
-                'js' => "alert('this functionality is not implemented yet, i apologise for the inconvenience')",
-            );
-        } else if ($step == 2) {
-            $step = 1;
-            $this->_errors[] = $this->displayError($this->l("Unable to get a list websites from piwik, if you dont have any sites in piwik yet click 'Create new Site' button."));
-        }
-
+        // use step 2 ??
+        PiwikWizardHelper::pkws2($step, $pkToken, $pkSites, $fields_form, $helperform);
+        foreach (PiwikWizardHelper::$errors as $value)
+            $this->_errors[] = $this->displayError($value);
+        PiwikWizardHelper::$errors = array();
 
         $fields_form[0]['form']['input'][] = array(
             'type' => 'html',
             'name' => "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'STEP_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'STEP_WIZARD' . "\" value=\"{$step}\" />"
         );
-        $fields_form[0]['form']['legend']['title'] = $helperform->title . " [Step " . $step . "/2]";
+        $fields_form[0]['form']['legend']['title'] = $helperform->title . " " . sprintf($this->l("[Step %s/2]"), $step);
         if ($step != 1) {
             $fields_form[0]['form']['input'][] = array(
                 'type' => 'html',
-                'name' => "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'HOST_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'HOST_WIZARD' . "\" value=\"{$piwikhost}\" />"
-                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'USRNAME_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'USRNAME_WIZARD' . "\" value=\"{$username}\" />"
-                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'USRPASSWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'USRPASSWD_WIZARD' . "\" value=\"{$password}\" />"
-                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' . "\" value=\"{$usernamehttp}\" />"
-                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" value=\"{$passwordhttp}\" />"
+                'name' => "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'HOST_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'HOST_WIZARD' . "\" value=\"" . PiwikWizardHelper::$piwikhost . "\" />"
+                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'USRNAME_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'USRNAME_WIZARD' . "\" value=\"" . PiwikWizardHelper::$username . "\" />"
+                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'USRPASSWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'USRPASSWD_WIZARD' . "\" value=\"" . PiwikWizardHelper::$password . "\" />"
+                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' . "\" value=\"" . PiwikWizardHelper::$usernamehttp . "\" />"
+                . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" value=\"" . PiwikWizardHelper::$passwordhttp . "\" />"
             );
         }
-
-
-        if ($step == 1) {
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'text',
-                'label' => $this->l('Piwik Host'),
-                'name' => PKHelper::CPREFIX . 'HOST_WIZARD',
-                'desc' => $this->l('Example: http://www.example.com/piwik/'),
-                'hint' => $this->l('The full url to your piwik installation.!'),
-                'required' => true,
-            );
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'text',
-                'label' => $this->l('Piwik User name'),
-                'name' => PKHelper::CPREFIX . 'USRNAME_WIZARD',
-                'desc' => $this->l('Enter your username for Piwik, we need this in order to fetch your api authentication token'),
-                'required' => true,
-                'autocomplete' => false,
-            );
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'password',
-                'label' => $this->l('Piwik User password'),
-                'name' => PKHelper::CPREFIX . 'USRPASSWD_WIZARD',
-                'desc' => $this->l('Enter your password for Piwik, we need this in order to fetch your api authentication token'),
-                'required' => true,
-                'autocomplete' => false,
-            );
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'switch',
-                'is_bool' => true, //retro compat 1.5
-                'label' => $this->l('Save username and password'),
-                'name' => PKHelper::CPREFIX . 'SAVE_USRPWD_WIZARD',
-                'desc' => $this->l('Whether or not to save the username and password, saving the username and password will enable quick(automatic) login to piwik from the integrated stats page'),
-                'required' => false,
-                'values' => array(
-                    array(
-                        'id' => 'active_on',
-                        'value' => 1,
-                        'label' => $this->l('Enabled')
-                    ),
-                    array(
-                        'id' => 'active_off',
-                        'value' => 0,
-                        'label' => $this->l('Disabled')
-                    )
-                ),
-            );
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'html',
-                'name' => "<strong>{$this->l("HTTP Basic Authorization")}</strong>"
-            );
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'text',
-                'label' => $this->l('HTTP Auth Username'),
-                'name' => PKHelper::CPREFIX . 'PAUTHUSR_WIZARD',
-                'required' => false,
-                'autocomplete' => false,
-                'desc' => $this->l('this field along with password can be used if piwik installation is protected by HTTP Basic Authorization'),
-            );
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'password',
-                'label' => $this->l('HTTP Auth Password'),
-                'name' => PKHelper::CPREFIX . 'PAUTHPWD_WIZARD',
-                'required' => false,
-                'autocomplete' => false,
-                'desc' => $this->l('this field along with username can be used if piwik installation is protected by HTTP Basic Authorization'),
-            );
-            $fields_form[0]['form']['submit'] = array(
-                'title' => $this->l('Next'),
-                'icon' => 'process-icon-next',
-                'class' => (version_compare(_PS_VERSION_, '1.6', '>=') ? 'btn btn-default' : 'button'),
-            );
-            $fields_form[0]['form']['buttons'][] = array(
-                'title' => $this->l('Cancel'),
-                'icon' => 'process-icon-cancel',
-                'class' => ' donotdisable',
-                'ps15style' => 'font-size: 14px; padding: 5px 10px;',
-                'type' => 'button',
-                'href' => str_replace('&pkwizard', '', $helperform->currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'),
-                'id' => 'btnCreateNewSite',
-                'name' => 'btnCreateNewSite',
-            );
-            $fields_form[0]['form']['buttons'][] = array(
-                'title' => $this->l('Create new Site'),
-                'icon' => 'process-icon-new',
-                'class' => '  pull-right donotdisable',
-                'type' => 'button',
-                'id' => 'btnCreateNewSite',
-                'name' => 'btnCreateNewSite',
-                'js' => "alert('this functionality is not implemented yet, i apologise for the inconvenience')",
-            );
-        }
-        $helperform->show_cancel_button = false; // link is wrong and can end up in and annoying loop
+        
+        PiwikWizardHelper::pkws1($step, $fields_form, $helperform);
+        
+        $helperform->show_cancel_button = false; // link is wrong and can end up in an annoying loop
         $helperform->fields_value = array(
-            PKHelper::CPREFIX . 'USRNAME_WIZARD' => ($username !== false ? $username : ''),
-            PKHelper::CPREFIX . 'USRPASSWD_WIZARD' => ($password !== false ? $password : ''),
-            PKHelper::CPREFIX . 'HOST_WIZARD' => ($piwikhost !== false ? $piwikhost : ''),
+            PKHelper::CPREFIX . 'USRNAME_WIZARD' => (PiwikWizardHelper::$username !== false ? PiwikWizardHelper::$username : ''),
+            PKHelper::CPREFIX . 'USRPASSWD_WIZARD' => (PiwikWizardHelper::$password !== false ? PiwikWizardHelper::$password : ''),
+            PKHelper::CPREFIX . 'HOST_WIZARD' => (PiwikWizardHelper::$piwikhost !== false ? PiwikWizardHelper::$piwikhost : ''),
             PKHelper::CPREFIX . 'SAVE_USRPWD_WIZARD' => 0,
-            PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' => ($usernamehttp !== false ? $usernamehttp : ''),
-            PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' => ($passwordhttp !== false ? $passwordhttp : ''),
+            PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' => (PiwikWizardHelper::$usernamehttp !== false ? PiwikWizardHelper::$usernamehttp : ''),
+            PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' => (PiwikWizardHelper::$passwordhttp !== false ? PiwikWizardHelper::$passwordhttp : ''),
         );
     }
 
@@ -367,7 +198,7 @@ class piwikanalyticsjs extends Module {
             $_html .= $this->processWizardFormUpdate();
         }
         $this->piwikSite = false;
-        if (!Tools::getIsset('pkwizard')) { /* do not try to connect when using wizard */
+        if (!$this->isWizardRequest()) { /* do not try to connect when using wizard */
             if (Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') !== false)
                 $this->piwikSite = PKHelper::getPiwikSite();
         }
@@ -376,7 +207,7 @@ class piwikanalyticsjs extends Module {
         $this->__setCurrencies();
 
         //* warnings on module configure page
-        if (!Tools::getIsset('pkwizard')) { /* do not show them if we are using the  wizard */
+        if (!$this->isWizardRequest()) { /* do not show them if we are using the  wizard */
             if ($this->id && !Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH') && !Tools::getIsset(PKHelper::CPREFIX . 'TOKEN_AUTH')) /* avoid the same error message twice */
                 $this->_errors[] = $this->displayError($this->l('Piwik auth token is empty'));
             if ($this->id && ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0) && !Tools::getIsset(PKHelper::CPREFIX . 'SITEID')) /* avoid the same error message twice */
@@ -389,7 +220,6 @@ class piwikanalyticsjs extends Module {
 
         $languages = Language::getLanguages(FALSE);
         foreach ($languages as $languages_key => $languages_value) {
-            // is_default
             $languages[$languages_key]['is_default'] = ($languages_value['id_lang'] == (int) Configuration::get('PS_LANG_DEFAULT') ? true : false);
         }
         $helper = new HelperForm();
@@ -411,7 +241,8 @@ class piwikanalyticsjs extends Module {
             'image' => $this->_path . 'logox22.png'
         );
 
-        if (Tools::getIsset('pkwizard')) {
+        if ($this->isWizardRequest()) {
+            require_once dirname(__FILE__) . '/PiwikWizard.php';
             $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name . '&pkwizard';
             $step = 1;
             if (empty($this->_errors) && empty($_html)) {
@@ -1364,7 +1195,7 @@ class piwikanalyticsjs extends Module {
         if (Tools::getIsset('p')) {
             $page = " (" . Tools::getValue('p') . ")";
         }
-        // $param['expr'] is not the searched word if lets say search is Snitmøntre then the $param['expr'] will be Snitmontre
+        // $param['expr'] is not the searched word if lets say search is Snitmï¿½ntre then the $param['expr'] will be Snitmontre
         $expr = Tools::getIsset('search_query') ? htmlentities(Tools::getValue('search_query')) : $param['expr'];
         $this->context->smarty->assign(array(
             PKHelper::CPREFIX . 'SITE_SEARCH' => "_paq.push(['trackSiteSearch',\"{$expr}{$page}\",false,{$param['total']}]);"
@@ -1655,6 +1486,14 @@ class piwikanalyticsjs extends Module {
     }
 
     /* HELPERS */
+
+    /**
+     * returns true if request is wizard
+     * @return boolean
+     */
+    private function isWizardRequest() {
+        return Tools::getIsset('pkwizard');
+    }
 
     private function parseProductSku($id, $attrid = FALSE, $ref = FALSE) {
         if (Validate::isInt($id) && (!empty($attrid) && !is_null($attrid) && $attrid !== FALSE) && (!empty($ref) && !is_null($ref) && $ref !== FALSE)) {
@@ -1996,11 +1835,11 @@ class piwikanalyticsjs extends Module {
                         $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics');
                 } else if (method_exists('Tab', 'getIdFromClassName')) {
                     $tmpId = TabCore::getIdFromClassName('PiwikAnalytics15');
-                    if (!isset($tmpId) || !((bool)$tmpId) || ((int)$tmpId < 1))
+                    if (!isset($tmpId) || !((bool) $tmpId) || ((int) $tmpId < 1))
                         $tmpId = Tab::getIdFromClassName('AdminPiwikAnalytics');
-                    if (!isset($tmpId) || !((bool)$tmpId) || ((int)$tmpId < 1))
+                    if (!isset($tmpId) || !((bool) $tmpId) || ((int) $tmpId < 1))
                         $tmpId = Tab::getIdFromClassName('PiwikAnalytics');
-                    if (!isset($tmpId) || !((bool)$tmpId) || ((int)$tmpId < 1))
+                    if (!isset($tmpId) || !((bool) $tmpId) || ((int) $tmpId < 1))
                         $AdminParentStats = new Tab($tmpId);
                 }
                 if (isset($AdminParentStats) && ($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore)) {
