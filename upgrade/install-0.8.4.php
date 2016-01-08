@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (C) 2014 Christian Jensen
+ * Copyright (C) 2016 Christian Jensen
  *
  * This file is part of PiwikAnalyticsJS for prestashop.
  * 
@@ -28,10 +28,8 @@
  * @param piwikanalyticsjs $module
  * @return boolean
  */
-function upgrade_module_0_8_3($module) {
-    if ($pksd = Configuration::get('PIWIK_SET_DOMAINS')) {
-        $pksd_ = explode(' ', $pksd);
-        Configuration::updateValue('PIWIK_SET_DOMAINS', implode(',', $pksd_));
-    }
+function upgrade_module_0_8_4($module) {
+    if (!Configuration::hasKey('PIWIK_SEARCH_QUERY'))
+        Configuration::updateValue('PIWIK_SEARCH_QUERY', '{QUERY} ({PAGE})');
     return true;
 }

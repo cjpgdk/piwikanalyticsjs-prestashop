@@ -148,9 +148,9 @@ class piwikanalyticsjs extends Module {
                 . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" value=\"" . PiwikWizardHelper::$passwordhttp . "\" />"
             );
         }
-        
+
         PiwikWizardHelper::pkws1($step, $fields_form, $helperform);
-        
+
         $helperform->show_cancel_button = false; // link is wrong and can end up in an annoying loop
         $helperform->fields_value = array(
             PKHelper::CPREFIX . 'USRNAME_WIZARD' => (PiwikWizardHelper::$username !== false ? PiwikWizardHelper::$username : ''),
@@ -565,6 +565,25 @@ class piwikanalyticsjs extends Module {
                 ),
                 array(
                     'type' => 'html',
+                    'name' => "<strong>{$this->l('Searches')}</strong>"
+                    . '<br />'
+                    . $this->l('the following input is used when a search is made with the page selection in use.')
+                    . '<br />'
+                    . $this->l('You can use the following variables')
+                    . '<br />'
+                    . '<strong>' . $this->l('{QUERY}') . '</strong> ' . $this->l('is replaced with the search query')
+                    . '<br />'
+                    . '<strong>' . $this->l('{PAGE}') . '</strong> ' . $this->l('is replaced with the page number'),
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Searches'),
+                    'name' => PKHelper::CPREFIX . 'SEARCH_QUERY',
+                    'desc' => $this->l('Template to use when a multipage search is made'),
+                    'required' => false
+                ),
+                array(
+                    'type' => 'html',
                     'name' => "<strong>{$this->l('Piwik Cookies')}</strong>"
                 ),
                 array(
@@ -943,6 +962,7 @@ class piwikanalyticsjs extends Module {
             PKHelper::CPREFIX . 'PAUTHPWD' => Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD'),
             PKHelper::CPREFIX . 'DREPDATE' => Configuration::get(PKHelper::CPREFIX . 'DREPDATE'),
             PKHelper::CPREFIX . 'USE_CURL' => Configuration::get(PKHelper::CPREFIX . 'USE_CURL'),
+            PKHelper::CPREFIX . 'SEARCH_QUERY' => Configuration::get(PKHelper::CPREFIX . "SEARCH_QUERY"),
             /* stuff thats isset by ajax calls to Piwik API ---(here to avoid not isset warnings..!)--- */
             'PKAdminSiteName' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->name : ''),
             'PKAdminEcommerce' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->ecommerce : ''),
@@ -1105,7 +1125,10 @@ class piwikanalyticsjs extends Module {
                 Configuration::updateValue(PKHelper::CPREFIX . "PAUTHPWD", Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD', Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD')));
 
             if (Tools::getIsset(PKHelper::CPREFIX . 'DREPDATE'))
-                Configuration::updateValue(PKHelper::CPREFIX . "DREPDATE", Tools::getValue(PKHelper::CPREFIX . 'DREPDATE', 'day|tody'));
+                Configuration::updateValue(PKHelper::CPREFIX . "DREPDATE", Tools::getValue(PKHelper::CPREFIX . 'DREPDATE', 'day|today'));
+
+            if (Tools::getIsset(PKHelper::CPREFIX . 'SEARCH_QUERY'))
+                Configuration::updateValue(PKHelper::CPREFIX . "SEARCH_QUERY", Tools::getValue(PKHelper::CPREFIX . 'SEARCH_QUERY', '{QUERY} ({PAGE})'));
 
             $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
         }
@@ -1190,15 +1213,21 @@ class piwikanalyticsjs extends Module {
         if ((int) Configuration::get(PKHelper::CPREFIX . 'SITEID') <= 0)
             return "";
         $param['total'] = intval($param['total']);
-        /* if multi pages in search add page number of current if set! */
-        $page = "";
-        if (Tools::getIsset('p')) {
-            $page = " (" . Tools::getValue('p') . ")";
-        }
-        // $param['expr'] is not the searched word if lets say search is Snitm�ntre then the $param['expr'] will be Snitmontre
+        // $param['expr'] is not the searched word if lets say search is Snitmøntre then the $param['expr'] will be Snitmontre
         $expr = Tools::getIsset('search_query') ? htmlentities(Tools::getValue('search_query')) : $param['expr'];
+        /* if multi pages in search add page number of current if set! */
+        $search_tpl = Configuration::get(PKHelper::CPREFIX . 'SEARCH_QUERY');
+        if ($search_tpl === false) {
+            $search_tpl = "{QUERY} ({PAGE})";
+        }
+        if (Tools::getIsset('p')) {
+            $search_tpl = str_replace('{QUERY}', $expr, $search_tpl);
+            $expr = str_replace('{PAGE}', Tools::getValue('p'), $search_tpl);
+        }
+        
+
         $this->context->smarty->assign(array(
-            PKHelper::CPREFIX . 'SITE_SEARCH' => "_paq.push(['trackSiteSearch',\"{$expr}{$page}\",false,{$param['total']}]);"
+            PKHelper::CPREFIX . 'SITE_SEARCH' => "_paq.push(['trackSiteSearch',\"{$expr}\",false,{$param['total']}]);"
         ));
     }
 
@@ -1490,6 +1519,7 @@ class piwikanalyticsjs extends Module {
     /**
      * returns true if request is wizard
      * @return boolean
+     * @since 0.8.4
      */
     private function isWizardRequest() {
         return Tools::getIsset('pkwizard');
@@ -1519,13 +1549,13 @@ class piwikanalyticsjs extends Module {
     }
 
     /**
-     * convert into default currentcy used in piwik
+     * convert into default currency used in Piwik
      * @param array $params
      * @return float
      * @since 0.4
      */
     private function currencyConvertion($params) {
-        $pkc = Configuration::get("PIWIK_DEFAULT_CURRENCY");
+        $pkc = Configuration::get(PKHelper::CPREFIX . "DEFAULT_CURRENCY");
         if (empty($pkc))
             return (float) $params['price'];
         if ($params['conversion_rate'] === FALSE || $params['conversion_rate'] == 0.00 || $params['conversion_rate'] == 1.00) {
@@ -1601,19 +1631,19 @@ class piwikanalyticsjs extends Module {
 
         $this->context->smarty->assign(PKHelper::CPREFIX . 'SITEID', Configuration::get(PKHelper::CPREFIX . 'SITEID'));
 
-        $pkvct = (int) Configuration::get(PKHelper::CPREFIX . 'COOKIE_TIMEOUT'); /* no iset if the same as default */
+        $pkvct = (int) Configuration::get(PKHelper::CPREFIX . 'COOKIE_TIMEOUT'); /* no isset if the same as default */
         if ($pkvct != 0 && $pkvct !== FALSE && ($pkvct != (int) (self::PK_VC_TIMEOUT * 60))) {
             $this->context->smarty->assign(PKHelper::CPREFIX . 'COOKIE_TIMEOUT', $pkvct);
         }
         unset($pkvct);
 
-        $pkrct = (int) Configuration::get(PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT'); /* no iset if the same as default */
+        $pkrct = (int) Configuration::get(PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT'); /* no isset if the same as default */
         if ($pkrct != 0 && $pkrct !== FALSE && ($pkrct != (int) (self::PK_RC_TIMEOUT * 60))) {
             $this->context->smarty->assign(PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT', $pkrct);
         }
         unset($pkrct);
 
-        $pksct = (int) Configuration::get(PKHelper::CPREFIX . 'SESSION_TIMEOUT'); /* no iset if the same as default */
+        $pksct = (int) Configuration::get(PKHelper::CPREFIX . 'SESSION_TIMEOUT'); /* no isset if the same as default */
         if ($pksct != 0 && $pksct !== FALSE && ($pksct != (int) (self::PK_SC_TIMEOUT * 60))) {
             $this->context->smarty->assign(PKHelper::CPREFIX . 'SESSION_TIMEOUT', $pksct);
         }
@@ -1795,7 +1825,9 @@ class piwikanalyticsjs extends Module {
             Configuration::updateValue($key, $value);
         }
 
-
+//  properly not needed only here as a reminder, 
+//  if management of carts in Piwik becomes available
+//  
 //        if (!Db::getInstance()->Execute('
 //			CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'piwikanalytics` (
 //				`id_pk_analytics` int(11) NOT NULL AUTO_INCREMENT,

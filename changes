@@ -1,6 +1,10 @@
 Version: 0.8.4 (un-released)
     * just some code clean up
 
+    * disable debug by default
+
+    * add template for multipage searches
+
 Version: 0.8.3
     * Seriously improve the world crappiest configuration wizard, :)
     - it has been completely redesigned with usability in mind
