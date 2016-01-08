@@ -129,6 +129,7 @@ class piwikanalyticsjs extends Module {
 
         // use step 2 ??
         PiwikWizardHelper::pkws2($step, $pkToken, $pkSites, $fields_form, $helperform);
+        // get and set errors "PiwikWizardHelper::$errors"
         foreach (PiwikWizardHelper::$errors as $value)
             $this->_errors[] = $this->displayError($value);
         PiwikWizardHelper::$errors = array();
@@ -191,11 +192,10 @@ class piwikanalyticsjs extends Module {
             $this->context->controller->addJqueryPlugin('tagify', _PS_JS_DIR_ . 'jquery/plugins/');
 
 
-        // @todo process only returns a value on error so move them from $_html to $this->_errors
         $_html = "";
-        $_html .= $this->processFormsUpdate();
+        $this->processFormsUpdate();
         if (Tools::isSubmit('submitUpdateWizardForm' . $this->name)) {
-            $_html .= $this->processWizardFormUpdate();
+            $this->processWizardFormUpdate();
         }
         $this->piwikSite = false;
         if (!$this->isWizardRequest()) { /* do not try to connect when using wizard */
@@ -385,7 +385,7 @@ class piwikanalyticsjs extends Module {
             'type' => 'textarea',
             'label' => $this->l('Extra HTML'),
             'name' => PKHelper::CPREFIX . 'EXHTML',
-            'desc' => $this->l('Some extra HTML code to put after the piwik tracking code, this can be any html of your choice'),
+            'desc' => $this->l('Some extra HTML code to put after Piwik tracking code, this can be any html of your choice'),
             'rows' => 10,
             'cols' => 50,
         );
@@ -445,206 +445,10 @@ class piwikanalyticsjs extends Module {
             'class' => 'btn btn-default'
         );
 
-
-
-        $fields_form[1]['form'] = array(
-            'legend' => array(
-                'title' => $this->displayName . ' ' . $this->l('Advanced'),
-                'image' => $this->_path . 'logox22.png'
-            ),
-            'input' => array(
-                array(
-                    'type' => 'html',
-                    'name' => $this->l('In this section you can modify certain aspects of the way this plugin sends products, searches, category view etc.. to piwik')
-                ),
-                array(
-                    'type' => 'switch',
-                    'is_bool' => true, //retro compat 1.5
-                    'label' => $this->l('Use HTTPS'),
-                    'name' => PKHelper::CPREFIX . 'CRHTTPS',
-                    'hint' => $this->l('ONLY enable this feature if piwik installation is accessible via https'),
-                    'desc' => $this->l('use Hypertext Transfer Protocol Secure (HTTPS) in all requests from code to piwik, this only affects how requests are sent from proxy script to piwik, your visitors will still use the protocol they visit your shop with'),
-                    'values' => array(
-                        array(
-                            'id' => 'active_on',
-                            'value' => 1,
-                            'label' => $this->l('Enabled')
-                        ),
-                        array(
-                            'id' => 'active_off',
-                            'value' => 0,
-                            'label' => $this->l('Disabled')
-                        )
-                    ),
-                ),
-                array(
-                    'type' => 'html',
-                    'name' => $this->l('in the next few inputs you can set how the product id is passed on to piwik')
-                    . '<br />'
-                    . $this->l('there are three variables you can use:')
-                    . '<br />'
-                    . $this->l('{ID} : this variable is replaced with id the product has in prestashop')
-                    . '<br />'
-                    . $this->l('{REFERENCE} : this variable is replaced with the unique reference you when adding adding/updating a product, this variable is only available in prestashop 1.5 and up')
-                    . '<br />'
-                    . $this->l('{ATTRID} : this variable is replaced with id the product attribute')
-                    . '<br />'
-                    . $this->l('in cases where only the product id is available it be parsed as ID and nothing else'),
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Product id V1'),
-                    'name' => PKHelper::CPREFIX . 'PRODID_V1',
-                    'desc' => $this->l('This template is used in case ALL three values are available ("Product ID", "Product Attribute ID" and "Product Reference")'),
-                    'required' => false
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Product id V2'),
-                    'name' => PKHelper::CPREFIX . 'PRODID_V2',
-                    'desc' => $this->l('This template is used in case only "Product ID" and "Product Reference" are available'),
-                    'required' => false
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Product id V3'),
-                    'name' => PKHelper::CPREFIX . 'PRODID_V3',
-                    'desc' => $this->l('This template is used in case only "Product ID" and "Product Attribute ID" are available'),
-                    'required' => false
-                ),
-                array(
-                    'type' => 'html',
-                    'name' => "<strong>{$this->l('Searches')}</strong>"
-                    . '<br />'
-                    . $this->l('the following input is used when a search is made with the page selection in use.')
-                    . '<br />'
-                    . $this->l('You can use the following variables')
-                    . '<br />'
-                    . '<strong>' . $this->l('{QUERY}') . '</strong> ' . $this->l('is replaced with the search query')
-                    . '<br />'
-                    . '<strong>' . $this->l('{PAGE}') . '</strong> ' . $this->l('is replaced with the page number'),
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Searches'),
-                    'name' => PKHelper::CPREFIX . 'SEARCH_QUERY',
-                    'desc' => $this->l('Template to use when a multipage search is made'),
-                    'required' => false
-                ),
-                array(
-                    'type' => 'html',
-                    'name' => "<strong>{$this->l('Proxy script')}</strong>"
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Timeout'),
-                    'name' => PKHelper::CPREFIX . 'PROXY_TIMEOUT',
-                    'desc' => $this->l('the maximum time in seconds to wait for proxied request to piwik'),
-                    'required' => false
-                ),
-                array(
-                    'type' => 'switch',
-                    'is_bool' => true, //retro compat 1.5
-                    'label' => $this->l('Use proxy script'),
-                    'name' => PKHelper::CPREFIX . 'USE_PROXY',
-                    'desc' => $this->l('Whether or not to use the proxy insted of Piwik Host'),
-                    'values' => array(
-                        array(
-                            'id' => 'active_on',
-                            'value' => 1,
-                            'label' => $this->l('Enabled')
-                        ),
-                        array(
-                            'id' => 'active_off',
-                            'value' => 0,
-                            'label' => $this->l('Disabled')
-                        )
-                    ),
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Proxy script'),
-                    'name' => PKHelper::CPREFIX . 'PROXY_SCRIPT',
-                    'hint' => $this->l('Example: www.example.com/pkproxy.php'),
-                    'desc' => sprintf($this->l('the FULL path to proxy script to use, build-in: [%s]'), self::getModuleLink($this->name, 'piwik')),
-                    'required' => false
-                ),
-                array(
-                    'type' => 'switch',
-                    'is_bool' => true,
-                    'label' => $this->l('Use cURL'),
-                    'name' => PKHelper::CPREFIX . 'USE_CURL',
-                    'desc' => $this->l('Whether or not to use cURL in Piwik API and proxy requests?'),
-                    'disabled' => (function_exists('curl_version')) ? false : true,
-                    'values' => array(
-                        array(
-                            'id' => 'active_on',
-                            'value' => 1,
-                            'label' => $this->l('Enabled'),
-                        ),
-                        array(
-                            'id' => 'active_off',
-                            'value' => 0,
-                            'label' => $this->l('Disabled'),
-                        )
-                    ),
-                ), array(
-                    'type' => 'html',
-                    'name' => "<strong>{$this->l('Piwik Cookies')}</strong>"
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Piwik Session Cookie timeout'),
-                    'name' => PKHelper::CPREFIX . 'SESSION_TIMEOUT',
-                    'required' => false,
-                    'hint' => $this->l('this value must be set in minutes'),
-                    'desc' => $this->l('Piwik Session Cookie timeout, the default is 30 minutes'),
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Piwik Visitor Cookie timeout'),
-                    'name' => PKHelper::CPREFIX . 'COOKIE_TIMEOUT',
-                    'required' => false,
-                    'hint' => $this->l('this value must be set in minutes'),
-                    'desc' => $this->l('Piwik Visitor Cookie timeout, the default is 13 months (569777 minutes)'),
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Piwik Referral Cookie timeout'),
-                    'name' => PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT',
-                    'required' => false,
-                    'hint' => $this->l('this value must be set in minutes'),
-                    'desc' => $this->l('Piwik Referral Cookie timeout, the default is 6 months (262974 minutes)'),
-                ),
-                array(
-                    'type' => 'html',
-                    'name' => "<strong>{$this->l('Piwik Proxy Script Authorization? if piwik is installed behind HTTP Basic Authorization (Both password and username must be filled before the values will be used)')}</strong>"
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Proxy Script Username'),
-                    'name' => PKHelper::CPREFIX . 'PAUTHUSR',
-                    'required' => false,
-                    'autocomplete' => false,
-                    'desc' => $this->l('this field along with password can be used if piwik installation is protected by HTTP Basic Authorization'),
-                ),
-                array(
-                    'type' => 'password',
-                    'label' => $this->l('Proxy Script Password'),
-                    'name' => PKHelper::CPREFIX . 'PAUTHPWD',
-                    'required' => false,
-                    'autocomplete' => false,
-                    'desc' => $this->l('this field along with username can be used if piwik installation is protected by HTTP Basic Authorization'),
-                ),
-            ),
-            'submit' => array(
-                'title' => $this->l('Save'),
-                'class' => 'btn btn-default'
-            )
-        );
+        define('PIWIK_AUTHORIZED_ADV_FORM', TRUE);
+        require dirname(__FILE__) . '/_piwik_config_adv_form.php';
 
         if ($this->piwikSite !== FALSE) {
-
             $tmp = PKHelper::getMyPiwikSites(TRUE);
             $this->displayErrors(PKHelper::$errors);
             PKHelper::$errors = PKHelper::$error = "";
@@ -855,6 +659,7 @@ class piwikanalyticsjs extends Module {
                 ),
             );
         }
+
         $helper->fields_value = $this->getFormFields();
         $this->context->smarty->assign(array(
             'psversion' => _PS_VERSION_,
@@ -991,7 +796,6 @@ class piwikanalyticsjs extends Module {
     }
 
     private function processWizardFormUpdate() {
-        $_html = "";
         $username = $password = $piwikhost = $saveusrpwd = $usernamehttp = $passwordhttp = false;
         if (Tools::getIsset(PKHelper::CPREFIX . 'USRNAME_WIZARD'))
             $username = Tools::getValue(PKHelper::CPREFIX . 'USRNAME_WIZARD');
@@ -1015,13 +819,13 @@ class piwikanalyticsjs extends Module {
                     }
                     Configuration::updateValue(PKHelper::CPREFIX . 'HOST', $tmp);
                 } else {
-                    $_html .= $this->displayError($this->l('Piwik host url is not valid'));
+                    $this->_errors[] = $this->displayError($this->l('Piwik host url is not valid'));
                 }
             } else {
-                $_html .= $this->displayError($this->l('Piwik host cannot be empty'));
+                $this->_errors[] = $this->displayError($this->l('Piwik host cannot be empty'));
             }
         } else {
-            $_html .= $this->displayError($this->l('Piwik host cannot be empty'));
+            $this->_errors[] = $this->displayError($this->l('Piwik host cannot be empty'));
         }
         if (($username !== false && strlen($username) > 2) && ($password !== false && strlen($password) > 2)) {
             if ($saveusrpwd == 1 || $saveusrpwd !== false) {
@@ -1029,18 +833,19 @@ class piwikanalyticsjs extends Module {
                 Configuration::updateValue(PKHelper::CPREFIX . "USRNAME", $username);
             }
         } else {
-            $_html .= $this->displayError($this->l('Username and/or password is missing/to short'));
+            $this->_errors[] = $this->displayError($this->l('Username and/or password is missing/to short'));
         }
         if (($usernamehttp !== false && strlen($usernamehttp) > 0) && ($passwordhttp !== false && strlen($passwordhttp) > 0)) {
             Configuration::updateValue(PKHelper::CPREFIX . "PAUTHUSR", $usernamehttp);
             Configuration::updateValue(PKHelper::CPREFIX . "PAUTHPWD", $passwordhttp);
         }
-        return $_html;
     }
 
+    /**
+     * handles the configuration form update
+     * @return void
+     */
     private function processFormsUpdate() {
-
-        $_html = "";
         if (Tools::isSubmit('submitUpdate' . $this->name)) {
             if (Tools::getIsset(PKHelper::CPREFIX . 'HOST')) {
                 $tmp = Tools::getValue(PKHelper::CPREFIX . 'HOST', '');
@@ -1052,24 +857,24 @@ class piwikanalyticsjs extends Module {
                         }
                         Configuration::updateValue(PKHelper::CPREFIX . 'HOST', $tmp);
                     } else {
-                        $_html .= $this->displayError($this->l('Piwik host url is not valid'));
+                        $this->_errors[] = $this->displayError($this->l('Piwik host url is not valid'));
                     }
                 } else {
-                    $_html .= $this->displayError($this->l('Piwik host cannot be empty'));
+                    $this->_errors[] = $this->displayError($this->l('Piwik host cannot be empty'));
                 }
             }
             if (Tools::getIsset(PKHelper::CPREFIX . 'SITEID')) {
                 $tmp = (int) Tools::getValue(PKHelper::CPREFIX . 'SITEID', 0);
                 Configuration::updateValue(PKHelper::CPREFIX . 'SITEID', $tmp);
                 if ($tmp <= 0) {
-                    $_html .= $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
+                    $this->_errors[] = $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
                 }
             }
             if (Tools::getIsset(PKHelper::CPREFIX . 'TOKEN_AUTH')) {
                 $tmp = Tools::getValue(PKHelper::CPREFIX . 'TOKEN_AUTH', '');
                 Configuration::updateValue(PKHelper::CPREFIX . 'TOKEN_AUTH', $tmp);
                 if (empty($tmp)) {
-                    $_html .= $this->displayError($this->l('Piwik auth token is empty'));
+                    $this->_errors[] = $this->displayError($this->l('Piwik auth token is empty'));
                 }
             }
             /* setReferralCookieTimeout */
@@ -1097,7 +902,7 @@ class piwikanalyticsjs extends Module {
             if (Tools::getIsset(PKHelper::CPREFIX . 'PROXY_TIMEOUT')) {
                 $tmp = (int) Tools::getValue(PKHelper::CPREFIX . 'PROXY_TIMEOUT', 5);
                 if ($tmp <= 0) {
-                    $_html .= $this->displayError($this->l('Piwik proxy timeout must be an integer and larger than 0 (zero)'));
+                    $this->_errors[] = $this->displayError($this->l('Piwik proxy timeout must be an integer and larger than 0 (zero)'));
                     $tmp = 5;
                 }
                 Configuration::updateValue(PKHelper::CPREFIX . 'PROXY_TIMEOUT', $tmp);
@@ -1146,9 +951,8 @@ class piwikanalyticsjs extends Module {
             if (Tools::getIsset(PKHelper::CPREFIX . 'SEARCH_QUERY'))
                 Configuration::updateValue(PKHelper::CPREFIX . "SEARCH_QUERY", Tools::getValue(PKHelper::CPREFIX . 'SEARCH_QUERY', '{QUERY} ({PAGE})'));
 
-            $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
+            $this->_errors[] = $this->displayConfirmation($this->l('Configuration Updated'));
         }
-        return $_html;
     }
 
     /* HOOKs */
