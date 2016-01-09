@@ -93,29 +93,7 @@ class piwikanalyticsjs extends Module {
     }
 
     public function generateWizardForm($step = 1, & $fields_form, & $helperform) {
-        // set translations
-        PiwikWizardHelper::$strings['821dc1363c6c3a23185ea0cf3bee5261'] = $this->l("Select a site.");
-        PiwikWizardHelper::$strings['4ddd9129714e7146ed2215bcbd559335'] = $this->l("I encountered an unknown error while trying to get the selected site, id#%s");
-        PiwikWizardHelper::$strings['e41246ca9fd83a123022c5c5b7a6f866'] = $this->l("I'm unable, to get admin access to the selected site id #%s");
-        PiwikWizardHelper::$strings['ea4788705e6873b424c65e91c2846b19'] = $this->l("Cancel");
-        PiwikWizardHelper::$strings['00617256bf279d54780075598d7e958c'] = $this->l('Create new Site');
-        PiwikWizardHelper::$strings['3c68005461c0d81c1626c01c9aa400e0'] = $this->l("Unable to get a list of websites from Piwik, if you dont have any sites in piwik yet click 'Create new Site' button.");
-        PiwikWizardHelper::$strings['10ac3d04253ef7e1ddc73e6091c0cd55'] = $this->l('Next');
-        PiwikWizardHelper::$strings['11552a6e511d4ab1ee43f2e0ab9d623f'] = $this->l('this field along with username can be used if piwik installation is protected by HTTP Basic Authorization');
-        PiwikWizardHelper::$strings['e4a1b909bb1918a40f18d8dfb013fd28'] = $this->l('HTTP Auth Password');
-        PiwikWizardHelper::$strings['4b3e9319a9c0c328221080116e0d5104'] = $this->l('HTTP Auth Username');
-        PiwikWizardHelper::$strings['7965ca87322fb45ebc60071041580e8f'] = $this->l("HTTP Basic Authorization");
-        PiwikWizardHelper::$strings['b9f5c797ebbf55adccdd8539a65a0241'] = $this->l('Disabled');
-        PiwikWizardHelper::$strings['00d23a76e43b46dae9ec7aa9dcbebb32'] = $this->l('Enabled');
-        PiwikWizardHelper::$strings['3b6761cfe4215c632072f87259970d84'] = $this->l('Whether or not to save the username and password, saving the username and password will enable quick(automatic) login to piwik from the integrated stats page');
-        PiwikWizardHelper::$strings['ea88860b951ee567e988d794ef0ca090'] = $this->l('Save username and password');
-        PiwikWizardHelper::$strings['47f896968366f1688c401fece093c2d1'] = $this->l('Enter your password for Piwik, we need this in order to fetch your api authentication token');
-        PiwikWizardHelper::$strings['3eb1a362b1cfc065415c6f31730bfd84'] = $this->l('Piwik User password');
-        PiwikWizardHelper::$strings['8e70216e1e56d8d2f7e3cd229171ba1f'] = $this->l('Enter your username for Piwik, we need this in order to fetch your api authentication token');
-        PiwikWizardHelper::$strings['4081cf3a3e78277c30f0acd948082cb8'] = $this->l('Piwik User name');
-        PiwikWizardHelper::$strings['6fbd6e012c9a1a4b2f0796196d060e6d'] = $this->l('The full url to your piwik installation.!');
-        PiwikWizardHelper::$strings['6752ab12af9a9878bf9d08c751ac2aa5'] = $this->l('Example: http://www.example.com/piwik/');
-        PiwikWizardHelper::$strings['3c6805325f65f0ee32244920e46aac39'] = $this->l('Piwik Host');
+        $this->__wizardDefaults();
 
         PiwikWizardHelper::setUsePiwikSite($helperform);
         PiwikWizardHelper::getFormValuesInternal();
@@ -149,7 +127,7 @@ class piwikanalyticsjs extends Module {
                 . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" value=\"" . PiwikWizardHelper::$passwordhttp . "\" />"
             );
         }
-
+        // use step 1 ??
         PiwikWizardHelper::pkws1($step, $fields_form, $helperform);
 
         $helperform->show_cancel_button = false; // link is wrong and can end up in an annoying loop
@@ -163,6 +141,42 @@ class piwikanalyticsjs extends Module {
         );
     }
 
+    public function generateCreateNewSiteForm($step, & $fields_form, & $helperform) {
+
+        $this->__wizardDefaults();
+
+        PKHelper::$httpAuthUsername = (PiwikWizardHelper::$usernamehttp !== false ? PiwikWizardHelper::$usernamehttp : '');
+        PKHelper::$httpAuthPassword = (PiwikWizardHelper::$passwordhttp !== false ? PiwikWizardHelper::$passwordhttp : '');
+        PKHelper::$piwikHost = str_replace(array('http://', 'https://'), '', PiwikWizardHelper::$piwikhost);
+        $pkToken = PKHelper::getTokenAuth(PiwikWizardHelper::$username, PiwikWizardHelper::$password);
+
+        $helperform->submit_action = 'submitPKNewSiteForm' . $this->name;
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'html',
+            'name' => "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'STEP_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'STEP_WIZARD' . "\" value=\"{$step}\" />"
+        );
+        $fields_form[0]['form']['legend']['title'] = $helperform->title . " " . sprintf($this->l("[Step %s/2]"), $step);
+
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'html',
+            'name' => "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'HOST_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'HOST_WIZARD' . "\" value=\"" . PiwikWizardHelper::$piwikhost . "\" />"
+            . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'USRNAME_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'USRNAME_WIZARD' . "\" value=\"" . PiwikWizardHelper::$username . "\" />"
+            . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'USRPASSWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'USRPASSWD_WIZARD' . "\" value=\"" . PiwikWizardHelper::$password . "\" />"
+            . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHUSR_WIZARD' . "\" value=\"" . PiwikWizardHelper::$usernamehttp . "\" />"
+            . "<input type=\"hidden\" name=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" id=\"" . PKHelper::CPREFIX . 'PAUTHPWD_WIZARD' . "\" value=\"" . PiwikWizardHelper::$passwordhttp . "\" />"
+        );
+
+        if (!empty(PKHelper::$error) || ($pkToken === false)) {
+            foreach (PKHelper::$errors as $value)
+                $this->_errors[] = $this->displayError($value);
+            $fields_form[0]['form']['input'][] = array('type' => 'html', 'name' => "<strong>" . str_replace(array('{link}', '{/link}'), array('<a href="' . AdminController::$currentIndex . '&configure=' . $this->name . '&pkwizard&token=' . Tools::getAdminTokenLite('AdminModules') . '">', '</a>'), $this->l('can\'t continue see above errors.. {link}Back to previous page{/link}')) . "</strong>");
+            if ($pkToken === false)
+                $fields_form[0]['form']['input'][] = array('type' => 'html', 'name' => "<strong>" . str_replace(array('{link}', '{/link}'), array('<a href="' . AdminController::$currentIndex . '&configure=' . $this->name . '&pkwizard&token=' . Tools::getAdminTokenLite('AdminModules') . '">', '</a>'), $this->l('Unable to get your auth token please check your username and password and try again.. {link}Back to previous page{/link}')) . "</strong>");
+        } else {
+            PiwikWizardHelper::pkns($fields_form, $helperform, $this->currencies, $this->default_currency);
+        }
+    }
+    
     /**
      * get content to display in the admin area
      * @return string
@@ -253,10 +267,16 @@ class piwikanalyticsjs extends Module {
             }
             $helper->title = $this->displayName . ' - ' . $this->l('Configuration Wizard');
             $helper->submit_action = 'submitUpdateWizardForm' . $this->name;
-            $this->generateWizardForm($step, $fields_form, $helper);
+
+            if (Tools::isSubmit('createnewsite'))
+                $this->generateCreateNewSiteForm($step, $fields_form, $helper);
+            else
+                $this->generateWizardForm($step, $fields_form, $helper);
 
             $this->context->smarty->assign(array(
                 'psversion' => _PS_VERSION_,
+                'hf_currentIndex' => $helper->currentIndex,
+                'pstoken' => Tools::getAdminTokenLite('AdminModules'),
             ));
             if (is_array($this->_errors))
                 $_html = implode('', $this->_errors) . $_html;
@@ -1539,6 +1559,59 @@ class piwikanalyticsjs extends Module {
 
 
         return $ret;
+    }
+
+    private function __wizardDefaults() {
+        // set translations
+        PiwikWizardHelper::$strings['821dc1363c6c3a23185ea0cf3bee5261'] = $this->l("Select a site.");
+        PiwikWizardHelper::$strings['4ddd9129714e7146ed2215bcbd559335'] = $this->l("I encountered an unknown error while trying to get the selected site, id#%s");
+        PiwikWizardHelper::$strings['e41246ca9fd83a123022c5c5b7a6f866'] = $this->l("I'm unable, to get admin access to the selected site id #%s");
+        PiwikWizardHelper::$strings['ea4788705e6873b424c65e91c2846b19'] = $this->l("Cancel");
+        PiwikWizardHelper::$strings['00617256bf279d54780075598d7e958c'] = $this->l('Create new Site');
+        PiwikWizardHelper::$strings['3c68005461c0d81c1626c01c9aa400e0'] = $this->l("Unable to get a list of websites from Piwik, if you dont have any sites in piwik yet click 'Create new Site' button.");
+        PiwikWizardHelper::$strings['10ac3d04253ef7e1ddc73e6091c0cd55'] = $this->l('Next');
+        PiwikWizardHelper::$strings['11552a6e511d4ab1ee43f2e0ab9d623f'] = $this->l('this field along with username can be used if piwik installation is protected by HTTP Basic Authorization');
+        PiwikWizardHelper::$strings['e4a1b909bb1918a40f18d8dfb013fd28'] = $this->l('HTTP Auth Password');
+        PiwikWizardHelper::$strings['4b3e9319a9c0c328221080116e0d5104'] = $this->l('HTTP Auth Username');
+        PiwikWizardHelper::$strings['7965ca87322fb45ebc60071041580e8f'] = $this->l("HTTP Basic Authorization");
+        PiwikWizardHelper::$strings['b9f5c797ebbf55adccdd8539a65a0241'] = $this->l('Disabled');
+        PiwikWizardHelper::$strings['00d23a76e43b46dae9ec7aa9dcbebb32'] = $this->l('Enabled');
+        PiwikWizardHelper::$strings['3b6761cfe4215c632072f87259970d84'] = $this->l('Whether or not to save the username and password, saving the username and password will enable quick(automatic) login to piwik from the integrated stats page');
+        PiwikWizardHelper::$strings['ea88860b951ee567e988d794ef0ca090'] = $this->l('Save username and password');
+        PiwikWizardHelper::$strings['47f896968366f1688c401fece093c2d1'] = $this->l('Enter your password for Piwik, we need this in order to fetch your api authentication token');
+        PiwikWizardHelper::$strings['3eb1a362b1cfc065415c6f31730bfd84'] = $this->l('Piwik User password');
+        PiwikWizardHelper::$strings['8e70216e1e56d8d2f7e3cd229171ba1f'] = $this->l('Enter your username for Piwik, we need this in order to fetch your api authentication token');
+        PiwikWizardHelper::$strings['4081cf3a3e78277c30f0acd948082cb8'] = $this->l('Piwik User name');
+        PiwikWizardHelper::$strings['6fbd6e012c9a1a4b2f0796196d060e6d'] = $this->l('The full url to your piwik installation.!');
+        PiwikWizardHelper::$strings['6752ab12af9a9878bf9d08c751ac2aa5'] = $this->l('Example: http://www.example.com/piwik/');
+        PiwikWizardHelper::$strings['3c6805325f65f0ee32244920e46aac39'] = $this->l('Piwik Host');
+        PiwikWizardHelper::$strings['b817abd7e8364a16b7edfcc78e74558e'] = $this->l('Piwik Site Name');
+        PiwikWizardHelper::$strings['2cbae2cc76d6994fee1bb84712069eb7'] = $this->l('Main Url');
+        PiwikWizardHelper::$strings['82419044af129bcd8894f7d208f4dd2b'] = $this->l('Addtional Urls');
+        PiwikWizardHelper::$strings['34eea1731773212b3234ef8048dbee1e'] = $this->l('Is this site an ecommerce site?');
+        PiwikWizardHelper::$strings['53ef2022ee91ccf50dd8b63da5a563b9'] = $this->l('Ecommerce');
+        PiwikWizardHelper::$strings['93cba07454f06a4a960172bbd6e2a435'] = $this->l('Yes');
+        PiwikWizardHelper::$strings['bafd7322c6e97d25b6299b5d6fe8920b'] = $this->l('No');
+        PiwikWizardHelper::$strings['871e94256265ecc5d2ca1f9b42f861ac'] = $this->l('Site Search');
+        PiwikWizardHelper::$strings['0eccdaa003c737691fe1153ea0a4550f'] = $this->l('Search Keyword Parameters');
+        PiwikWizardHelper::$strings['28235d8369c0f9b740f83e25c4fe2f1d'] = $this->l('keyword parameters must be excluded to avoid normal page views to be interpreted as searches (the tracking code will see them and make the required postback to Piwik if it is a real search), if you are only using PrestaShop with this site setting this to empty, will be sufficient');
+        PiwikWizardHelper::$strings['f4e283ffb009bdda02a06737c25bd93c'] = $this->l('Search Category Parameters');
+        PiwikWizardHelper::$strings['dc1317a4a93a700507570dfd69c757d9'] = $this->l('Excluded ip addresses');
+        PiwikWizardHelper::$strings['3443f50780c66a77394a10925b76bed7'] = $this->l('ip addresses excluded from tracking, separated by comma ","');
+        PiwikWizardHelper::$strings['510940abcdfeff622ba993e36f47519f'] = $this->l('Excluded Query Parameters');
+        PiwikWizardHelper::$strings['0040b52be769bb81e1e5d2051b7f6652'] = $this->l('please read: http://piwik.org/faq/how-to/faq_81/');
+        PiwikWizardHelper::$strings['236df51bb0e6416236e255b528346fca'] = $this->l('Timezone');
+        PiwikWizardHelper::$strings['63ce9117e223ae7871044b39e2ca28be'] = $this->l('The timezone for this site');
+        PiwikWizardHelper::$strings['6ba290764cb95fbe109e7f3b317865ad'] = $this->l('Choose Timezone');
+        PiwikWizardHelper::$strings['386c339d37e737a436499d423a77df0c'] = $this->l('Currency');
+        PiwikWizardHelper::$strings['70cd4d21141d3d3198c8a606303d454b'] = $this->l('The currency for this site');
+        PiwikWizardHelper::$strings['a7b3bae411492841bb245cee3ddcc599'] = $this->l('Excluded User Agents');
+        PiwikWizardHelper::$strings['7a42168f46cbbe0357bcc36205123080'] = $this->l('please read: http://piwik.org/faq/how-to/faq_17483/');
+        PiwikWizardHelper::$strings['a9d005356a04262c95dc815b96a65038'] = $this->l('Keep URL Fragments');
+        PiwikWizardHelper::$strings['686e697538050e4664636337cc3b834f'] = $this->l('Create');
+        PiwikWizardHelper::$strings['157c966cf06d25578931a8c74298c332'] = $this->l('Name of this site in Piwik');
+        // posted username and passwd etc..
+        PiwikWizardHelper::getFormValuesInternal();
     }
 
     /* INSTALL / UNINSTALL */

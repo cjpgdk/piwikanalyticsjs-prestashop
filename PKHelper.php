@@ -119,6 +119,81 @@ class PKHelper {
     }
 
     /**
+     * adds a new site to piwik
+     * @param type $siteName
+     * @param type $urls
+     * @param type $ecommerce
+     * @param type $siteSearch
+     * @param type $searchKeywordParameters
+     * @param type $searchCategoryParameters
+     * @param type $excludedIps
+     * @param type $excludedQueryParameters
+     * @param type $timezone
+     * @param type $currency
+     * @param type $group
+     * @param type $startDate
+     * @param type $excludedUserAgents
+     * @param type $keepURLFragments
+     * @param type $type
+     * @param type $settings
+     * @return int|boolean boolean false on error, new siteid on success
+     */
+    public static function addPiwikSite($siteName, $urls, $ecommerce = 1, $siteSearch = 1, $searchKeywordParameters = '', $searchCategoryParameters = '', $excludedIps = '', $excludedQueryParameters = '', $timezone = 'UTC', $currency = '', $group = '', $startDate = '', $excludedUserAgents = '', $keepURLFragments = 0, $type = 'website', $settings = '') {
+        if (!self::baseTest())
+            return false;
+        $url = self::getBaseURL(0);
+        $url .= "&method=SitesManager.addSite&format=JSON&";
+
+        $url_params = array();
+        if ($siteName !== NULL)
+            $url_params['siteName'] = $siteName;
+        if ($urls !== NULL) {
+            foreach (explode(',', $urls) as $value) {
+                if (!empty($value))
+                    $url_params['urls'][] = trim($value);
+            }
+        }
+        if ($ecommerce !== NULL && !empty($ecommerce))
+            $url_params['ecommerce'] = intval($ecommerce) > 0 ? 1 : 0;
+        if ($siteSearch !== NULL && !empty($siteSearch))
+            $url_params['siteSearch'] = intval($siteSearch) > 0 ? 1 : 0;
+        if ($searchKeywordParameters !== NULL && !empty($searchKeywordParameters))
+            $url_params['searchKeywordParameters'] = $searchKeywordParameters;
+        if ($searchCategoryParameters !== NULL && !empty($searchCategoryParameters))
+            $url_params['searchCategoryParameters'] = $searchCategoryParameters;
+        if ($excludedIps !== NULL && !empty($excludedIps))
+            $url_params['excludedIps'] = $excludedIps;
+        if ($excludedQueryParameters !== NULL && !empty($excludedQueryParameters))
+            $url_params['excludedQueryParameters'] = $excludedQueryParameters;
+        if ($timezone !== NULL && !empty($timezone))
+            $url_params['timezone'] = $timezone;
+        if ($currency !== NULL && !empty($currency))
+            $url_params['currency'] = $currency;
+        if ($group !== NULL && !empty($group))
+            $url_params['group'] = $group;
+        if ($startDate !== NULL && !empty($startDate))
+            $url_params['startDate'] = $startDate;
+        if ($excludedUserAgents !== NULL && !empty($excludedUserAgents))
+            $url_params['excludedUserAgents'] = $excludedUserAgents;
+        if ($keepURLFragments !== NULL && !empty($keepURLFragments))
+            $url_params['keepURLFragments'] = $keepURLFragments;
+        if ($type !== NULL && !empty($type))
+            $url_params['type'] = $type;
+        if ($settings !== NULL && !empty($settings))
+            $url_params['settings'] = $settings;
+
+        if ($result = self::getAsJsonDecoded($url . http_build_query($url_params))) {
+            if (isset($result->result)) {
+                self::$error = self::l(sprintf('Unknown response from Piwik API: [%s]', $result->result)) . ' - message: ' . isset($result->message) ? $result->message : '';
+                self::$errors[] = self::$error;
+            } else if (isset($result->value)) {
+                return $result->value;
+            }
+        }
+        return FALSE;
+    }
+
+    /**
      * 
      * @param type $idSite
      * @param type $siteName
@@ -489,6 +564,7 @@ class PKHelper {
         else
             $lng = 'en';
 
+        $timeout = 0;
         if (Configuration::hasKey(PKHelper::CPREFIX . 'PROXY_TIMEOUT'))
             $timeout = Configuration::get(PKHelper::CPREFIX . 'PROXY_TIMEOUT');
         if ((int) $timeout <= 0)
