@@ -1424,7 +1424,7 @@ class piwikanalyticsjs extends Module {
         if ($array) {
             $categories = array();
             foreach ($_categories as $category) {
-                $categories[] = $category['name'];
+                $categories[] = addcslashes($category['name'], '"');
                 if (count($categories) == 5)
                     break;
             }
@@ -1433,7 +1433,7 @@ class piwikanalyticsjs extends Module {
             $c = 0;
             foreach ($_categories as $category) {
                 $c++;
-                $categories .= '"' . $category['name'] . '",';
+                $categories .= '"' . addcslashes($category['name'], '"') . '",';
                 if ($c == 5)
                     break;
             }
