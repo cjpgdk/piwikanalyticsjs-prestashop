@@ -1,5 +1,5 @@
 {*
- * Copyright (C) 2014 Christian Jensen
+ * Copyright (C) 2016 Christian Jensen
  *
  * This file is part of PiwikAnalyticsJS for prestashop.
  * 

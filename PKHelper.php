@@ -7,7 +7,7 @@ if (class_exists('PKHelper',FALSE))
     return;
 
 /*
- * Copyright (C) 2014-2016 Christian Jensen
+ * Copyright (C) 2016 Christian Jensen
  *
  * This file is part of PiwikAnalyticsJS for prestashop.
  * 

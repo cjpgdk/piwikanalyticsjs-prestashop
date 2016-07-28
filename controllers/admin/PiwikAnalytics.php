@@ -4,7 +4,7 @@ if (!defined('_PS_VERSION_'))
     exit;
 
 /**
- * Copyright (C) 2015 Christian Jensen
+ * Copyright (C) 2016 Christian Jensen
  *
  * This file is part of PiwikAnalyticsJS for prestashop.
  * 
