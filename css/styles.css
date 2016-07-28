@@ -1,0 +1,47 @@
+.small-tab { max-width: 500px; }
+.tabs-pk li { list-style:none; display:inline; }
+.tabs-pk a { padding:5px 10px; display:inline-block;
+             background:#666; color:#fff; text-decoration:none; }
+.tabs-pk a.active { background:#fff; color:#000; }
+a.pkbutton { border-radius: 0; padding:5px 10px; display:inline-block;
+             background:#666; color:#fff; text-decoration:none;}
+.float-right { float: right !important; }.float-left { float: left !important; }
+.bg-blue { background: rgb(73, 178, 255) none repeat scroll 0px 0px !important; }
+.bg-gray { background: #d1d1d1 none repeat scroll 0 0 !important;color: #000 !important;text-shadow: none !important; }
+.bg-green { background: rgb(0, 210, 0) none repeat scroll 0 0 !important; }
+.bd-blue { border: 1px solid rgb(73, 178, 255) !important; }
+.pkforms {    background: #F8F8F8;    padding: 30px 30px 20px 30px;    font: 12px Arial, Helvetica, sans-serif;    color: #666;}
+.pkforms h1>span {    display: block;    font-size: 11px;    color: #FFF;}
+.pkforms label {    display: block;    float: none !important;    margin: 0px 0px 5px;    width: 100%;}
+.pkforms label>span {    float: left;    margin-top: 10px;    color: #5E5E5E;}
+.pkforms input[type='text'], .pkforms input[type='email'], .pkforms input[type='password'], .pkforms textarea, .smart-green select {
+    color: #555;    height: 30px;    line-height:15px;    width: 100%;
+    padding: 0px 0px 0px 10px;    margin-top: 2px;    border: 1px solid #E5E5E5;    background: #FBFBFB;
+    outline: 0;    -webkit-box-shadow: inset 1px 1px 2px rgba(238, 238, 238, 0.2);
+    box-shadow: inset 1px 1px 2px rgba(238, 238, 238, 0.2);    font: normal 14px/14px Arial, Helvetica, sans-serif;
+}.pkforms textarea{    height:100px;    padding-top: 10px;
+}.pkforms select {    background: url('down-arrow.png') no-repeat right, -moz-linear-gradient(top, #FBFBFB 0%, #E9E9E9 100%);
+    background: url('down-arrow.png') no-repeat right, -webkit-gradient(linear, left top, left bottom, color-stop(0%,#FBFBFB), color-stop(100%,#E9E9E9));
+    appearance:none;    -webkit-appearance:none;    -moz-appearance: none;    text-indent: 0.01px;    text-overflow: '';    width:100%;    height:30px;}
+.pkforms .pkbutton {  cursor: pointer;  border-radius: 5px;    -webkit-border-radius: 5px;    -moz-border-border-radius: 5px;    border: none;    padding: 10px 25px 10px 25px;    color: #FFF;    text-shadow: 1px 1px 1px #949494;}
+.pkforms .pkbutton:hover {    background-color:#80A24A;}.pkforms .switch {    float: left;    margin-top: 5px;    width: 100%;}.pka-toggle {  position: absolute;  margin-left: -9999px;  visibility: hidden;}.pka-toggle + label {
+  display: block;  position: relative;  cursor: pointer;  outline: none;
+  user-select: none;}input.pka-toggle-yes-no + label {  padding: 2px;  width: 60px;  height: 30px;}input.pka-toggle-yes-no + label:before,input.pka-toggle-yes-no + label:after {
+  display: block; position: absolute;
+  top: 0; left: 0;
+  bottom: 0; right: 0;
+  color: #fff;
+  font-size: 20px;
+  text-align: center;
+  line-height: 30px;}input.pka-toggle-yes-no + label:before {
+  background-color: #dddddd;
+  content: attr(data-off);
+  transition: transform 0.5s;
+  backface-visibility: hidden;}input.pka-toggle-yes-no + label:after {
+  background-color: #8ce196;
+  content: attr(data-on);
+  transition: transform 0.5s;
+  transform: rotateY(180deg);
+  backface-visibility: hidden;}input.pka-toggle-yes-no:checked + label:before {transform: rotateY(180deg);}input.pka-toggle-yes-no:checked + label:after {transform: rotateY(0);}
+.pkforms .tagify-container {    margin-bottom: 5px;    width: 100%;}.pkforms .tagify-container input {    float: left;    width: auto;}
+.pkforms.small { max-width: 500px; }.pkforms label.has-error input {border: 1px solid #ff0000;}.tagify-container {height: 60px !important;}

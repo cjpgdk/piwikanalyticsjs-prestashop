@@ -22,77 +22,48 @@
 * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
 *}
 <script type="text/javascript">
-    var hostvalid = false;
-    var passwordvalid = false;
-    var usernamevalid = false;
+    var hostvalid = false, passwordvalid = false, usernamevalid = false;
     $(document).ready(function () {
         /*PIWIK_ XXXXXXXX _WIZARD */
 
-        {if version_compare($psversion, '1.5.0.13','>=')}
-        $("#PIWIK_HOST_WIZARD").on("keyup", function () {
-        {else}
-        $("#PIWIK_HOST_WIZARD").keyup(function () {
-        {/if}
+        {if version_compare($psversion, '1.5.0.13','>=')} $("#PIWIK_HOST_WIZARD").on("keyup", function () {
+        {else} $("#PIWIK_HOST_WIZARD").keyup(function () { {/if}
             $("#PIWIK_HOST_WIZARD").trigger("input");
             return true;
         });
 
-        {if version_compare($psversion, '1.5.0.13','>=')}
-        $("#PIWIK_USRNAME_WIZARD").on("keyup", function () {
-        {else}
-        $("#PIWIK_USRNAME_WIZARD").keyup(function () {
-        {/if}
+        {if version_compare($psversion, '1.5.0.13','>=')} $("#PIWIK_USRNAME_WIZARD").on("keyup", function () {
+        {else} $("#PIWIK_USRNAME_WIZARD").keyup(function () { {/if}
             $("#PIWIK_USRNAME_WIZARD").trigger("input");
             return true;
         });
 
-        {if version_compare($psversion, '1.5.0.13','>=')}
-        $("#PIWIK_USRPASSWD_WIZARD").on("keyup", function () {
-        {else}
-        $("#PIWIK_USRPASSWD_WIZARD").keyup(function () {
-        {/if}
+        {if version_compare($psversion, '1.5.0.13','>=')} $("#PIWIK_USRPASSWD_WIZARD").on("keyup", function () {
+        {else} $("#PIWIK_USRPASSWD_WIZARD").keyup(function () { {/if}
             $("#PIWIK_USRPASSWD_WIZARD").trigger("input");
             return true;
         });
 
-        {if version_compare($psversion, '1.5.0.13','>=')}
-        $("#PIWIK_HOST_WIZARD").on("input", function () {
-        {else}
-        $("#PIWIK_HOST_WIZARD").change(function () {
-        {/if}
-            var strvalue = $(this).val();
+        {if version_compare($psversion, '1.5.0.13','>=')} $("#PIWIK_HOST_WIZARD").on("input", function () {
+        {else} $("#PIWIK_HOST_WIZARD").change(function () { {/if}
             hostvalid = false;
-            var stringLength = strvalue.length;
-
+            var strvalue = $(this).val(), stringLength = strvalue.length;
             if (stringLength > 2) {
                 var lastChar = strvalue.charAt(stringLength - 1);
-                
-                if (lastChar === '/')
-                    hostvalid = true;
-                else
-                    hostvalid = false;
-
+                if (lastChar === '/') hostvalid = true;
+                else hostvalid = false;
                 if ((strvalue.indexOf("http://") === -1) && (strvalue.indexOf("https://") === -1))
-                {
-                    hostvalid = false;
-                }
-                else if (hostvalid === true)
-                    hostvalid = true;
+                { hostvalid = false; }
+                else if (hostvalid === true) hostvalid = true;
             }
-            if (hostvalid === true)
-                $(this).parent('div').removeClass('has-error');
-            else
-                $(this).parent('div').addClass('has-error');
-
+            if (hostvalid === true) $(this).parent('label').removeClass('has-error');
+            else $(this).parent('label').addClass('has-error');
             isValidInputsStep1();
             return true;
         });
 
-        {if version_compare($psversion, '1.5.0.13','>=')}
-        $("#PIWIK_USRNAME_WIZARD").on("input", function () {
-        {else}
-        $("#PIWIK_USRNAME_WIZARD").change(function () {
-        {/if}
+        {if version_compare($psversion, '1.5.0.13','>=')} $("#PIWIK_USRNAME_WIZARD").on("input", function () {
+        {else} $("#PIWIK_USRNAME_WIZARD").change(function () {  {/if}
             var strvalue = $(this).val();
             if (strvalue !== undefined && strvalue !== "" && strvalue.length > 2)
                 usernamevalid = true;
@@ -100,19 +71,16 @@
                 usernamevalid = false;
 
             if (usernamevalid === true)
-                $(this).parent('div').removeClass('has-error');
+                $(this).parent('label').removeClass('has-error');
             else
-                $(this).parent('div').addClass('has-error');
+                $(this).parent('label').addClass('has-error');
 
             isValidInputsStep1();
             return true;
         });
 
-        {if version_compare($psversion, '1.5.0.13','>=')}
-        $("#PIWIK_USRPASSWD_WIZARD").on("input", function () {
-        {else}
-        $("#PIWIK_USRPASSWD_WIZARD").change(function () {
-        {/if}
+        {if version_compare($psversion, '1.5.0.13','>=')} $("#PIWIK_USRPASSWD_WIZARD").on("input", function () {
+        {else} $("#PIWIK_USRPASSWD_WIZARD").change(function () { {/if}
             var strvalue = $(this).val();
             if (strvalue !== undefined && strvalue !== "" && strvalue.length > 2)
                 passwordvalid = true;
@@ -120,9 +88,9 @@
                 passwordvalid = false;
 
             if (passwordvalid === true)
-                $(this).parent('div').removeClass('has-error');
+                $(this).parent('label').removeClass('has-error');
             else
-                $(this).parent('div').addClass('has-error');
+                $(this).parent('label').addClass('has-error');
 
             isValidInputsStep1();
             return true;
@@ -137,7 +105,7 @@
         $('a#desc-module-back').attr('href', window.location.href.replace("&pkwizard", ""));
 
     });
-
+    
     function isValidInputsStep1() {
         if ((hostvalid === true) && (passwordvalid === true) && (usernamevalid === true))
             enableSubmit();

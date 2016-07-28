@@ -1,3 +1,30 @@
+Version: ???
+
+    * use 'addcslashes' on product catetegories when used for javascript
+    - see https://github.com/cmjnisse/piwikanalyticsjs-prestashop/pull/21
+
+    * removed pkapicall ajax handler, not needed any more
+    
+    * added a check in some places to see if debug is enabled before converting data
+    - this saves some memory, and a microsecond or two 
+
+    * removed the possibility to edit other piwik sites from within the module
+    - now only the site isset from configuration can be edited
+
+    * Create new layout to keep the same style throughout prestashop versions 1.5.x.x - 1.7.x.x
+    - this is done to better make a manual/guide of how to use this module without the need 
+    - for multiple versions for each prestashop release
+
+    * WIZARD: if Piwik host is saved with https: prefix set use HTTPS
+
+    * change default product id v3 from {ID}#{ATTRID} to {ID}-{ATTRID} so it folllows the layout of product id v1
+
+    * better validation of some inputs
+
+    * FIX: allow token overide (skip missing error)
+    - this introduced new issue with addNew site method, for now we just mix the 
+    - Wizzard and Piwik helper classes in that method (this is temporary)
+
 Version: 0.8.4 (un-released)
     * just some code clean up
 

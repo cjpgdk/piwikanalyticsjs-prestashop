@@ -116,9 +116,17 @@ EOF;
                     $period = "day";
                     $date = "today";
                 }
+                
+                $http_auth= "";
+                $http_user = Configuration::get('PIWIK_PAUTHUSR');
+                $http_password = Configuration::get('PIWIK_PAUTHPWD');
+                if((!empty($http_user) && strlen($http_user)>1) &&
+                        (!empty($http_password) && strlen($http_password)>1))
+                    $http_auth = "{$http_user}:{$http_password}@";
+                
                 $this->content .= ''
                         . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
-                        . 'src="' . $http
+                        . 'src="' . $http . $http_auth
                         . $PIWIK_HOST . 'index.php'
                         . '?module=Widgetize'
                         . '&action=iframe'
