@@ -19,6 +19,39 @@
  *
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ *
+ *
+ **************************************
+ * For developers
+ **************************************
+ -- when piwik is loaded
+ if(window.isPiwikLoaded)
+    window.piwikLoaded(window.piwikTracker);
+ --  -- 
+so in your theme use
+ --  -- 
+window.piwikLoaded = function(tracker){
+    // do your stuff, piwik object is 
+    // tracker or window.piwikTracker
+}
+ --  -- 
+or (depends on how you define your custom scripts)
+ --  -- 
+function myCustomPiwikLoaded(){
+     if(window.isPiwikLoaded || typeof Piwik === 'object' || typeof Piwik === 'Object'){
+        if(typeof window.piwikTracker === 'undefined' || 
+            (typeof window.piwikTracker !== 'object' && typeof window.piwikTracker !== 'Object')
+        ) {
+            window.piwikTracker = Piwik.getAsyncTracker();
+        }
+        // do your stuff 
+        window.piwikTracker.trackEvent(category, action, [name], [value]);
+        
+     } else{
+        setTimeout(myCustomPiwikLoaded, 600);
+     }
+}
+setTimeout(myCustomPiwikLoaded, 600);
 *}
 
 <script type="text/javascript">
@@ -31,6 +64,11 @@
         {else}
             _paq.push(['setTrackerUrl', u+'piwik.php']);
         {/if}
+        {* left out since this requires Piwik to be installed in the same domain as your shop
+        if isset($PIWIK_REQUEST_METHOD) && $PIWIK_REQUEST_METHOD eq true}
+            _paq.push(['setRequestMethod', 'POST']);
+        {/if
+        *}
         {if isset($PIWIK_COOKIE_DOMAIN) && $PIWIK_COOKIE_DOMAIN eq true}
             _paq.push(['setCookieDomain', '{$PIWIK_COOKIE_DOMAIN}']);
         {/if}
@@ -38,16 +76,16 @@
         _paq.push(['setDomains', {$PIWIK_SET_DOMAINS}]);
         {/if}
         {if isset($PIWIK_COOKIE_TIMEOUT)}
-        _paq.push(['setVisitorCookieTimeout', '{$PIWIK_COOKIE_TIMEOUT}']);
+        _paq.push(['setVisitorCookieTimeout', '{$PIWIK_COOKIE_TIMEOUT|intval}']);
         {/if}
         {if isset($PIWIK_SESSION_TIMEOUT)}
-        _paq.push(['setSessionCookieTimeout', '{$PIWIK_SESSION_TIMEOUT}']);
+        _paq.push(['setSessionCookieTimeout', '{$PIWIK_SESSION_TIMEOUT|intval}']);
         {/if}
         {if isset($PIWIK_RCOOKIE_TIMEOUT)}
-        _paq.push(['setReferralCookieTimeout', '{$PIWIK_RCOOKIE_TIMEOUT}']);
+        _paq.push(['setReferralCookieTimeout', '{$PIWIK_RCOOKIE_TIMEOUT|intval}']);
         {/if}
         _paq.push(['enableLinkTracking']);
-    {if isset($PIWIK_UUID)}
+    {if isset($PIWIK_UUID) && version_compare($PIWIK_VER|floatval,'2.7.0','>')}
         _paq.push(['setUserId', '{$PIWIK_UUID}']);
     {/if}
     {if isset($PIWIK_PRODUCTS) && is_array($PIWIK_PRODUCTS)}
@@ -61,7 +99,7 @@
     {if $PIWIK_CART eq true}
         {if is_array($PIWIK_CART_PRODUCTS)}
             {foreach from=$PIWIK_CART_PRODUCTS item=_product}
-                _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME|escape:'quotes'}', {$_product.CATEGORY}, '{$_product.PRICE}', '{$_product.QUANTITY}']);
+                _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME|escape:'htmlall':'UTF-8'}', {$_product.CATEGORY}, '{$_product.PRICE|floatval}', '{$_product.QUANTITY}']);
             {/foreach}
         {/if}
         {if isset($PIWIK_CART_TOTAL)}
@@ -71,7 +109,7 @@
     {if $PIWIK_ORDER eq true}
         {if is_array($PIWIK_ORDER_PRODUCTS)}
             {foreach from=$PIWIK_ORDER_PRODUCTS item=_product}
-                _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME}', {$_product.CATEGORY}, '{$_product.PRICE}', '{$_product.QUANTITY}']);
+                _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME|escape:'htmlall':'UTF-8'}', {$_product.CATEGORY}, '{$_product.PRICE|floatval}', '{$_product.QUANTITY}']);
             {/foreach}
         {/if}
         _paq.push(['trackEcommerceOrder','{$PIWIK_ORDER_DETAILS.order_id}', '{$PIWIK_ORDER_DETAILS.order_total}', '{$PIWIK_ORDER_DETAILS.order_sub_total}', '{$PIWIK_ORDER_DETAILS.order_tax}', '{$PIWIK_ORDER_DETAILS.order_shipping}', '{$PIWIK_ORDER_DETAILS.order_discount}']);
@@ -86,6 +124,11 @@
     {/if}
     {literal}
         (function() {var d = document, g = d.createElement("script"), s = d.getElementsByTagName("script")[0];g.type = "text/javascript";g.defer = true;g.async = true;g.src = {/literal}{if $PIWIK_USE_PROXY eq true}{literal}u{/literal}{else}{literal}u+'piwik.js'{/literal}{/if}{literal};s.parentNode.insertBefore(g, s);})();
+        window.isPiwikLoaded=false;setTimeout(piwikLoaded1469750422, 600);var _piwikLoaded1469750422Count = 0;
+        if(typeof window.piwikLoaded !== 'object' && typeof window.piwikLoaded !== 'Object') {window.piwikLoaded = function(tracker){}}
+        function piwikLoaded1469750422 (){
+             if ((typeof Piwik === 'object' || typeof Piwik === 'Object') && !window.isPiwikLoaded) {window.piwikTracker = Piwik.getAsyncTracker();window.isPiwikLoaded = true;}
+             else {_piwikLoaded1469750422Count++;if(_piwikLoaded1469750422Count < 5)setTimeout(piwikLoaded1469750422, 500);};if(window.isPiwikLoaded)window.piwikLoaded(window.piwikTracker);}
     {/literal}
 </script>
 {if isset($PIWIK_EXHTML)}

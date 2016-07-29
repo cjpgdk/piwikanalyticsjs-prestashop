@@ -1347,7 +1347,9 @@ class piwikanalyticsjs extends Module {
     }
 
     private function __setConfigDefault() {
-
+        
+        $this->context->smarty->assign(PKHelper::CPREFIX.'VER',$this->piwikVersion);
+        
         $this->context->smarty->assign(PKHelper::CPREFIX.'USE_PROXY',(bool)Configuration::get(PKHelper::CPREFIX.'USE_PROXY'));
 
         //* using proxy script?

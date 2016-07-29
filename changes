@@ -1,5 +1,12 @@
 Version: ???
 
+    ** tested with various Piwik versions minimum FULLY supported version is '2.7.0'
+     - Absolute minimum Piwik version '2.0.0', but lower than '2.7.0' you will loose
+     - functionality
+
+    * add Piwik loaded event thingy
+    - see views/templates/hook/jstracking.tpl for details
+
     * use 'addcslashes' on product catetegories when used for javascript
     - see https://github.com/cmjnisse/piwikanalyticsjs-prestashop/pull/21
 
