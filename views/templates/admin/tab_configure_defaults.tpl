@@ -34,7 +34,7 @@
     </label>
 
     <label>
-        <span>{l s='Piwik token auth' mod='piwikanalyticsjs'} <sup>*</sup></span>
+        <span>{l s='Piwik token auth' mod='piwikanalyticsjs'} <sup>*</sup> [<a onclick="return showLookupTokenForm();" href="#" title="{l s='Click to lookup your Piwik auth token' mod='piwikanalyticsjs'}">{l s='Lookup' mod='piwikanalyticsjs'}</a>]</span>
         <input id='{$pkCPREFIX}TOKEN_AUTH' type='text' name='{$pkCPREFIX}TOKEN_AUTH' placeholder='abcdef12345678' value="{$pkfvTOKEN_AUTH}" onchange="tabContentChanged(true);" />
         <small>{l s='You can find piwik token by loggin to piwik installation. under API' mod='piwikanalyticsjs'}</small>
     </label>

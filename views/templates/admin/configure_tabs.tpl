@@ -28,12 +28,12 @@
         tab_content_changed = value;
     }
 </script>
-<fieldset id='fieldset_piwik_analytics' style="width: 700px; margin-left: auto; margin-right: auto;">
+<fieldset id='fieldset_piwik_analytics' style="width: 700px;margin-left: auto;margin-right: auto;">
     <legend>
         <img alt='{l s='Piwik Analytics' mod='piwikanalyticsjs'}' src='{$piwik_module_dir}/logox22.png'>
         {l s='Piwik Analytics' mod='piwikanalyticsjs'}
     </legend>
-    <div style="display: block; width: 100%; float: left;">
+    <div style="display: block;width: 100%;float: left;min-height: 40px;">
         <div class='float-left'>
             <i>{l s='Piwik version' mod='piwikanalyticsjs'} {$piwikVersion}</i><br>
             {if $piwikSite}
@@ -50,6 +50,9 @@
         <div class='float-right'>
             <ul class='tabs-pk not-tab'>
                 <li>
+                    <a onclick="return showLookupTokenForm();" class='bg-blue link-not-tab' href="#" title="{l s='Click to lookup your Piwik auth token' mod='piwikanalyticsjs'}">{l s='Lookup auth token' mod='piwikanalyticsjs'}</a>
+                </li>
+                <li>
                     <a href='{$config_wizard_link}' class='bg-blue link-not-tab' title='{l s='Click here to open piwik site lookup wizard' mod='piwikanalyticsjs'}'>
                         {l s='Configuration Wizard' mod='piwikanalyticsjs'}
                     </a>
@@ -65,10 +68,10 @@
         <li><a href='#tabs-pk6'>{l s='Cookies' mod='piwikanalyticsjs'}</a></li>
         <li><a href='#tabs-pk3'>{l s='Site Manager' mod='piwikanalyticsjs'}</a></li>
     </ul>
-    <div id='tabs-pk1' class='small-tab'>{include file=$tab_defaults_file}</div>
-    <div id='tabs-pk2' class='small-tab'>{include file=$tab_proxyscript_file}</div>
-    <div id='tabs-pk4' class='small-tab'>{include file=$tab_extra_file}</div>
-    <div id='tabs-pk5' class='small-tab'>{include file=$tab_html_file}</div>
-    <div id='tabs-pk6' class='small-tab'>{include file=$tab_cookies_file}</div>
-    <div id='tabs-pk3' class='small-tab'>{include file=$tab_site_manager_file}</div>
+    <div id='tabs-pk1'>{include file=$tab_defaults_file}</div>
+    <div id='tabs-pk2'>{include file=$tab_proxyscript_file}</div>
+    <div id='tabs-pk4'>{include file=$tab_extra_file}</div>
+    <div id='tabs-pk5'>{include file=$tab_html_file}</div>
+    <div id='tabs-pk6'>{include file=$tab_cookies_file}</div>
+    <div id='tabs-pk3'>{include file=$tab_site_manager_file}</div>
 </fieldset><br/>

@@ -119,7 +119,7 @@
         <small>{l s='please read: http://piwik.org/faq/how-to/faq_81/' mod='piwikanalyticsjs'}</small>
     </label>
     <label>
-        <span>{l s='Timezone' mod='piwikanalyticsjs'} <sup>*</sup></span>
+        <span>{l s='Timezone' mod='piwikanalyticsjs'}</span>
         <select name="PKAdminTimezone" id="PKAdminTimezone" onchange="tabContentChanged(true);" >
             <option value="0"{if $PKAdminTimezone == "0"} selected="selected"{/if}>{l s='Choose Timezone' mod='piwikanalyticsjs'}</option>
             {foreach from=$pktimezones  key=timezone_key item=timezone_value}
@@ -133,7 +133,7 @@
         <small>{l s='Based on your settings in Piwik your default timezone is' mod='piwikanalyticsjs'} {$PKAdminTimezone}</small>
     </label>
     <label>
-        <span>{l s='Currency' mod='piwikanalyticsjs'} <sup>*</sup></span>
+        <span>{l s='Currency' mod='piwikanalyticsjs'}</span>
         <select name="PKAdminCurrency" id="PKAdminCurrency" onchange="tabContentChanged(true);" >
             <option value="0"{if $PKAdminCurrency == "0"} selected="selected"{/if}>{l s='Choose currency' mod='piwikanalyticsjs'}</option>
             {foreach from=$pkfvCurrencies  key=currency_key item=currency_value}

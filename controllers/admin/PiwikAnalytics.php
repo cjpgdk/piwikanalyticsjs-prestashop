@@ -33,46 +33,57 @@ class PiwikAnalyticsController extends ModuleAdminController {
 
     public function init() {
         parent::init();
+        
+        if ($this->ajax && Tools::getIsset('action')) {
+            $action = Tools::getIsset('action');
+            if ($action == "lookupauthtoken") {
+                $this->lookupauthtoken();
+            }
+        }
 
         $this->bootstrap = true;
         $this->action = 'view';
         $this->display = 'view';
         $this->show_page_header_toolbar = true;
-        $this->tpl_folder = _PS_MODULE_DIR_ . $this->module->name . '/views/templates/admin/PiwikAnalytics/';
+        $this->tpl_folder = _PS_MODULE_DIR_.$this->module->name.'/views/templates/admin/PiwikAnalytics/';
+    }
+
+    private function lookupauthtoken() {
+        die("<h1>lookupauthtoken 'PiwikAnalyticsController'</h1>");
     }
 
     public function initContent() {
         if ($this->ajax)
             return;
 
-        if (version_compare(_PS_VERSION_, '1.5.4.0', '>=')) {
+        if (version_compare(_PS_VERSION_,'1.5.4.0','>=')) {
             $this->initTabModuleList();
             $this->addToolBarModulesListButton();
         }
-        $this->toolbar_title = $this->l('Stats', 'PiwikAnalytics');
+        $this->toolbar_title = $this->l('Stats','PiwikAnalytics');
 
         if (_PS_VERSION_ < '1.6')
             $this->bootstrap = false;
         else
             $this->initPageHeaderToolbar();
-        $http = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://');
+        $http = ((bool)Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://');
         $PIWIK_HOST = Configuration::get('PIWIK_HOST');
-        $PIWIK_SITEID = (int) Configuration::get('PIWIK_SITEID');
+        $PIWIK_SITEID = (int)Configuration::get('PIWIK_SITEID');
 
-        $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki');
+        $this->context->smarty->assign('help_link','https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki');
         // PKHelper::CPREFIX . 'USRNAME'
         $user = Configuration::get('PIWIK_USRNAME');
         // PKHelper::CPREFIX . 'USRPASSWD'
         $passwd = Configuration::get('PIWIK_USRPASSWD');
         if ((!empty($user) && $user !== FALSE) && (!empty($passwd) && $passwd !== FALSE)) {
             $this->page_header_toolbar_btn['stats'] = array(
-                'href' => $http . $PIWIK_HOST . 'index.php?module=Login&action=logme&login=' . $user . '&password=' . md5($passwd) . '&idSite=' . $PIWIK_SITEID,
+                'href' => $http.$PIWIK_HOST.'index.php?module=Login&action=logme&login='.$user.'&password='.md5($passwd).'&idSite='.$PIWIK_SITEID,
                 'desc' => $this->l('Piwik'),
                 'target' => true
             );
         } else {
             $this->page_header_toolbar_btn['stats'] = array(
-                'href' => $http . $PIWIK_HOST . 'index.php',
+                'href' => $http.$PIWIK_HOST.'index.php',
                 'desc' => $this->l('Piwik'),
                 'target' => true
             );
@@ -104,37 +115,37 @@ EOF;
                 $lng = new LanguageCore($this->context->cookie->id_lang);
 
                 if (_PS_VERSION_ < '1.6')
-                    $this->content .= '<h3><a target="_blank" href="' . $this->page_header_toolbar_btn['stats']['href'] . '">' . $this->page_header_toolbar_btn['stats']['desc'] . '</a> | <a target="_blank" href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki">' . $this->l('Help') . '</a></h3>';
+                    $this->content .= '<h3><a target="_blank" href="'.$this->page_header_toolbar_btn['stats']['href'].'">'.$this->page_header_toolbar_btn['stats']['desc'].'</a> | <a target="_blank" href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki">'.$this->l('Help').'</a></h3>';
 
                 $DREPDATE = Configuration::get('PIWIK_DREPDATE');
-                if ($DREPDATE !== FALSE && (strpos($DREPDATE, '|') !== FALSE)) {
-                    list($period, $date) = explode('|', $DREPDATE);
+                if ($DREPDATE !== FALSE && (strpos($DREPDATE,'|') !== FALSE)) {
+                    list($period,$date) = explode('|',$DREPDATE);
                 } else {
                     $period = "day";
                     $date = "today";
                 }
-                
-                $http_auth= "";
+
+                $http_auth = "";
                 $http_user = Configuration::get('PIWIK_PAUTHUSR');
                 $http_password = Configuration::get('PIWIK_PAUTHPWD');
-                if((!empty($http_user) && strlen($http_user)>1) &&
-                        (!empty($http_password) && strlen($http_password)>1))
+                if ((!empty($http_user) && strlen($http_user) > 1) &&
+                        (!empty($http_password) && strlen($http_password) > 1))
                     $http_auth = "{$http_user}:{$http_password}@";
-                
+
                 $this->content .= ''
-                        . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
-                        . 'src="' . $http . $http_auth
-                        . $PIWIK_HOST . 'index.php'
-                        . '?module=Widgetize'
-                        . '&action=iframe'
-                        . '&moduleToWidgetize=Dashboard'
-                        . '&actionToWidgetize=index'
-                        . '&idSite=' . $PIWIK_SITEID
-                        . '&period=' . $period
-                        . '&token_auth=' . $PIWIK_TOKEN_AUTH
-                        . '&language=' . $lng->iso_code
-                        . '&date=' . $date
-                        . '" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>';
+                        .'<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
+                        .'src="'.$http.$http_auth
+                        .$PIWIK_HOST.'index.php'
+                        .'?module=Widgetize'
+                        .'&action=iframe'
+                        .'&moduleToWidgetize=Dashboard'
+                        .'&actionToWidgetize=index'
+                        .'&idSite='.$PIWIK_SITEID
+                        .'&period='.$period
+                        .'&token_auth='.$PIWIK_TOKEN_AUTH
+                        .'&language='.$lng->iso_code
+                        .'&date='.$date
+                        .'" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>';
             }
         }
 

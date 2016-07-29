@@ -32,7 +32,7 @@
     </label>
     <br><br>
     <span>
-        {l s='Piwik image tracking code append one of them to field "Extra HTML" this will add images tracking code to all your pages' mod='piwikanalyticsjs'}<br/>
+        {l s='Piwik image tracking code append one of them to field "Extra HTML" this will add image tracking code to all your pages' mod='piwikanalyticsjs'}<br/>
         {if $pkfvEXHTML_ImageTracker != false && $pkfvEXHTML_ImageTrackerProxy != false}
             <strong>{l s='default' mod='piwikanalyticsjs'}</strong>:<br>
             <i>{$pkfvEXHTML_ImageTracker}</i><br><br>

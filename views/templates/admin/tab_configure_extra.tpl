@@ -81,6 +81,15 @@
             {l s='to add multiple domains you must separate them with comma ",", the currently tracked website is added to this array automatically, Leave empty to exclude this from the tracking code' mod='piwikanalyticsjs'}</small>
     </label>
 
+    <hr class="bd-blue" />
+
+    <label class="switch">
+        <span>{l s='Discard hash tag' mod='piwikanalyticsjs'}</span>
+        <input id="{$pkCPREFIX}DHashTag" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $pkfvDHashTag==1} checked="checked"{/if} name="{$pkCPREFIX}DHashTag" onchange="tabContentChanged(true);" />
+        <label for="{$pkCPREFIX}DHashTag" data-on="Yes" data-off="No" style="clear: both;"></label>
+        <small>{l s='Set to yes to not record the hash tag (anchor) portion of URLs' mod='piwikanalyticsjs'}</small>
+    </label>
+    
     <hr/>
     <input type='submit' class='button pkbutton bg-blue' value='{l s='Save' mod='piwikanalyticsjs'}' name='submitUpdatePiwikAnalyticsjsExtra' />
 </form>

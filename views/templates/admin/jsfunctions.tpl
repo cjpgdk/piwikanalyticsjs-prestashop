@@ -99,6 +99,20 @@
         });
     });
     
+    function showLookupTokenForm() {
+        {if version_compare("$psversion", '1.5.4.999', '<=')}
+            {literal}$.fancybox({type:'ajax', href:'{/literal}{$piwikAnalyticsControllerLink}{literal}&ajax=1',
+                hideOnOverlayClick:false, enableEscapeButton:false,ajax :{type: "POST",
+                data: 'action=lookupauthtoken&piwik_host='+$('#{/literal}{$pkCPREFIX}{literal}HOST').val()+'&piwik_user='+$('#{/literal}{$pkCPREFIX}{literal}USRNAME').val()},
+                onClosed:function(){
+                    window.location.reload();
+                }});{/literal}
+        {else}
+            
+        {/if}
+        return false;
+    }
+    
     function moduleUpdateConfirmClick(result) {
         hideLoadingStuff();
         if (result === true) {
@@ -146,7 +160,7 @@
         });
     }
 
-    {if version_compare($psversion, '1.5.4.999','>')}
+    {if version_compare("$psversion", '1.5.4.999','>')}
     function hideLoadingStuff() {
         $('#ajax_running').hide('fast');
         clearTimeout(ajax_running_timeout);
