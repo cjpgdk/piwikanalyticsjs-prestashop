@@ -85,7 +85,7 @@ setTimeout(myCustomPiwikLoaded, 600);
         _paq.push(['setReferralCookieTimeout', '{$PIWIK_RCOOKIE_TIMEOUT|intval}']);
         {/if}
         _paq.push(['enableLinkTracking']);
-    {if isset($PIWIK_UUID) && version_compare($PIWIK_VER|floatval,'2.7.0','>')}
+    {if isset($PIWIK_UUID) && version_compare($PIWIK_VER|floatval,'2.7.0','>=')}
         _paq.push(['setUserId', '{$PIWIK_UUID}']);
     {/if}
     {if isset($PIWIK_PRODUCTS) && is_array($PIWIK_PRODUCTS)}
