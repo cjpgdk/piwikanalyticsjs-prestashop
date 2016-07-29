@@ -100,7 +100,10 @@ $content = PKHelper::get_http($url . (version_compare(PHP_VERSION, '5.3.0', '<')
 // Forward the HTTP response code
 // not for cURL, working on it. (@todo cURL response_header [piwik.php])
 if (!headers_sent() && isset($http_response_header[0])) {
-    header($http_response_header[0]);
+    sendHeader($http_response_header[0]);
+}else if($content === false){
+    sendHeader($_SERVER['SERVER_PROTOCOL'] . '505 Internal server error');
+    $content = '/* there was an error loading piwik.js */';
 }
 echo $content;
 

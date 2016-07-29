@@ -1,6 +1,17 @@
 <?php
 
 /*
+ *
+ * ***** THIS FILE USES CODE FROM PIWIK PROXY SCRIPT *****
+ * 
+ * Piwik - free/libre analytics platform
+ * Piwik Proxy Hide URL
+ *
+ * @link http://piwik.org/faq/how-to/#faq_132
+ * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ * 
+ * ***** THIS FILE USES CODE FROM PIWIK PROXY SCRIPT *****
+ * 
  * Copyright (C) 2016 Christian Jensen
  *
  * This file is part of PiwikAnalyticsJS for prestashop.
@@ -20,14 +31,6 @@
  *
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- *
- * ***** THIS FILE USES CODE FROM PIWIK PROXY SCRIPT *****
- * 
- * Piwik - free/libre analytics platform
- * Piwik Proxy Hide URL
- *
- * @link http://piwik.org/faq/how-to/#faq_132
- * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  */
 
 if (!defined('_PS_VERSION_'))
@@ -40,7 +43,6 @@ class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
 
     public function __construct() {
 
-        PKHelper::DebugLogger('START: PiwikAnalyticsJSPiwikModuleFrontController::__construct();');
         // Edit the line below, and replace http://your-piwik-domain.example.org/piwik/
         // with your Piwik URL ending with a slash.
         // This URL will never be revealed to visitors or search engines.
@@ -50,15 +52,13 @@ class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
         // which you created when you followed instructions above.
         $TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
 
-        PKHelper::DebugLogger('Config values Loaded');
-
         // 1) PIWIK.JS PROXY: No _GET parameter, we serve the JS file
+        // @todo change to post, starting to get errors on server#a7 with to long request length
         if (
                 (count($_GET) == 3 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc')) ||
                 (count($_GET) == 4 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc') && Tools::getIsset('id_lang')) ||
                 (count($_GET) == 5 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc') && Tools::getIsset('id_lang') && Tools::getIsset('isolang'))
         ) {
-            PKHelper::DebugLogger('Got piwik.js request with _GET count of : ' . count($_GET) . "\n" . str_repeat('==', 50) . "\n" . print_r($_GET, true) . "\n" . str_repeat('==', 50));
             $modifiedSince = false;
             if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
                 $modifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'];
@@ -75,18 +75,12 @@ class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
 
             // Returns 304 if not modified since
             if (!empty($modifiedSince) && $modifiedSince < $lastModified) {
-                PKHelper::DebugLogger('Set Header 304 Not Modified');
                 $this->sendHeader(sprintf("%s 304 Not Modified", $_SERVER['SERVER_PROTOCOL']));
             } else {
                 $this->sendHeader('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
                 $this->sendHeader('Content-Type: application/javascript; charset=UTF-8');
-
-                PKHelper::DebugLogger('Send request to Piwik');
-                PKHelper::DebugLogger("\t: {$PIWIK_URL}piwik.js");
                 $exHeaders = array(sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", $this->arrayValue($_SERVER, 'HTTP_ACCEPT_LANGUAGE', ''))));
-                PKHelper::DebugLogger("\t: Extra heders\n" . str_repeat('==', 50) . "\n" . print_r($exHeaders, true) . "\n" . str_repeat('==', 50));
                 if ($piwikJs = PKHelper::get_http($PIWIK_URL . 'piwik.js', $exHeaders)) {
-                    PKHelper::DebugLogger('Send Piwik js to client');
                     die($piwikJs);
                 } else {
                     if (!empty(PKHelper::$errors)) {
@@ -94,35 +88,28 @@ class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
                             PKHelper::ErrorLogger($value);
                         }
                     }
-                    PKHelper::DebugLogger('Error:....' . "\n" . str_repeat('==', 50) . print_r(PKHelper::$error, true) . "\n" . str_repeat('==', 50) . "\n" . print_r(PKHelper::$errors, true) . "\n" . str_repeat('==', 50));
                     $this->sendHeader($_SERVER['SERVER_PROTOCOL'] . '505 Internal server error');
                 }
             }
-            PKHelper::DebugLogger('END: PiwikAnalyticsJSPiwikModuleFrontController::__construct();');
             die();
         }
-        PKHelper::DebugLogger('Got piwik image request with _GET count of :' . count($_GET) . "\n" . str_repeat('==', 50) . "\n" . print_r($_GET, true) . "\n" . str_repeat('==', 50));
         // 2) PIWIK.PHP PROXY: GET parameters found, this is a tracking request, we redirect it to Piwik
         $url = sprintf("%spiwik.php?cip=%s&token_auth=%s&", $PIWIK_URL, $this->getVisitIp(), $TOKEN_AUTH);
 
         foreach ($_GET as $key => $value) {
             $url .= urlencode($key) . '=' . urlencode($value) . '&';
         }
-
-
-        PKHelper::DebugLogger('Send request to Piwik ::: ' . $url . (version_compare(PHP_VERSION, '5.3.0', '<') ? '&send_image=1' /* PHP 5.2 force returning */ : ''));
-
         $this->sendHeader("Content-Type: image/gif");
         $content = PKHelper::get_http($url . (version_compare(PHP_VERSION, '5.3.0', '<') ? '&send_image=1' /* PHP 5.2 force returning */ : ''), array(sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", $this->arrayValue($_SERVER, 'HTTP_ACCEPT_LANGUAGE', '')))));
 
-        PKHelper::DebugLogger('Piwik request complete');
         // Forward the HTTP response code
         // not for cURL, working on it. (@todo cURL response_header [piwik.php])
         if (!headers_sent() && isset($http_response_header[0])) {
             header($http_response_header[0]);
+        }else if($content === false){
+            sendHeader($_SERVER['SERVER_PROTOCOL'] . '505 Internal server error');
+            $content = '/* there was an error loading piwik.js */';
         }
-
-        PKHelper::DebugLogger('END: PiwikAnalyticsJSPiwikModuleFrontController::__construct();');
         die($content);
     }
 
