@@ -90,16 +90,16 @@ setTimeout(myCustomPiwikLoaded, 600);
     {/if}
     {if isset($PIWIK_PRODUCTS) && is_array($PIWIK_PRODUCTS)}
         {foreach from=$PIWIK_PRODUCTS item=piwikproduct}
-            _paq.push(['setEcommerceView', '{$piwikproduct.SKU}', '{$piwikproduct.NAME|escape:'htmlall':'UTF-8'}', {$piwikproduct.CATEGORY}, '{$piwikproduct.PRICE|floatval}']);
+            _paq.push(['setEcommerceView', '{$piwikproduct.SKU}', '{$piwikproduct.NAME|replace:"'":"\'":'UTF-8'}', {$piwikproduct.CATEGORY}, '{$piwikproduct.PRICE|floatval}']);
         {/foreach}
     {/if}
     {if isset($piwik_category) && is_array($piwik_category)}
-            _paq.push(['setEcommerceView', false, false, '{$piwik_category.NAME|escape:'htmlall':'UTF-8'}']);
+            _paq.push(['setEcommerceView', false, false, '{$piwik_category.NAME|replace:"'":"\'":'UTF-8'}']);
     {/if}
     {if $PIWIK_CART eq true}
         {if is_array($PIWIK_CART_PRODUCTS)}
             {foreach from=$PIWIK_CART_PRODUCTS item=_product}
-                _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME|escape:'htmlall':'UTF-8'}', {$_product.CATEGORY}, '{$_product.PRICE|floatval}', '{$_product.QUANTITY}']);
+                _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME|replace:"'":"\'":'UTF-8'}', {$_product.CATEGORY}, '{$_product.PRICE|floatval}', '{$_product.QUANTITY}']);
             {/foreach}
         {/if}
         {if isset($PIWIK_CART_TOTAL)}
@@ -109,7 +109,7 @@ setTimeout(myCustomPiwikLoaded, 600);
     {if $PIWIK_ORDER eq true}
         {if is_array($PIWIK_ORDER_PRODUCTS)}
             {foreach from=$PIWIK_ORDER_PRODUCTS item=_product}
-                _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME|escape:'htmlall':'UTF-8'}', {$_product.CATEGORY}, '{$_product.PRICE|floatval}', '{$_product.QUANTITY}']);
+                _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME|replace:"'":"\'":'UTF-8'}', {$_product.CATEGORY}, '{$_product.PRICE|floatval}', '{$_product.QUANTITY}']);
             {/foreach}
         {/if}
         _paq.push(['trackEcommerceOrder','{$PIWIK_ORDER_DETAILS.order_id}', '{$PIWIK_ORDER_DETAILS.order_total}', '{$PIWIK_ORDER_DETAILS.order_sub_total}', '{$PIWIK_ORDER_DETAILS.order_tax}', '{$PIWIK_ORDER_DETAILS.order_shipping}', '{$PIWIK_ORDER_DETAILS.order_discount}']);
