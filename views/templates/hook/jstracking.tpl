@@ -61,9 +61,10 @@ setHeartBeatTimer( minimumVisitLength, heartBeatDelay )
       the heartBeatDelay determines how frequently to update the server
 enableHeartBeatTimer( delayInSeconds )
 
-setLinkClasses( string | array ) - Set classes to be treated as outlinks (in addition to piwik_link)
-
 ?? allow custom _paq to be created from admin
+
+?? setRequestMethod to POST when using builtin proxy
+
 *}
 <script type="text/javascript">
     var u=(("https:" == document.location.protocol) ? "https://{$PIWIK_HOST}" : "http://{$PIWIK_HOST}");
@@ -78,11 +79,15 @@ setLinkClasses( string | array ) - Set classes to be treated as outlinks (in add
     {/if
     *}
     {if isset($PIWIK_COOKIE_DOMAIN) && $PIWIK_COOKIE_DOMAIN eq true} _paq.push(['setCookieDomain', '{$PIWIK_COOKIE_DOMAIN}']);{/if}
+    {if isset($PIWIK_COOKIEPREFIX) && $PIWIK_COOKIEPREFIX eq true} _paq.push(['setCookieNamePrefix', '{$PIWIK_COOKIEPREFIX}']);{/if}
+    {if isset($PIWIK_COOKIEPATH) && $PIWIK_COOKIEPATH eq true} _paq.push(['setCookiePath', '{$PIWIK_COOKIEPATH}']);{/if}
     {if isset($PIWIK_SET_DOMAINS) && $PIWIK_SET_DOMAINS eq true} _paq.push(['setDomains', {$PIWIK_SET_DOMAINS}]);{/if}
     {if isset($PIWIK_COOKIE_TIMEOUT)} _paq.push(['setVisitorCookieTimeout', '{$PIWIK_COOKIE_TIMEOUT|intval}']);{/if}
     {if isset($PIWIK_SESSION_TIMEOUT)} _paq.push(['setSessionCookieTimeout', '{$PIWIK_SESSION_TIMEOUT|intval}']);{/if}
     {if isset($PIWIK_RCOOKIE_TIMEOUT)} _paq.push(['setReferralCookieTimeout', '{$PIWIK_RCOOKIE_TIMEOUT|intval}']);{/if}
-    _paq.push(['enableLinkTracking']);
+    {if $PIWIK_LINKTRACK eq true} _paq.push(['enableLinkTracking']);{/if}
+    {if isset($PIWIK_LINKClS) && $PIWIK_LINKClS eq true} _paq.push(['setLinkClasses', {$PIWIK_LINKClS}]);{/if}
+    {if isset($PIWIK_LINKTTIME) && $PIWIK_LINKTTIME eq true} _paq.push(['setLinkTrackingTimer', {$PIWIK_LINKTTIME|intval}]);{/if}
     {if isset($PIWIK_UUID) && version_compare($PIWIK_VER|floatval,'2.7.0','>=')} _paq.push(['setUserId', '{$PIWIK_UUID}']);{/if}
     {if isset($PIWIK_PRODUCTS) && is_array($PIWIK_PRODUCTS)}
         {foreach from=$PIWIK_PRODUCTS item=piwikproduct}
@@ -98,7 +103,7 @@ setLinkClasses( string | array ) - Set classes to be treated as outlinks (in add
                 _paq.push(['addEcommerceItem', '{$_product.SKU}', '{$_product.NAME|replace:"'":"\'":'UTF-8'}', {$_product.CATEGORY}, '{$_product.PRICE|floatval}', '{$_product.QUANTITY}']);
             {/foreach}
         {/if}
-        {if isset($PIWIK_CART_TOTAL)}_paq.push(['trackEcommerceCartUpdate', {$PIWIK_CART_TOTAL|floatval}]);{/if}
+        {if isset($PIWIK_CART_TOTAL)} _paq.push(['trackEcommerceCartUpdate', {$PIWIK_CART_TOTAL|floatval}]);{/if}
     {/if}
     {if $PIWIK_ORDER eq true}
         {if is_array($PIWIK_ORDER_PRODUCTS)}
@@ -116,8 +121,8 @@ setLinkClasses( string | array ) - Set classes to be treated as outlinks (in add
     {/if}
     {literal}
         (function() {var d = document, g = d.createElement("script"), s = d.getElementsByTagName("script")[0];g.type = "text/javascript";g.defer = true;g.async = true;g.src = {/literal}{if $PIWIK_USE_PROXY eq true}{literal}u{/literal}{else}{literal}u+'piwik.js'{/literal}{/if}{literal};s.parentNode.insertBefore(g, s);})();
-        window.isPiwikLoaded=false;setTimeout(piwikLoaded1469750422, 600);var _piwikLoaded1469750422Count = 0;
-        if(typeof window.piwikLoaded !== 'object' && typeof window.piwikLoaded !== 'Object') {window.piwikLoaded = function(tracker){}}
+        window.isPiwikLoaded=false;var _piwikLoaded1469750422Count = 0;setTimeout(piwikLoaded1469750422, 600);
+        if(typeof window.piwikLoaded !== 'function') {window.piwikLoaded = function(tracker){}}
         function piwikLoaded1469750422 (){
              if ((typeof Piwik === 'object' || typeof Piwik === 'Object') && !window.isPiwikLoaded) {window.piwikTracker = Piwik.getAsyncTracker();window.isPiwikLoaded = true;}
              else {_piwikLoaded1469750422Count++;if(_piwikLoaded1469750422Count < 5)setTimeout(piwikLoaded1469750422, 500);};if(window.isPiwikLoaded)window.piwikLoaded(window.piwikTracker);}

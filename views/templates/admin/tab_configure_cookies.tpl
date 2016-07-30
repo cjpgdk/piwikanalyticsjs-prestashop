@@ -29,6 +29,18 @@
     </label>
     
     <label>
+        <span>{l s='Cookie name prefix' mod='piwikanalyticsjs'}</span>
+        <input id='{$pkCPREFIX}COOKIEPREFIX' type='text' name='{$pkCPREFIX}COOKIEPREFIX' placeholder='_pk_' value="{$pkfvCOOKIEPREFIX}" onchange="tabContentChanged(true);"/>
+        <small>{l s='Leave empty to use Piwik default' mod='piwikanalyticsjs'}</small>
+    </label>
+    
+    <label>
+        <span>{l s='Cookie path' mod='piwikanalyticsjs'}</span>
+        <input id='{$pkCPREFIX}COOKIEPATH' type='text' name='{$pkCPREFIX}COOKIEPATH' placeholder='/' value="{$pkfvCOOKIEPATH}" onchange="tabContentChanged(true);"/>
+        <small>{l s='Leave empty to use Piwik default' mod='piwikanalyticsjs'}</small>
+    </label>
+    
+    <label>
         <span>{l s='Piwik Session Cookie timeout' mod='piwikanalyticsjs'}</span>
         <input id='{$pkCPREFIX}SESSION_TIMEOUT' type='text' name='{$pkCPREFIX}SESSION_TIMEOUT' placeholder='30' value="{$pkfvSESSION_TIMEOUT}" onchange="tabContentChanged(true);"/>
         <small>{l s='Piwik Session Cookie timeout, the default is 30 minutes, this value must be set in minutes' mod='piwikanalyticsjs'}</small>

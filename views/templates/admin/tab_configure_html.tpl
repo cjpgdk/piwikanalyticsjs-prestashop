@@ -20,7 +20,7 @@
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
 *}
-<form action='#tabs-pk5' method='post' class='pkforms' autocomplete="off" name="formUpdatePiwikAnalyticsjsHTML">
+<form action='#tabs-pk5' method='post' class='pkforms' autocomplete="off" name="formUpdatePiwikAnalyticsjsHTML" id="formUpdatePiwikAnalyticsjsHTML">
     {if !empty($pkfvEXHTML_Warning)}
         <h3>{$pkfvEXHTML_Warning}</h3>
     {/if}
@@ -44,6 +44,34 @@
         {/if}
     </span>
 
+    <hr class="bd-blue" />
+
+    <label class="switch">
+        <span>{l s='Enable link tracking' mod='piwikanalyticsjs'}</span>
+        <input id="{$pkCPREFIX}LINKTRACK" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $pkfvLINKTRACK==1} checked="checked"{/if} name="{$pkCPREFIX}LINKTRACK" onchange="tabContentChanged(true);" />
+        <label for="{$pkCPREFIX}LINKTRACK" data-on="Yes" data-off="No" style="clear: both;"></label>
+        <small>{l s='Install link tracking on all applicable link elements.' mod='piwikanalyticsjs'}</small>
+    </label>
+    <script type="text/javascript">
+        $().ready(function () {
+            $('#{$pkCPREFIX}LINKClS').tagify({ldelim}delimiters: [13, 44], addTagPrompt: '{l s='Add Class' mod='piwikanalyticsjs'}'{rdelim});
+            $('#formUpdatePiwikAnalyticsjsHTML').submit(function () {
+                $(this).find('#{$pkCPREFIX}LINKClS').val($('#{$pkCPREFIX}LINKClS').tagify('serialize'));
+            });
+        });
+    </script>
+    <label>
+        <span>{l s='Set link classes' mod='piwikanalyticsjs'}</span>
+        <input type="text" class="tagify " value="{$pkfvLINKClS}" id="{$pkCPREFIX}LINKClS" name="{$pkCPREFIX}LINKClS" onchange="tabContentChanged(true);"/>
+        <small>{l s='Set classes to be treated as outlinks (in addition to piwik_link)' mod='piwikanalyticsjs'}</small>
+    </label>
+    
+    <label>
+        <span>{l s='Set link tracking timer' mod='piwikanalyticsjs'}</span>
+        <input id='{$pkCPREFIX}LINKTTIME' type='text' name='{$pkCPREFIX}LINKTTIME' value="{$pkfvLINKTTIME}" onchange="tabContentChanged(true);"/>
+        <small>{l s='Set delay for link tracking in seconds. (set to 0 uses piwik default)' mod='piwikanalyticsjs'}</small>
+    </label>
+    
     <hr/>
     <input type='submit' class='button pkbutton bg-blue' value='{l s='Save' mod='piwikanalyticsjs'}' name='submitUpdatePiwikAnalyticsjsHTML' />
 </form>

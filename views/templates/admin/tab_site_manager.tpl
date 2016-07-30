@@ -52,21 +52,7 @@
     <input type="hidden" name="PKAdminStartDate" id="PKAdminStartDate" value="{$PKAdminStartDate}" />
     <input type="hidden" name="PKAdminSiteUrls" id="PKAdminSiteUrls" value="{$PKAdminSiteUrls}" />
     <input type="hidden" name="PKAdminSiteType" id="PKAdminSiteType" value="{$PKAdminSiteType}" />
-    {*
-    * array(
-    *   'type' => 'select',
-    *   'label' => $this->l('Piwik Site'),
-    *   'name' => 'SPKSID',
-    *   'desc' => sprintf($this->l('Based on your settings in Piwik your default site is %s'), $piwikSiteId),
-    *   'options' => array(
-    *       'default' => $pksite_default,
-    *       'query' => $pksites,
-    *       'id' => 'pkid',
-    *       'name' => 'name'
-    *   ),
-    *   'onchange' => 'return ChangePKSiteEdit(this.value)',
-    * ),
-    *}
+    
     <label>
         <span>{l s='In this section you can modify your settings in piwik just so you don\'t have to login to Piwik to do this' mod='piwikanalyticsjs'}</span>
     </label>
