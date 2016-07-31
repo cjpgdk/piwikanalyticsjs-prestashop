@@ -1,24 +1,24 @@
 {*
- * Copyright (C) 2016 Christian Jensen
- *
- * This file is part of PiwikAnalyticsJS for prestashop.
- * 
- * PiwikAnalyticsJS for prestashop is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * PiwikAnalyticsJS for prestashop is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with PiwikAnalyticsJS for prestashop.  If not, see <http://www.gnu.org/licenses/>.
- *
- *
- * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
- * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+* Copyright (C) 2016 Christian Jensen
+*
+* This file is part of PiwikAnalyticsJS for prestashop.
+* 
+* PiwikAnalyticsJS for prestashop is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+* 
+* PiwikAnalyticsJS for prestashop is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+* 
+* You should have received a copy of the GNU General Public License
+* along with PiwikAnalyticsJS for prestashop.  If not, see <http://www.gnu.org/licenses/>.
+*
+*
+* @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
+* @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
 *}
 <form action='#tabs-pk3' method='post' class='pkforms' name="formUpdatePiwikAnalyticsjsSiteManager" id="formUpdatePiwikAnalyticsjsSiteManager">
     <script type="text/javascript">
@@ -36,10 +36,10 @@
                 addTagPrompt: '{l s='Add IP' mod='piwikanalyticsjs'}'
             });
             $('#PKAdminExcludedQueryParameters').tagify({
-                delimiters: [13, 44], 
+                delimiters: [13, 44],
                 addTagPrompt: '{l s='Add Parameter' mod='piwikanalyticsjs'}'
             });
-            $('#formUpdatePiwikAnalyticsjsSiteManager').submit(function(){
+            $('#formUpdatePiwikAnalyticsjsSiteManager').submit(function () {
                 $('#PKAdminExcludedQueryParameters').val($('#PKAdminExcludedQueryParameters').tagify('serialize'));
                 $('#PKAdminSearchCategoryParameters').val($('#PKAdminSearchCategoryParameters').tagify('serialize'));
                 $('#PKAdminSearchKeywordParameters').val($('#PKAdminSearchKeywordParameters').tagify('serialize'));
@@ -52,7 +52,7 @@
     <input type="hidden" name="PKAdminStartDate" id="PKAdminStartDate" value="{$PKAdminStartDate}" />
     <input type="hidden" name="PKAdminSiteUrls" id="PKAdminSiteUrls" value="{$PKAdminSiteUrls}" />
     <input type="hidden" name="PKAdminSiteType" id="PKAdminSiteType" value="{$PKAdminSiteType}" />
-    
+
     <label>
         <span>{l s='In this section you can modify your settings in piwik just so you don\'t have to login to Piwik to do this' mod='piwikanalyticsjs'}</span>
     </label>
@@ -69,18 +69,26 @@
     *     <small></small>
     * </label>
     *}
-    <label class="switch">
-        <span>{l s='Ecommerce' mod='piwikanalyticsjs'}</span>
-        <input id="PKAdminEcommerce" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $PKAdminEcommerce==1} checked="checked"{/if} name="PKAdminEcommerce" onchange="tabContentChanged(true);"/>
-        <label for="PKAdminEcommerce" data-on="{l s='Yes' mod='piwikanalyticsjs'}" data-off="{l s='No' mod='piwikanalyticsjs'}" style="clear: both;"></label>
-        <small>{l s='Is this site an ecommerce site?' mod='piwikanalyticsjs'}</small>
-    </label>
-    <label class="switch">
-        <span>{l s='Site Search' mod='piwikanalyticsjs'}</span>
-        <input id="PKAdminSiteSearch" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $PKAdminSiteSearch==1} checked="checked"{/if} name="PKAdminSiteSearch" onchange="tabContentChanged(true);"/>
-        <label for="PKAdminSiteSearch" data-on="{l s='Yes' mod='piwikanalyticsjs'}" data-off="{l s='No' mod='piwikanalyticsjs'}" style="clear: both;"></label>
-        <small>{l s='Track searches on this site' mod='piwikanalyticsjs'}</small>
-    </label>
+    <div style="float: left; display: block; width: 100%; margin-bottom: 8px;">
+        <label class="switch" style="max-width: 150px; text-align: center; float: left ! important;">
+            <span style="margin: 0px auto; float: none;">{l s='Ecommerce' mod='piwikanalyticsjs'}</span>
+            <input id="PKAdminEcommerce" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $PKAdminEcommerce==1} checked="checked"{/if} name="PKAdminEcommerce" onchange="tabContentChanged(true);"/>
+            <label for="PKAdminEcommerce" data-on="{l s='Yes' mod='piwikanalyticsjs'}" data-off="{l s='No' mod='piwikanalyticsjs'}" style="margin: 0px auto; float: none;"></label>
+            <small>{l s='Is this site an ecommerce site?' mod='piwikanalyticsjs'}</small>
+        </label>
+        <label class="switch" style="max-width: 150px; text-align: center; float: left ! important;">
+            <span style="margin: 0px auto; float: none;">{l s='Site Search' mod='piwikanalyticsjs'}</span>
+            <input id="PKAdminSiteSearch" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $PKAdminSiteSearch==1} checked="checked"{/if} name="PKAdminSiteSearch" onchange="tabContentChanged(true);"/>
+            <label for="PKAdminSiteSearch" data-on="{l s='Yes' mod='piwikanalyticsjs'}" data-off="{l s='No' mod='piwikanalyticsjs'}" style="margin: 0px auto; float: none;"></label>
+            <small>{l s='Track searches on this site' mod='piwikanalyticsjs'}</small>
+        </label>
+        <label class="switch" style="max-width: 150px; text-align: center; float: left ! important;">
+            <span style="margin: 0px auto; float: none;">{l s='Keep URL Fragments' mod='piwikanalyticsjs'}</span>
+            <input id="PKAdminKeepURLFragments" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $PKAdminKeepURLFragments==1} checked="checked"{/if} name="PKAdminKeepURLFragments" onchange="tabContentChanged(true);"/>
+            <label for="PKAdminKeepURLFragments" data-on="{l s='Yes' mod='piwikanalyticsjs'}" data-off="{l s='No' mod='piwikanalyticsjs'}" style="margin: 0px auto; float: none;"></label>
+            <small>{l s='Is this site an ecommerce site?' mod='piwikanalyticsjs'}</small>
+        </label>
+    </div>
     <label>
         <span>{l s='Search Keyword Parameters' mod='piwikanalyticsjs'}</span>
         <input type="text" class="tagify" value="{$PKAdminSearchKeywordParameters}" id="PKAdminSearchKeywordParameters" name="PKAdminSearchKeywordParameters"/>
@@ -144,12 +152,6 @@
         <span>{l s='Excluded User Agents' mod='piwikanalyticsjs'}</span>
         <textarea rows="10" cols="50" id="PKAdminExcludedUserAgents" name="PKAdminExcludedUserAgents" onchange="tabContentChanged(true);">{$pkfvEXHTML}</textarea>
         <small>{l s='please read: http://piwik.org/faq/how-to/faq_17483/' mod='piwikanalyticsjs'}</small>
-    </label>
-    <label class="switch">
-        <span>{l s='Keep URL Fragments' mod='piwikanalyticsjs'}</span>
-        <input id="PKAdminKeepURLFragments" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $PKAdminKeepURLFragments==1} checked="checked"{/if} name="PKAdminKeepURLFragments" onchange="tabContentChanged(true);"/>
-        <label for="PKAdminKeepURLFragments" data-on="{l s='Yes' mod='piwikanalyticsjs'}" data-off="{l s='No' mod='piwikanalyticsjs'}" style="clear: both;"></label>
-        <small>{l s='Is this site an ecommerce site?' mod='piwikanalyticsjs'}</small>
     </label>
     {*
     * <label>

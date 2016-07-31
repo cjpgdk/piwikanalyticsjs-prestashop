@@ -82,14 +82,21 @@
     </label>
 
     <hr class="bd-blue" />
+    <div style="float: left; display: block; width: 100%; margin-bottom: 8px;">
+        <label class="switch" style="max-width: 150px; text-align: center; float: left ! important;">
+            <span style="margin: 0px auto; float: none;">{l s='Discard hash tag' mod='piwikanalyticsjs'}</span>
+            <input id="{$pkCPREFIX}DHashTag" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $pkfvDHashTag==1} checked="checked"{/if} name="{$pkCPREFIX}DHashTag" onchange="tabContentChanged(true);" />
+            <label for="{$pkCPREFIX}DHashTag" data-on="Yes" data-off="No" style="clear: both; margin: 0px auto;"></label>
+            <small>{l s='Set to yes to not record the hash tag (anchor) portion of URLs' mod='piwikanalyticsjs'}</small>
+        </label>
 
-    <label class="switch">
-        <span>{l s='Discard hash tag' mod='piwikanalyticsjs'}</span>
-        <input id="{$pkCPREFIX}DHashTag" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $pkfvDHashTag==1} checked="checked"{/if} name="{$pkCPREFIX}DHashTag" onchange="tabContentChanged(true);" />
-        <label for="{$pkCPREFIX}DHashTag" data-on="Yes" data-off="No" style="clear: both;"></label>
-        <small>{l s='Set to yes to not record the hash tag (anchor) portion of URLs' mod='piwikanalyticsjs'}</small>
-    </label>
-    
+        <label class="switch" style="max-width: 150px; text-align: center; float: left ! important;">
+            <span style="margin: 0px auto; float: none;">{l s='Set api url' mod='piwikanalyticsjs'}</span>
+            <input id="{$pkCPREFIX}APTURL" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $pkfvAPTURL==1} checked="checked"{/if} name="{$pkCPREFIX}APTURL" onchange="tabContentChanged(true);" />
+            <label for="{$pkCPREFIX}APTURL" data-on="Yes" data-off="No" style="clear: both; margin: 0px auto;"></label>
+            <small>{l s='This function is only useful when the \'Overlay\' report is not working. By default you do not need to use this function.' mod='piwikanalyticsjs'}</small>
+        </label>
+    </div>
     <hr/>
     <input type='submit' class='button pkbutton bg-blue' value='{l s='Save' mod='piwikanalyticsjs'}' name='submitUpdatePiwikAnalyticsjsExtra' />
 </form>

@@ -239,6 +239,7 @@ class piwikanalyticsjs extends Module {
             'pkfvSEARCH_QUERY' => Configuration::get(PKHelper::CPREFIX."SEARCH_QUERY"),
             'pkfvSET_DOMAINS' => Configuration::get(PKHelper::CPREFIX.'SET_DOMAINS'),
             'pkfvDHashTag' => Configuration::get(PKHelper::CPREFIX.'DHashTag'),
+            'pkfvAPTURL' => Configuration::get(PKHelper::CPREFIX.'APTURL'),
             /** tab|HTML * */
             'pkfvEXHTML' => Configuration::get(PKHelper::CPREFIX."EXHTML"),
             'pkfvEXHTML_ImageTracker' => $image_tracking['default'],
@@ -246,6 +247,7 @@ class piwikanalyticsjs extends Module {
             'pkfvEXHTML_Warning' => (version_compare(_PS_VERSION_,'1.6.0.7','>=') ? "<br><strong>{$this->l("Before you edit/add html code to this field make sure the HTMLPurifier library isn't in use if HTMLPurifier is enabled, all html code will be stripd from the field when saving, check the settings in 'Preferences=>General', you can enable HTMLPurifier again after you made your changes")}</strong>" : ""),
             'pkfvLINKTRACK' => Configuration::get(PKHelper::CPREFIX.'LINKTRACK'),
             'pkfvLINKClS' => Configuration::get(PKHelper::CPREFIX.'LINKClS'),
+            'LINKClSIGNORE' => Configuration::get(PKHelper::CPREFIX.'LINKClSIGNORE'),
             'pkfvLINKTTIME' => (int)Configuration::get(PKHelper::CPREFIX.'LINKTTIME'),
             /** tab|Cookies * */
             'pkfvSESSION_TIMEOUT' => ($PIWIK_SESSION_TIMEOUT != 0 ? (int)($PIWIK_SESSION_TIMEOUT / 60) : (int)(self::PK_SC_TIMEOUT )),
@@ -580,6 +582,12 @@ class piwikanalyticsjs extends Module {
             } else {
                 Configuration::updateValue($KEY_PREFIX.'DHashTag',0);
             }
+            // [PIWIK_APTURL] 
+            if (Tools::getIsset($KEY_PREFIX.'APTURL')) {
+                Configuration::updateValue($KEY_PREFIX.'APTURL',1);
+            } else {
+                Configuration::updateValue($KEY_PREFIX.'APTURL',0);
+            }
         }
         // handle submission from html tab
         if (Tools::isSubmit('submitUpdatePiwikAnalyticsjsHTML')) {
@@ -596,6 +604,9 @@ class piwikanalyticsjs extends Module {
             // [PIWIK_LINKClS] 
             if (Tools::getIsset($KEY_PREFIX.'LINKClS'))
                 Configuration::updateValue($KEY_PREFIX.'LINKClS',Tools::getValue($KEY_PREFIX.'LINKClS', ''));
+            // [PIWIK_LINKClSIGNORE] 
+            if (Tools::getIsset($KEY_PREFIX.'LINKClSIGNORE'))
+                Configuration::updateValue($KEY_PREFIX.'LINKClSIGNORE',Tools::getValue($KEY_PREFIX.'LINKClSIGNORE', ''));
             // [PIWIK_LINKTTIME] 
             if (Tools::getIsset($KEY_PREFIX.'LINKTTIME'))
                 Configuration::updateValue($KEY_PREFIX.'LINKTTIME',Tools::getValue($KEY_PREFIX.'LINKTTIME', ''));
@@ -1349,7 +1360,8 @@ class piwikanalyticsjs extends Module {
             $key_prefix.'HOST', $key_prefix.'PROXY_SCRIPT',
             $key_prefix.'LINKTRACK', $key_prefix.'LINKClS',
             $key_prefix.'LINKTTIME', $key_prefix.'COOKIEPREFIX',
-            $key_prefix.'COOKIEPATH',
+            $key_prefix.'COOKIEPATH', $key_prefix.'LINKClSIGNORE',
+            $key_prefix.'APTURL',
         );
         $configuration = Configuration::getMultiple($keys);
 
@@ -1361,6 +1373,8 @@ class piwikanalyticsjs extends Module {
         $this->context->smarty->assign(PKHelper::CPREFIX.'VER',$this->piwikVersion);
         $this->context->smarty->assign(PKHelper::CPREFIX.'USE_PROXY',(bool)$configuration["{$key_prefix}USE_PROXY"]);
         $this->context->smarty->assign($key_prefix.'DHashTag',(bool)$configuration[$key_prefix.'DHashTag']);
+        $this->context->smarty->assign($key_prefix.'APTURL',(bool)$configuration[$key_prefix.'APTURL']);
+        $this->context->smarty->assign($key_prefix.'HOSTAPI',$configuration["{$key_prefix}HOST"]);
         $this->context->smarty->assign($key_prefix.'LINKTRACK',(bool)$configuration[$key_prefix.'LINKTRACK']);
         $this->context->smarty->assign($key_prefix.'DNT',(bool)$configuration["{$key_prefix}DNT"]);
         
@@ -1412,6 +1426,19 @@ class piwikanalyticsjs extends Module {
             $this->context->smarty->assign($key_prefix.'LINKClS',FALSE);
         }
         unset($PIWIK_LINKClS);
+        // link ignore classes
+        if (!empty($configuration["{$key_prefix}LINKClSIGNORE"])) {
+            $sdArr = explode(',',$configuration["{$key_prefix}LINKClSIGNORE"]);
+            if (count($sdArr) > 1)
+                $PIWIK_LINKClSIGNORE = "['".trim(implode("','",$sdArr),",'")."']";
+            else
+                $PIWIK_LINKClSIGNORE = "'{$sdArr[0]}'";
+            $this->context->smarty->assign($key_prefix.'LINKClSIGNORE',(!empty($PIWIK_LINKClSIGNORE) ? $PIWIK_LINKClSIGNORE : FALSE));
+            unset($sdArr);
+        }else {
+            $this->context->smarty->assign($key_prefix.'LINKClSIGNORE',FALSE);
+        }
+        unset($PIWIK_LINKClSIGNORE);
         // link track time
         $tmp = $configuration["{$key_prefix}LINKTTIME"];
         if ($tmp != 0 && $tmp !== FALSE) {

@@ -72,6 +72,20 @@
         <small>{l s='Set delay for link tracking in seconds. (set to 0 uses piwik default)' mod='piwikanalyticsjs'}</small>
     </label>
     
+    <script type="text/javascript">
+        $().ready(function () {
+            $('#{$pkCPREFIX}LINKClSIGNORE').tagify({ldelim}delimiters: [13, 44], addTagPrompt: '{l s='Add Class' mod='piwikanalyticsjs'}'{rdelim});
+            $('#formUpdatePiwikAnalyticsjsHTML').submit(function () {
+                $(this).find('#{$pkCPREFIX}LINKClSIGNORE').val($('#{$pkCPREFIX}LINKClSIGNORE').tagify('serialize'));
+            });
+        });
+    </script>
+    <label>
+        <span>{l s='Set ignore link classes' mod='piwikanalyticsjs'}</span>
+        <input type="text" class="tagify " value="{$pkfvLINKClSIGNORE}" id="{$pkCPREFIX}LINKClSIGNORE" name="{$pkCPREFIX}LINKClSIGNORE" onchange="tabContentChanged(true);"/>
+        <small>{l s='Set classes to be ignored if present in link (in addition to piwik_ignore)' mod='piwikanalyticsjs'}</small>
+    </label>
+    
     <hr/>
     <input type='submit' class='button pkbutton bg-blue' value='{l s='Save' mod='piwikanalyticsjs'}' name='submitUpdatePiwikAnalyticsjsHTML' />
 </form>

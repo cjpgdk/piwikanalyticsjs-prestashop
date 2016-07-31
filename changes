@@ -1,5 +1,7 @@
 Version: ???
 
+    * add setApiUrl
+
     * added admin option to set cookie 'Path' and 'Name Prefix'
 
     * added option to enable link tracking, set link tracking classes
