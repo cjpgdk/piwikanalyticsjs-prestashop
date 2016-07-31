@@ -31,11 +31,17 @@ if (!defined('_PS_VERSION_'))
  *  - 1.5.0.5
  *  - 1.5.0.13
  */
+if (!class_exists('PiwikAnalyticsjsConfiguration',false)) {
+    require_once dirname(__FILE__).'/../../PiwikAnalyticsjsConfiguration.php';
+}
 if (!class_exists('PKHelper',false)) {
     require_once dirname(__FILE__).'/../../PKHelper.php';
 }
 
 class PiwikAnalytics15Controller extends ModuleAdminController {
+
+    /** @var piwikanalyticsjs */
+    private $module = null;
 
     public function __construct() {
         parent::__construct();
@@ -44,78 +50,183 @@ class PiwikAnalytics15Controller extends ModuleAdminController {
         $this->template = 'content.tpl';
         $this->tpl_folder = _PS_MODULE_DIR_.'piwikanalyticsjs/views/templates/admin/PiwikAnalytics/';
         $this->tpl_folder_theme = _PS_THEME_DIR_.'modules/piwikanalyticsjs/views/templates/admin/PiwikAnalytics/';
-        
-        $_module = Module::getInstanceByName('piwikanalyticsjs');
-        if ($_module->id) {
+
+        $this->module = Module::getInstanceByName('piwikanalyticsjs');
+        if ($this->module->id) {
             if (version_compare(_PS_VERSION_,'1.5.0.13',"<="))
-                PKHelper::$_module = $_module;
+                PKHelper::$_module = & $this->module;
         }
     }
 
-    public function initToolbar() {
-        /* remove toolbar */
-    }
-
-    public function displayError($error) {
-        $output = '
-		<div class="module_error alert error">
-			<img src="'._PS_IMG_.'admin/warning.gif" alt="" title="" /> '.$error.'
-		</div>';
-        return $output;
-    }
-
-    private function lookupauthtoken() {
+    private function validateconfiguration() {
         $content = "";
-        $error = "";
-        if (Tools::getIsset('PKLOOKUPTOKENHOST') &&
-                Tools::getIsset('PKLOOKUPTOKENUSRNAME') &&
-                Tools::getIsset('PKLOOKUPTOKENUSRPASSWD')) {
-            PKHelper::$piwikHost = Tools::getValue('PKLOOKUPTOKENHOST');
-
-            if (Tools::getIsset('PKLOOKUPTOKENSAVEUSRPWD',false)) {
-                Configuration::updateValue(PKHelper::CPREFIX.'USRNAME',Tools::getValue('PKLOOKUPTOKENUSRNAME',''));
-                Configuration::updateValue(PKHelper::CPREFIX.'USRPASSWD',Tools::getValue('PKLOOKUPTOKENUSRPASSWD',''));
-            }
-
-            PKHelper::$httpAuthUsername = Tools::getValue('PKLOOKUPTOKENPAUTHUSR','');
-            PKHelper::$httpAuthPassword = Tools::getValue('PKLOOKUPTOKENPAUTHPWD','');
-            Configuration::updateValue(PKHelper::CPREFIX.'PAUTHUSR',PKHelper::$httpAuthUsername);
-            Configuration::updateValue(PKHelper::CPREFIX.'PAUTHPWD',PKHelper::$httpAuthPassword);
-
-            if ($token = PKHelper::getTokenAuth(Tools::getValue('PKLOOKUPTOKENUSRNAME'),Tools::getValue('PKLOOKUPTOKENUSRPASSWD'),NULL)) {
-                Configuration::updateValue(PKHelper::CPREFIX.'TOKEN_AUTH',$token);
-                $this->context->smarty->assign(array('piwikToken' => $token));
-            } else {
-                foreach (PKHelper::$errors as $key => $value) {
-                    $error .= $this->displayError($value);
+        $ps_version = _PS_VERSION_;
+        $hooks = $this->module->config->getHooks();
+        $result = array(
+            'hooks' => array(),
+            'config' => array(),
+        );
+        if (version_compare($ps_version,'1.5.9999.9999','<=')) {
+            foreach ($hooks as $hook_name) {
+                $result['hooks'][$hook_name] = false;
+                if ($this->module->isRegisteredInHook($hook_name)) {
+                    $result['hooks'][$hook_name] = true;
                 }
             }
         }
-
         $this->context->smarty->assign(array(
-            'piwik_host' => Tools::getValue('piwik_host',Tools::getValue('PKLOOKUPTOKENHOST')),
-            'piwik_user' => Tools::getValue('piwik_user',Tools::getValue('PKLOOKUPTOKENUSRNAME','')),
-            'piwik_passwd' => Tools::getValue('piwik_user',Tools::getValue('PKLOOKUPTOKENUSRPASSWD','')),
-            'piwik_auser' => Tools::getValue('PKLOOKUPTOKENPAUTHUSR',''),
-            'piwik_apasswd' => Tools::getValue('PKLOOKUPTOKENPAUTHPWD',''),
+            'section_hooks' => $result['hooks'],
         ));
-        if (version_compare(_PS_VERSION_,'1.5.0.5',">=") && version_compare(_PS_VERSION_,'1.5.3.999',"<=")) {
-            $this->context->smarty->assign(array('piwikAnalyticsControllerLink' => $this->context->link->getAdminLink('PiwikAnalytics15')));
-        } else {
-            $this->context->smarty->assign(array('piwikAnalyticsControllerLink' => $this->context->link->getAdminLink('AdminPiwikAnalytics')));
+
+        // check piwik connection
+        $this->module->config->validate('piwik');
+        $result = $this->module->config->validate_output;
+        foreach ($result['piwik_connection']['errors'] as $key => & $value) {
+            $value = $this->displayError($value);
+        }
+        $result['piwik_connection']['errors'] = implode('',$result['piwik_connection']['errors']);
+        $piwikSite = null;
+        if (empty($result['piwik_connection']['errors'])) {
+            $piwikSite = PKHelper::getPiwikSite($this->module->config->siteid);
+        }
+        $this->module->config->validate_output = array();
+        $this->context->smarty->assign(array(
+            'section_piwik' => $result,
+            'pksiteid' => $this->module->config->siteid,
+            'pkhost' => $this->module->config->host,
+        ));
+        // check currency
+        $currentcy = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
+        $piwikSitecurrentcy = $this->module->config->CURRENCY_DEFAULT;
+        if (isset($piwikSite[0]) && isset($piwikSite[0]->currency)) {
+            $piwikSitecurrentcy = $piwikSite[0]->currency;
+        }
+        $this->context->smarty->assign(array(
+            'pkCurrency' => $this->module->config->DEFAULT_CURRENCY,
+            'pkShopCurrency' => $currentcy->iso_code,
+            'pkSiteCurrency' => $piwikSitecurrentcy,
+            'piwikCurrencyMatchesShop' => (bool)((strtolower($currentcy->iso_code) == strtolower($this->module->config->DEFAULT_CURRENCY)) && (strtolower($piwikSitecurrentcy) == strtolower($this->module->config->DEFAULT_CURRENCY))),
+        ));
+        unset($currentcy);
+
+        // other settings
+        $this->context->smarty->assign(array(
+            'useHttps' => (bool)$this->module->config->use_https,
+            'useProxy' => (bool)$this->module->config->use_proxy,
+            'useDnt' => (bool)$this->module->config->dnt,
+            'useCurl' => (bool)$this->module->config->use_curl,
+        ));
+
+        // check proxy
+        if ((bool)$this->module->config->use_proxy) {
+            $proxy_script = $this->module->config->proxy_script;
+            $http = ((bool)$this->module->config->use_https ? 'https://' : 'http://');
+            $http_auth = '';
+            $http_user = $this->module->config->PAUTHUSR;
+            $http_password = $this->module->config->PAUTHPWD;
+            if (!empty($http_user) && !empty($http_password)) {
+                $http_auth = "{$http_user}:{$http_password}@";
+            }
+            if ((bool)$this->module->config->use_curl) {
+                $ch = curl_init();
+                curl_setopt($ch,CURLOPT_URL,$http.$proxy_script);
+                curl_setopt($ch,CURLOPT_USERAGENT,(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : PKHelper::FAKEUSERAGENT));
+                if (!empty($http_user) && !empty($http_password))
+                    curl_setopt($ch,CURLOPT_USERPWD,$http_user.":".$http_password);
+                curl_setopt($ch,CURLOPT_TIMEOUT,$this->module->config->timeout);
+                curl_setopt($ch,CURLOPT_RETURNTRANSFER,TRUE);
+                curl_setopt($ch,CURLOPT_FAILONERROR,true);
+                $result = "";
+                $proxy_script_response_header = false;
+                if (($result = curl_exec($ch)) === false)
+                    $proxy_script_response_header = curl_error($ch);
+                curl_close($ch);
+
+
+                $ch = curl_init();
+                curl_setopt($ch,CURLOPT_URL,$http.$this->module->config->host.'piwik.js');
+                curl_setopt($ch,CURLOPT_USERAGENT,(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : PKHelper::FAKEUSERAGENT));
+                if (!empty($http_user) && !empty($http_password))
+                    curl_setopt($ch,CURLOPT_USERPWD,$http_user.":".$http_password);
+                curl_setopt($ch,CURLOPT_TIMEOUT,$this->module->config->timeout);
+                curl_setopt($ch,CURLOPT_RETURNTRANSFER,TRUE);
+                curl_setopt($ch,CURLOPT_FAILONERROR,true);
+                $result_piwik = "";
+                $piwik_response_header = false;
+                if (($result_piwik = curl_exec($ch)) === false)
+                    $piwik_response_header = curl_error($ch);
+                curl_close($ch);
+                $proxy_response_match = false;
+                if (strlen($result) == strlen($result_piwik)) {
+                    $proxy_response_match = true;
+                }
+                unset($result,$result_piwik);
+            } else {
+                $result = file_get_contents($http.$http_auth.$proxy_script);
+                $proxy_script_response_header = $http_response_header;
+                $result_piwik = file_get_contents($http.$http_auth.$this->module->config->host.'piwik.js');
+                $piwik_response_header = $http_response_header;
+                $proxy_response_match = false;
+                if (strlen($result) == strlen($result_piwik)) {
+                    $proxy_response_match = true;
+                }
+                unset($result,$result_piwik);
+            }
+            $proxy_script_response_unauthorized = false;
+            if (isset($proxy_script_response_header) && is_array($proxy_script_response_header)) {
+                foreach ($proxy_script_response_header as $key => & $value) {
+                    if ((strpos($value,'Unauthorized') !== false) ||
+                            (strpos($value,'Server Error') !== false)) {
+                        $proxy_script_response_unauthorized = true;
+                    }
+                    $value = Tools::truncate($value,50);
+                }
+            }else if ($proxy_script_response_header !== false){
+                 if ((strpos($proxy_script_response_header,'Unauthorized') !== false) ||
+                            (strpos($proxy_script_response_header,'Server Error') !== false)) {
+                        $proxy_script_response_unauthorized = true;
+                    }
+            }
+            $piwik_response_unauthorized = false;
+            if (isset($piwik_response_header) && is_array($piwik_response_header)) {
+                foreach ($piwik_response_header as $key => & $value) {
+                    if (preg_match("/^HTTP\/.*/i",$value)) {
+                        if ((strpos($value,'Unauthorized') !== false) ||
+                                (strpos($value,'Server Error') !== false)) {
+                            $piwik_response_unauthorized = true;
+                        }
+                    }
+                    $value = Tools::truncate($value,50);
+                }
+            }else if ($piwik_response_header !== false){
+                 if ((strpos($piwik_response_header,'Unauthorized') !== false) ||
+                            (strpos($piwik_response_header,'Server Error') !== false)) {
+                        $proxy_script_response_unauthorized = true;
+                    }
+            }
+
+            $this->context->smarty->assign(array(
+                'proxy_script_url' => $http.$proxy_script,
+                'proxy_script_response_header' => isset($proxy_script_response_header) ? (is_array($proxy_script_response_header) ? implode('<br/>',$proxy_script_response_header) : $proxy_script_response_header) : '',
+                'piwik_url' => $http.$this->module->config->host.'piwik.js',
+                'piwik_response_header' => isset($piwik_response_header) ? (is_array($piwik_response_header) ? implode('<br/>',$piwik_response_header) : $piwik_response_header) : '',
+                'proxy_response_match' => $proxy_response_match,
+                'http_auth' => !empty($http_auth),
+                'piwik_response_unauthorized' => $piwik_response_unauthorized,
+                'proxy_script_response_unauthorized' => $proxy_script_response_unauthorized,
+            ));
         }
 
-        if (file_exists($this->tpl_folder_theme.'lookupauthtoken.tpl'))
-            $content .= $this->context->smarty->fetch($this->tpl_folder_theme.'lookupauthtoken.tpl');
+        if (file_exists($this->tpl_folder_theme.'validateconfiguration.tpl'))
+            $content .= $this->context->smarty->fetch($this->tpl_folder_theme.'validateconfiguration.tpl');
         else
-            $content .= $this->context->smarty->fetch($this->tpl_folder.'lookupauthtoken.tpl');
-
-        die($content.$error);
+            $content .= $this->context->smarty->fetch($this->tpl_folder.'validateconfiguration.tpl');
+        die($content);
     }
 
     public function init() {
         if (Tools::getValue('ajax'))
-            $this->ajax = '1';
+            $this->ajax = true;
 
         /* Server Params */
         $protocol_link = (Configuration::get('PS_SSL_ENABLED')) ? 'https://' : 'http://';
@@ -126,9 +237,11 @@ class PiwikAnalytics15Controller extends ModuleAdminController {
 
 
         if ($this->ajax && Tools::getIsset('action')) {
-            $action = Tools::getIsset('action');
+            $action = strtolower(Tools::getValue('action'));
             if ($action == "lookupauthtoken") {
                 $this->lookupauthtoken();
+            } else if ($action == "validateconfiguration") {
+                $this->validateconfiguration();
             }
         }
 
@@ -218,6 +331,67 @@ EOF;
             'page_header_toolbar_title' => (isset($this->page_header_toolbar_title) ? $this->page_header_toolbar_title : ''),
             'page_header_toolbar_btn' => (isset($this->page_header_toolbar_btn) ? $this->page_header_toolbar_btn : ''),
         ));
+    }
+
+    public function initToolbar() {
+        /* remove toolbar */
+    }
+
+    public function displayError($error) {
+        $output = '
+		<div class="module_error alert error">
+			<img src="'._PS_IMG_.'admin/warning.gif" alt="" title="" /> '.$error.'
+		</div>';
+        return $output;
+    }
+
+    private function lookupauthtoken() {
+        $content = "";
+        $error = "";
+        if (Tools::getIsset('PKLOOKUPTOKENHOST') &&
+                Tools::getIsset('PKLOOKUPTOKENUSRNAME') &&
+                Tools::getIsset('PKLOOKUPTOKENUSRPASSWD')) {
+            PKHelper::$piwikHost = Tools::getValue('PKLOOKUPTOKENHOST');
+
+            if (Tools::getIsset('PKLOOKUPTOKENSAVEUSRPWD',false)) {
+                Configuration::updateValue(PKHelper::CPREFIX.'USRNAME',Tools::getValue('PKLOOKUPTOKENUSRNAME',''));
+                Configuration::updateValue(PKHelper::CPREFIX.'USRPASSWD',Tools::getValue('PKLOOKUPTOKENUSRPASSWD',''));
+            }
+
+            PKHelper::$httpAuthUsername = Tools::getValue('PKLOOKUPTOKENPAUTHUSR','');
+            PKHelper::$httpAuthPassword = Tools::getValue('PKLOOKUPTOKENPAUTHPWD','');
+            Configuration::updateValue(PKHelper::CPREFIX.'PAUTHUSR',PKHelper::$httpAuthUsername);
+            Configuration::updateValue(PKHelper::CPREFIX.'PAUTHPWD',PKHelper::$httpAuthPassword);
+
+            if ($token = PKHelper::getTokenAuth(Tools::getValue('PKLOOKUPTOKENUSRNAME'),Tools::getValue('PKLOOKUPTOKENUSRPASSWD'),NULL)) {
+                Configuration::updateValue(PKHelper::CPREFIX.'TOKEN_AUTH',$token);
+                $this->context->smarty->assign(array('piwikToken' => $token));
+            } else {
+                foreach (PKHelper::$errors as $key => $value) {
+                    $error .= $this->displayError($value);
+                }
+            }
+        }
+
+        $this->context->smarty->assign(array(
+            'piwik_host' => Tools::getValue('piwik_host',Tools::getValue('PKLOOKUPTOKENHOST')),
+            'piwik_user' => Tools::getValue('piwik_user',Tools::getValue('PKLOOKUPTOKENUSRNAME','')),
+            'piwik_passwd' => Tools::getValue('piwik_user',Tools::getValue('PKLOOKUPTOKENUSRPASSWD','')),
+            'piwik_auser' => Tools::getValue('PKLOOKUPTOKENPAUTHUSR',''),
+            'piwik_apasswd' => Tools::getValue('PKLOOKUPTOKENPAUTHPWD',''),
+        ));
+        if (version_compare(_PS_VERSION_,'1.5.0.5',">=") && version_compare(_PS_VERSION_,'1.5.3.999',"<=")) {
+            $this->context->smarty->assign(array('piwikAnalyticsControllerLink' => $this->context->link->getAdminLink('PiwikAnalytics15')));
+        } else {
+            $this->context->smarty->assign(array('piwikAnalyticsControllerLink' => $this->context->link->getAdminLink('AdminPiwikAnalytics')));
+        }
+
+        if (file_exists($this->tpl_folder_theme.'lookupauthtoken.tpl'))
+            $content .= $this->context->smarty->fetch($this->tpl_folder_theme.'lookupauthtoken.tpl');
+        else
+            $content .= $this->context->smarty->fetch($this->tpl_folder.'lookupauthtoken.tpl');
+
+        die($content.$error);
     }
 
 }
