@@ -6,9 +6,6 @@ if (!defined('_PS_VERSION_'))
 if (class_exists('PKHelper',FALSE))
     return;
 
-if (!class_exists('PiwikAnalyticsjsConfiguration',false))
-    require_once dirname(__FILE__).'/PiwikAnalyticsjsConfiguration.php';
-
 /*
  * Copyright (C) 2016 Christian Jensen
  *
