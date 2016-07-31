@@ -6,6 +6,9 @@ if (!defined('_PS_VERSION_'))
 if (class_exists('PKHelper',FALSE))
     return;
 
+if (!class_exists('PiwikAnalyticsjsConfiguration',false))
+    require_once dirname(__FILE__).'/PiwikAnalyticsjsConfiguration.php';
+
 /*
  * Copyright (C) 2016 Christian Jensen
  *
@@ -50,10 +53,6 @@ class PKHelper {
      */
     public static $_module = null;
 
-    /**
-     * prefix to use for configurations values
-     */
-    const CPREFIX = "PIWIK_";
     const FAKEUSERAGENT = "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0 (Fake Useragent from CLASS:PKHelper.php)";
 
     public static $httpAuthUsername = "";
@@ -108,7 +107,8 @@ class PKHelper {
      */
     public static function isIPv4($ip) {
         $_part = explode(".",$ip);
-        if (count($_part) != 4)  return false;
+        if (count($_part) != 4)
+            return false;
         else {
             for ($n = 0; $n < 4; $n++) {
                 $q = $_part[$n];
@@ -117,9 +117,11 @@ class PKHelper {
             }
         }
         $_ip = (int)$_part[0].".".(int)$_part[1].".".(int)$_part[2].".".(int)$_part[3];
-        if ($ip != $_ip) return false;
+        if ($ip != $_ip)
+            return false;
         return true;
     }
+
     /**
      * checks if $ip contains ANY invalid chars not allowd in IPv6 addresses
      * @param string $ip
@@ -136,19 +138,19 @@ class PKHelper {
     /**
      * adds a new site to piwik
      * @param type $siteName
-     * @param type $urls
-     * @param type $ecommerce
-     * @param type $siteSearch
-     * @param type $searchKeywordParameters
-     * @param type $searchCategoryParameters
-     * @param type $excludedIps
-     * @param type $excludedQueryParameters
+     * @param string $urls eg. www.example.com,web.example.com, ...
+     * @param boolean $ecommerce
+     * @param boolean $siteSearch
+     * @param string $searchKeywordParameters eg. param,param2,param3, ...
+     * @param string $searchCategoryParameters eg. param,param2,param3, ..
+     * @param string $excludedIps eg. ip1,ip2,ip3 ...
+     * @param string $excludedQueryParameterseg. param,param2,param3, ..
      * @param type $timezone
      * @param type $currency
      * @param type $group
      * @param type $startDate
      * @param type $excludedUserAgents
-     * @param type $keepURLFragments
+     * @param boolean $keepURLFragments
      * @param type $type
      * @param type $settings
      * @return int|boolean boolean false on error, new siteid on success
@@ -160,7 +162,7 @@ class PKHelper {
             // get new token
             // @todo PiwikWizardHelper::createNewSite() needs to handle this so wee do not mix helper classes that are suppose to be seperated.
             $token = self::getTokenAuth(PiwikWizardHelper::$username,PiwikWizardHelper::$password);
-            Configuration::updateValue(PKHelper::CPREFIX.'TOKEN_AUTH',$token);
+            self::getConf()->update('TOKEN_AUTH',$token);
             $url = self::getBaseURL(0,NULL,NULL,'API',NULL,$token);
         } else
             $url = self::getBaseURL(0); // use token from saved configuration
@@ -250,7 +252,7 @@ class PKHelper {
 
         if ($urls !== NULL) {
             if (!is_array($urls)) {
-                $urls=explode(',',$urls);
+                $urls = explode(',',$urls);
             }
             foreach ($urls as $value) {
                 $url .= "&urls[]=".urlencode(trim($value));
@@ -298,7 +300,6 @@ class PKHelper {
                 return FALSE;
             }
             return ($result->result == 'success' && $result->message == 'ok' ? TRUE : ($result->result != 'success' ? $result->message : FALSE));
-            
         } else
             return FALSE;
     }
@@ -374,13 +375,13 @@ class PKHelper {
             'proxy' => self::l('I need Site ID and Auth Token before i can get your image tracking code')
         );
 
-        $idSite = (int)Configuration::get(PKHelper::CPREFIX.'SITEID');
+        $idSite = (int)self::getConf()->SITEID;
         if (!self::baseTest() || ($idSite <= 0))
             return $ret;
 
         $url = self::getBaseURL();
         $url .= "&method=SitesManager.getImageTrackingCode&format=JSON&actionName=NoJavaScript";
-        $url .= "&piwikUrl=".urlencode(rtrim(Configuration::get(PKHelper::CPREFIX.'HOST'),'/'));
+        $url .= "&piwikUrl=".urlencode(rtrim(self::getConf()->HOST,'/'));
         $md5Url = md5($url);
         if (!isset(self::$_cachedResults[$md5Url])) {
             if ($result = self::getAsJsonDecoded($url))
@@ -391,9 +392,9 @@ class PKHelper {
         if (self::$_cachedResults[$md5Url] !== FALSE) {
             $ret['default'] = htmlentities('<noscript>'.self::$_cachedResults[$md5Url]->value.'</noscript>');
             if ((bool)Configuration::get('PS_REWRITING_SETTINGS'))
-                $ret['proxy'] = str_replace(Configuration::get(PKHelper::CPREFIX.'HOST').'piwik.php',Configuration::get(PKHelper::CPREFIX.'PROXY_SCRIPT'),$ret['default']);
+                $ret['proxy'] = str_replace(self::getConf()->HOST.'piwik.php',self::getConf()->PROXY_SCRIPT,$ret['default']);
             else
-                $ret['proxy'] = str_replace(Configuration::get(PKHelper::CPREFIX.'HOST').'piwik.php?',Configuration::get(PKHelper::CPREFIX.'PROXY_SCRIPT').'&',$ret['default']);
+                $ret['proxy'] = str_replace(self::getConf()->HOST.'piwik.php?',self::getConf()->PROXY_SCRIPT.'&',$ret['default']);
         }
         return $ret;
     }
@@ -404,7 +405,7 @@ class PKHelper {
      */
     public static function getPiwikSite($idSite = 0) {
         if ($idSite == 0)
-            $idSite = (int)Configuration::get(PKHelper::CPREFIX.'SITEID');
+            $idSite = (int)self::getConf()->SITEID;
         if (!self::baseTest() || ($idSite <= 0))
             return false;
 
@@ -441,7 +442,7 @@ class PKHelper {
 
     public static function getPiwikSite2($idSite = 0) {
         if ($idSite == 0)
-            $idSite = (int)Configuration::get(PKHelper::CPREFIX.'SITEID');
+            $idSite = (int)self::getConf()->SITEID;
         if ($result = self::getPiwikSite($idSite)) {
             $url = self::getBaseURL($idSite);
             $url .= "&method=SitesManager.getSiteUrlsFromId&format=JSON";
@@ -461,7 +462,7 @@ class PKHelper {
      */
     public static function getSiteUrlsFromId($idSite = 0) {
         if ($idSite <= 0)
-            $idSite = (int)Configuration::get(PKHelper::CPREFIX.'SITEID');
+            $idSite = (int)self::getConf()->SITEID;
         $url = self::getBaseURL($idSite);
         $url .= "&method=SitesManager.getSiteUrlsFromId&format=JSON";
         if ($resultUrls = self::getAsJsonDecoded($url)) {
@@ -586,20 +587,20 @@ class PKHelper {
      */
     protected static function getBaseURL($idSite = NULL,$pkHost = NULL,$https = NULL,$pkModule = 'API',$isoCode = NULL,$tokenAuth = NULL) {
         if ($https === NULL)
-            $https = (bool)Configuration::get(PKHelper::CPREFIX.'CRHTTPS');
+            $https = (bool)self::getConf()->CRHTTPS;
 
 
         if (self::$piwikHost == "" || self::$piwikHost === false)
-            self::$piwikHost = Configuration::get(PKHelper::CPREFIX.'HOST');
+            self::$piwikHost = self::getConf()->HOST;
 
         if ($pkHost === NULL)
             $pkHost = self::$piwikHost;
         if ($isoCode === NULL)
             $isoCode = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
         if ($idSite === NULL)
-            $idSite = Configuration::get(PKHelper::CPREFIX.'SITEID');
+            $idSite = self::getConf()->SITEID;
         if ($tokenAuth === NULL)
-            $tokenAuth = Configuration::get(PKHelper::CPREFIX.'TOKEN_AUTH');
+            $tokenAuth = self::getConf()->TOKEN_AUTH;
 
         $idSite_param = "&idSite={$idSite}";
         if ($idSite <= 0) {
@@ -620,9 +621,9 @@ class PKHelper {
     protected static function baseTest($authtoken = null,$piwikhost = null) {
         static $_error1 = FALSE;
         if ($authtoken === null)
-            $authtoken = Configuration::get(PKHelper::CPREFIX.'TOKEN_AUTH');
+            $authtoken = self::getConf()->TOKEN_AUTH;
         if ($piwikhost === null)
-            $piwikhost = Configuration::get(PKHelper::CPREFIX.'HOST');
+            $piwikhost = self::getConf()->HOST;
         if (empty($authtoken) || empty($piwikhost)) {
             if (!$_error1) {
                 self::$error = self::l('Piwik auth token and/or Piwik site id cannot be empty');
@@ -647,6 +648,20 @@ class PKHelper {
         return FALSE;
     }
 
+    /** @var PiwikAnalyticsjsConfiguration*/
+    private static $_PiwikAnalyticsjsConfiguration;
+
+    /** @return PiwikAnalyticsjsConfiguration */
+    public static function &getConf() {
+
+        if (!class_exists('PiwikAnalyticsjsConfiguration',false))
+            require_once dirname(__FILE__).'/PiwikAnalyticsjsConfiguration.php';
+        if (self::$_PiwikAnalyticsjsConfiguration === null || self::$_PiwikAnalyticsjsConfiguration === FALSE) {
+            self::$_PiwikAnalyticsjsConfiguration = new PiwikAnalyticsjsConfiguration();
+        }
+        return self::$_PiwikAnalyticsjsConfiguration;
+    }
+
     public static function get_http($url,$headers = array()) {
         static $_error2 = FALSE;
         if (self::DEBUGLOG == 1)
@@ -657,21 +672,19 @@ class PKHelper {
         else
             $lng = 'en';
 
-        $timeout = 0;
-        if (Configuration::hasKey(PKHelper::CPREFIX.'PROXY_TIMEOUT'))
-            $timeout = Configuration::get(PKHelper::CPREFIX.'PROXY_TIMEOUT');
+        $timeout = self::getConf()->PROXY_TIMEOUT;
         if ((int)$timeout <= 0)
             $timeout = 5;
 
         if (self::$httpAuthUsername == "" || self::$httpAuthUsername === false)
-            self::$httpAuthUsername = Configuration::get(PKHelper::CPREFIX.'PAUTHUSR');
+            self::$httpAuthUsername = self::getConf()->PAUTHUSR;
         if (self::$httpAuthPassword == "" || self::$httpAuthPassword === false)
-            self::$httpAuthPassword = Configuration::get(PKHelper::CPREFIX.'PAUTHPWD');
+            self::$httpAuthPassword = self::getConf()->PAUTHPWD;
 
         $httpauth_usr = self::$httpAuthUsername;
         $httpauth_pwd = self::$httpAuthPassword;
 
-        $use_cURL = (bool)Configuration::get(PKHelper::CPREFIX.'USE_CURL');
+        $use_cURL = (bool)self::getConf()->USE_CURL;
         if ($use_cURL === FALSE) {
             PKHelper::DebugLogger('Using \'file_get_contents\' to fetch remote');
             $httpauth = "";
@@ -813,6 +826,40 @@ class PKHelper {
             return $result;
         else
             return FALSE;
+    }
+
+    /**
+     * validate url
+     * @param string $url
+     * @return boolean
+     * @author Tim Groeneveld
+     * @link http://stackoverflow.com/users/2143004/timgws
+     * @link http://stackoverflow.com/a/21872143
+     */
+    public static function isValidUrl($url) {
+        // First check: is the url just a domain name? (allow a slash at the end)
+        $_domain_regex = "|^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(\.[A-Za-z]{2,})/?$|";
+        if (preg_match($_domain_regex,$url)) {
+            return true;
+        }
+
+        // Second: Check if it's a url with a scheme and all
+        $_regex = '#^([a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))$#';
+        if (preg_match($_regex,$url,$matches)) {
+            // pull out the domain name, and make sure that the domain is valid.
+            $_parts = parse_url($url);
+            if (!in_array($_parts['scheme'],array('http','https')))
+                return false;
+
+            // Check the domain using the regex, stops domains like "-example.com" passing through
+            if (!preg_match($_domain_regex,$_parts['host']))
+                return false;
+
+            // This domain looks pretty valid. Only way to check it now is to download it!
+            return true;
+        }
+
+        return false;
     }
 
 }

@@ -47,7 +47,7 @@
                 <br>
             {/if}
         </div>
-        <div class='float-right'>
+        <div class='float-right' style="max-width: 50%;">
             <ul class='tabs-pk not-tab'>
                 <li>
                     <a onclick="return showLookupTokenForm();" class='bg-blue link-not-tab' href="#" title="{l s='Click to lookup your Piwik auth token' mod='piwikanalyticsjs'}">{l s='Lookup auth token' mod='piwikanalyticsjs'}</a>
@@ -55,6 +55,11 @@
                 <li>
                     <a href='{$config_wizard_link}' class='bg-blue link-not-tab' title='{l s='Click here to open piwik site lookup wizard' mod='piwikanalyticsjs'}'>
                         {l s='Configuration Wizard' mod='piwikanalyticsjs'}
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="return validateConfiguration();" class='link-not-tab' title='{l s='Validate the configuration and module installation' mod='piwikanalyticsjs'}'>
+                        {l s='Validate installation' mod='piwikanalyticsjs'}
                     </a>
                 </li>
             </ul>

@@ -99,6 +99,17 @@
         });
     });
     
+    function validateConfiguration() {
+        {if version_compare("$psversion", '1.5.4.999', '<=')}
+            $.fancybox({
+                type:'ajax', href:'{$piwikAnalyticsControllerLink}&ajax=1&action=validateConfiguration',
+                hideOnOverlayClick:false, enableEscapeButton:false});
+        {else}
+            
+        {/if}
+        return false;
+    }
+    
     function showLookupTokenForm() {
         {if version_compare("$psversion", '1.5.4.999', '<=')}
             {literal}$.fancybox({type:'ajax', href:'{/literal}{$piwikAnalyticsControllerLink}{literal}&ajax=1',
