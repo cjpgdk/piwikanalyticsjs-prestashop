@@ -20,10 +20,10 @@
  * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
 *}
-<fieldset id='fieldset_piwik_analytics'>
+<fieldset id='fieldset_piwik_analytics' style="width: 700px;margin-left: auto;margin-right: auto;">
     {if $wizardStep == "1"}
         <legend><img alt='{l s='Piwik Analytics' mod='piwikanalyticsjs'}' src='{$piwik_module_dir}/logox22.png'>{l s='Piwik Analytics - Configuration Wizard [Step 1/2]' mod='piwikanalyticsjs'}</legend>
-        <form action='' method='post' class='pkforms small' autocomplete="off" name="formPiwikAnalyticsjsWizard" id="formPiwikAnalyticsjsWizard">
+        <form action='' method='post' class='pkforms' autocomplete="off" name="formPiwikAnalyticsjsWizard" id="formPiwikAnalyticsjsWizard">
             <input id="{$pkCPREFIX}STEP_WIZARD" type="hidden" value="{$wizardStep}" name="{$pkCPREFIX}STEP_WIZARD">
             <label>
                 <span>{l s='Piwik Host' mod='piwikanalyticsjs'} <sup>*</sup></span>

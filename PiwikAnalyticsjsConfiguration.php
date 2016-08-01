@@ -69,8 +69,7 @@ class PiwikAnalyticsjsConfiguration {
     public function __construct() {
         foreach ($this->config_fields as $key => & $value) {
             if ($_value = Configuration::get(self::PREFIX.$key))
-                ;
-            $value = $_value;
+                $value = $_value;
         }
     }
 
@@ -80,29 +79,6 @@ class PiwikAnalyticsjsConfiguration {
             $return[self::PREFIX.$key] = $value;
         }
         return $return;
-    }
-
-    public function __get($name) {
-        $name = $this->getInternalConfigName($name);
-        if (isset($this->config_fields[$name])) {
-            return $this->config_fields[$name];
-        }
-        return FALSE;
-    }
-
-    public function __set($name,$value) {
-        $name = $this->getInternalConfigName($name);
-        if (is_bool($value))
-            $value = ($value ? 1 : 0);
-        $this->config_fields[$name] = $value;
-    }
-
-    public function update($key,$value,$html = false) {
-        $key = $this->getInternalConfigName($key);
-        if (is_bool($value))
-            $value = ($value ? 1 : 0);
-        $this->config_fields[$key] = $value;
-        Configuration::updateValue($key,$value,$html);
     }
 
     public function getHooks() {
@@ -122,6 +98,10 @@ class PiwikAnalyticsjsConfiguration {
         if (version_compare(substr(_PS_VERSION_,0,3),'1.5','<=')) {
             return $hooks['PS15'];
         }
+    }
+
+    public function getPiwikUrl() {
+        return ((bool)$this->use_https ? 'https://' : 'http://').$this->host;
     }
 
     public $validate_output = array();
@@ -214,4 +194,42 @@ class PiwikAnalyticsjsConfiguration {
         return str_replace(self::PREFIX,'',strtoupper($s));
     }
 
+    /**
+     * Get the value of configuration item by name
+     * @param string $name
+     * @return boolean
+     */
+    public function __get($name) {
+        $name = $this->getInternalConfigName($name);
+        if (isset($this->config_fields[$name])) {
+            return $this->config_fields[$name];
+        }
+        return FALSE;
+    }
+
+    /**
+     * set the current loaded configuration value of $name
+     * @param string $name Key
+     * @param mixed $value
+     */
+    public function __set($name,$value) {
+        $name = $this->getInternalConfigName($name);
+        if (is_bool($value))
+            $value = ($value ? 1 : 0);
+        $this->config_fields[$name] = $value;
+    }
+
+    /**
+     * Update the configuration value both in database and loaded config
+     * @param string $key Key
+     * @param mixed $values $values is an array if the configuration is multilingual, a single string else.
+     * @param boolean $html Specify if html is authorized in value
+     */
+    public function update($key,$value,$html = false) {
+        $key = $this->getInternalConfigName($key);
+        if (is_bool($value))
+            $value = ($value ? 1 : 0);
+        $this->config_fields[$key] = $value;
+        Configuration::updateValue(self::PREFIX.$key,$value,$html);
+    }
 }

@@ -29,14 +29,15 @@ require dirname(__FILE__) . '/../../config/config.inc.php';
 // get Piwik helper class
 require dirname(__FILE__) . '/PKHelper.php';
 
+
 // Edit the line below, and replace http://your-piwik-domain.example.org/piwik/
 // with your Piwik URL ending with a slash.
 // This URL will never be revealed to visitors or search engines.
-$PIWIK_URL = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://') . Configuration::get('PIWIK_HOST');
+$PIWIK_URL = PKHelper::getConf()->getPiwikUrl();
 
 // Edit the line below, and replace xyz by the token_auth for the user "UserTrackingAPI"
 // which you created when you followed instructions above.
-$TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
+$TOKEN_AUTH = PKHelper::getConf()->token;
 
 function sendHeader($header, $replace = true) {
     headers_sent() || header($header, $replace);
@@ -98,7 +99,6 @@ sendHeader("Content-Type: image/gif");
 $content = PKHelper::get_http($url . (version_compare(PHP_VERSION, '5.3.0', '<') ? '&send_image=1' /* PHP 5.2 force returning */ : ''), array(sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", arrayValue($_SERVER, 'HTTP_ACCEPT_LANGUAGE', '')))));
 
 // Forward the HTTP response code
-// not for cURL, working on it. (@todo cURL response_header [piwik.php])
 if (!headers_sent() && isset($http_response_header[0])) {
     sendHeader($http_response_header[0]);
 }else if($content === false){

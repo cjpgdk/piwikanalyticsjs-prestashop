@@ -82,11 +82,11 @@ class piwikanalyticsjs extends Module {
         require_once dirname(__FILE__).'/PKHelper.php';
 
         //* warnings on module list page
-        if ($this->id && !Configuration::get(PACONF::PREFIX.'TOKEN_AUTH'))
+        if ($this->id && !$this->config->token)
             $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning.',<br/> ' : '').$this->l('You need to configure the auth token');
-        if ($this->id && ((int)Configuration::get(PACONF::PREFIX.'SITEID') <= 0))
+        if ($this->id && ((int)$this->config->siteid <= 0))
             $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning.',<br/> ' : '').$this->l('You have not yet set Piwik Site ID');
-        if ($this->id && !Configuration::get(PACONF::PREFIX.'HOST'))
+        if ($this->id && !$this->config->host)
             $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning.',<br/> ' : '').$this->l('You need to configure the Piwik server url');
 
         $this->description = $this->l('Integrates Piwik Analytics into your shop');
@@ -100,7 +100,7 @@ class piwikanalyticsjs extends Module {
             if (version_compare(_PS_VERSION_,'1.5.0.13',"<="))
                 PKHelper::$_module = & $this;
         }
-        $this->config = new PACONF();
+        $this->config = & PKHelper::getConf();
     }
 
     /**
@@ -117,7 +117,7 @@ class piwikanalyticsjs extends Module {
         }
 
         $this->piwikSite = false;
-        if (Configuration::get(PACONF::PREFIX.'TOKEN_AUTH') !== false && !$this->isWizardRequest())
+        if ($this->config->token !== false && !$this->isWizardRequest())
             $this->piwikSite = PKHelper::getPiwikSite();
 
         $currencies = array();
@@ -130,11 +130,11 @@ class piwikanalyticsjs extends Module {
 
         // warnings on module configure page
         if (!$this->isWizardRequest()) {
-            if ($this->id && !Configuration::get(PACONF::PREFIX.'TOKEN_AUTH') && !Tools::getIsset(PACONF::PREFIX.'TOKEN_AUTH'))
+            if ($this->id && !$this->config->token && !Tools::getIsset(PACONF::PREFIX.'TOKEN_AUTH'))
                 $this->_errors[] = $this->displayError($this->l('Piwik auth token is empty'));
-            if ($this->id && ((int)Configuration::get(PACONF::PREFIX.'SITEID') <= 0) && !Tools::getIsset(PACONF::PREFIX.'SITEID'))
+            if ($this->id && ((int)$this->config->siteid <= 0) && !Tools::getIsset(PACONF::PREFIX.'SITEID'))
                 $this->_errors[] = $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
-            if ($this->id && !Configuration::get(PACONF::PREFIX.'HOST'))
+            if ($this->id && !$this->config->host)
                 $this->_errors[] = $this->displayError($this->l('Piwik host cannot be empty'));
         }
 
@@ -155,8 +155,9 @@ class piwikanalyticsjs extends Module {
         } else {
             $this->context->smarty->assign(array('piwikAnalyticsControllerLink' => $this->context->link->getAdminLink('PiwikAnalytics')));
         }
-
-        $this->runWizard($_currentIndex,$_html,$currencies);
+        if ($this->isWizardRequest()) {
+            return $this->runWizard($_currentIndex,$_html,$currencies);
+        }
 
         $config_wizard_link = $this->context->link->getAdminLink('AdminModules').
                 "&configure={$this->name}&tab_module=analytics_stats&module_name={$this->name}&pkwizard";
@@ -167,7 +168,7 @@ class piwikanalyticsjs extends Module {
             'proxy' => false
         );
         if (version_compare($this->piwikVersion,'2.0','>')) {
-            if (Configuration::get(PACONF::PREFIX.'TOKEN_AUTH') !== false)
+            if ($this->config->token !== false)
                 $image_tracking = PKHelper::getPiwikImageTrackingCode();
             else
                 $image_tracking = array(
@@ -178,9 +179,9 @@ class piwikanalyticsjs extends Module {
         $this->displayErrorsPiwik();
 
         // get cookie settings
-        $PIWIK_RCOOKIE_TIMEOUT = (int)Configuration::get(PACONF::PREFIX.'RCOOKIE_TIMEOUT');
-        $PIWIK_COOKIE_TIMEOUT = (int)Configuration::get(PACONF::PREFIX.'COOKIE_TIMEOUT');
-        $PIWIK_SESSION_TIMEOUT = (int)Configuration::get(PACONF::PREFIX.'SESSION_TIMEOUT');
+        $PIWIK_RCOOKIE_TIMEOUT = (int)$this->config->RCOOKIE_TIMEOUT;
+        $PIWIK_COOKIE_TIMEOUT = (int)$this->config->COOKIE_TIMEOUT;
+        $PIWIK_SESSION_TIMEOUT = (int)$this->config->SESSION_TIMEOUT;
 
         $pktimezones = $this->getTimezonesList();
 
@@ -188,7 +189,7 @@ class piwikanalyticsjs extends Module {
         $this->context->smarty->assign(array(
             'piwikVersion' => $this->piwikVersion,
             'piwikSite' => $this->piwikSite !== FALSE && isset($this->piwikSite[0]),
-            'piwikSiteId' => (int)Configuration::get(PACONF::PREFIX.'SITEID'),
+            'piwikSiteId' => (int)$this->config->siteid,
             'piwikSiteName' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->name : $this->l('unknown')),
             'piwikExcludedIps' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->excluded_ips : ''),
             'piwikMainUrl' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->main_url : $this->l('unknown')),
@@ -207,7 +208,7 @@ class piwikanalyticsjs extends Module {
             'PKAdminSiteSearch' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->sitesearch : ''),
             'PKAdminSearchKeywordParameters' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->sitesearch_keyword_parameters : ''),
             'PKAdminSearchCategoryParameters' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->sitesearch_category_parameters : ''),
-            'SPKSID' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->idsite : Configuration::get(PACONF::PREFIX.'SITEID')),
+            'SPKSID' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->idsite : $this->config->siteid),
             'PKAdminExcludedIps' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->excluded_ips : ''),
             'PKAdminExcludedQueryParameters' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->excluded_parameters : ''),
             'PKAdminTimezone' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->timezone : ''),
@@ -219,51 +220,51 @@ class piwikanalyticsjs extends Module {
             'PKAdminKeepURLFragments' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->keep_url_fragment : 0),
             'PKAdminSiteType' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->type : 'website'),
             /** tab|Defaults * */
-            'pkfvHOST' => Configuration::get(PACONF::PREFIX.'HOST'),
-            'pkfvSITEID' => Configuration::get(PACONF::PREFIX.'SITEID'),
-            'pkfvTOKEN_AUTH' => Configuration::get(PACONF::PREFIX.'TOKEN_AUTH'),
-            'pkfvUSE_CURL' => Configuration::get(PACONF::PREFIX.'USE_CURL'),
-            'pkfvUSRNAME' => Configuration::get(PACONF::PREFIX.'USRNAME'),
-            'pkfvUSRPASSWD' => Configuration::get(PACONF::PREFIX.'USRPASSWD'),
-            'pkfvDNT' => Configuration::get(PACONF::PREFIX.'DNT'),
-            'pkfvDEFAULT_CURRENCY' => Configuration::get(PACONF::PREFIX.'DEFAULT_CURRENCY'),
+            'pkfvHOST' => $this->config->host,
+            'pkfvSITEID' => $this->config->siteid,
+            'pkfvTOKEN_AUTH' => $this->config->token,
+            'pkfvUSE_CURL' => $this->config->USE_CURL,
+            'pkfvUSRNAME' =>$this->config->USRNAME,
+            'pkfvUSRPASSWD' => $this->config->USRPASSWD,
+            'pkfvDNT' => $this->config->DNT,
+            'pkfvDEFAULT_CURRENCY' => $this->config->DEFAULT_CURRENCY,
             'pkfvCurrencies' => $currencies,
             'pkfvCURRENCY_DEFAULT' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->currency : $this->l('unknown')),
-            'pkfvDREPDATE' => Configuration::get(PACONF::PREFIX.'DREPDATE'),
+            'pkfvDREPDATE' => $this->config->DREPDATE,
             /** tab|Proxy Script * */
-            'pkfvPROXY_TIMEOUT' => Configuration::get(PACONF::PREFIX.'PROXY_TIMEOUT'),
-            'pkfvUSE_PROXY' => Configuration::get(PACONF::PREFIX.'USE_PROXY'),
+            'pkfvPROXY_TIMEOUT' => $this->config->PROXY_TIMEOUT,
+            'pkfvUSE_PROXY' => $this->config->USE_PROXY,
             'pkfvPROXY_SCRIPTPlaceholder' => str_replace(array("http://","https://"),'',self::getModuleLink($this->name,'piwik')),
             'pkfvPROXY_SCRIPTBuildIn' => str_replace(array("http://","https://"),'',self::getModuleLink($this->name,'piwik')),
-            'pkfvPROXY_SCRIPT' => Configuration::get(PACONF::PREFIX.'PROXY_SCRIPT'),
+            'pkfvPROXY_SCRIPT' => $this->config->PROXY_SCRIPT,
             'has_cURL' => (!function_exists('curl_version') /* FIX:4 my Nginx (php-fpm) */ && !function_exists('curl_init')/* //FIX */) ? false : true,
-            'pkfvPAUTHUSR' => Configuration::get(PACONF::PREFIX.'PAUTHUSR'),
-            'pkfvPAUTHPWD' => Configuration::get(PACONF::PREFIX.'PAUTHPWD'),
-            'pkfvCRHTTPS' => Configuration::get(PACONF::PREFIX.'CRHTTPS'),
+            'pkfvPAUTHUSR' => $this->config->PAUTHUSR,
+            'pkfvPAUTHPWD' => $this->config->PAUTHPWD,
+            'pkfvCRHTTPS' => $this->config->CRHTTPS,
             /** tab|Extra * */
             'pkfvPRODID_V1' => $this->getProductIdTemplate(1),
             'pkfvPRODID_V2' => $this->getProductIdTemplate(2),
             'pkfvPRODID_V3' => $this->getProductIdTemplate(3),
-            'pkfvSEARCH_QUERY' => Configuration::get(PACONF::PREFIX."SEARCH_QUERY"),
-            'pkfvSET_DOMAINS' => Configuration::get(PACONF::PREFIX.'SET_DOMAINS'),
-            'pkfvDHashTag' => Configuration::get(PACONF::PREFIX.'DHashTag'),
-            'pkfvAPTURL' => Configuration::get(PACONF::PREFIX.'APTURL'),
+            'pkfvSEARCH_QUERY' => $this->config->SEARCH_QUERY,
+            'pkfvSET_DOMAINS' => $this->config->SET_DOMAINS,
+            'pkfvDHashTag' => $this->config->DHashTag,
+            'pkfvAPTURL' => $this->config->APTURL,
             /** tab|HTML * */
-            'pkfvEXHTML' => Configuration::get(PACONF::PREFIX."EXHTML"),
+            'pkfvEXHTML' => $this->config->EXHTML,
             'pkfvEXHTML_ImageTracker' => $image_tracking['default'],
             'pkfvEXHTML_ImageTrackerProxy' => $image_tracking['proxy'],
             'pkfvEXHTML_Warning' => (version_compare(_PS_VERSION_,'1.6.0.7','>=') ? "<br><strong>{$this->l("Before you edit/add html code to this field make sure the HTMLPurifier library isn't in use if HTMLPurifier is enabled, all html code will be stripd from the field when saving, check the settings in 'Preferences=>General', you can enable HTMLPurifier again after you made your changes")}</strong>" : ""),
-            'pkfvLINKTRACK' => Configuration::get(PACONF::PREFIX.'LINKTRACK'),
-            'pkfvLINKClS' => Configuration::get(PACONF::PREFIX.'LINKClS'),
-            'pkfvLINKClSIGNORE' => Configuration::get(PACONF::PREFIX.'LINKClSIGNORE'),
-            'pkfvLINKTTIME' => (int)Configuration::get(PACONF::PREFIX.'LINKTTIME'),
+            'pkfvLINKTRACK' => $this->config->LINKTRACK,
+            'pkfvLINKClS' => $this->config->LINKClS,
+            'pkfvLINKClSIGNORE' => $this->config->LINKClSIGNORE,
+            'pkfvLINKTTIME' => (int)$this->config->LINKTTIME,
             /** tab|Cookies * */
             'pkfvSESSION_TIMEOUT' => ($PIWIK_SESSION_TIMEOUT != 0 ? (int)($PIWIK_SESSION_TIMEOUT / 60) : (int)(self::PK_SC_TIMEOUT )),
             'pkfvCOOKIE_TIMEOUT' => ($PIWIK_COOKIE_TIMEOUT != 0 ? (int)($PIWIK_COOKIE_TIMEOUT / 60) : (int)(self::PK_VC_TIMEOUT)),
             'pkfvRCOOKIE_TIMEOUT' => ($PIWIK_RCOOKIE_TIMEOUT != 0 ? (int)($PIWIK_RCOOKIE_TIMEOUT / 60) : (int)(self::PK_RC_TIMEOUT)),
-            'pkfvCOOKIE_DOMAIN' => Configuration::get(PACONF::PREFIX.'COOKIE_DOMAIN'),
-            'pkfvCOOKIEPREFIX' => Configuration::get(PACONF::PREFIX.'COOKIEPREFIX'),
-            'pkfvCOOKIEPATH' => Configuration::get(PACONF::PREFIX.'COOKIEPATH'),
+            'pkfvCOOKIE_DOMAIN' => $this->config->COOKIE_DOMAIN,
+            'pkfvCOOKIEPREFIX' => $this->config->COOKIEPREFIX,
+            'pkfvCOOKIEPATH' => $this->config->COOKIEPATH,
         ));
         $_html .= $this->display(__FILE__,'views/templates/admin/configure_tabs.tpl');
 
@@ -276,108 +277,115 @@ class piwikanalyticsjs extends Module {
     }
 
     private function runWizard($_currentIndex,$_html,$currencies) {
-        if ($this->isWizardRequest()) {
-            require_once dirname(__FILE__).'/PiwikWizard.php';
-            PiwikWizardHelper::setUsePiwikSite($_currentIndex);
-            PiwikWizardHelper::createNewSite();
-            $step = 1;
-            if (empty($this->_errors) && empty($_html)) {
-                if (Tools::getIsset(PACONF::PREFIX.'STEP_WIZARD')) {
-                    $step = (int)Tools::getValue(PACONF::PREFIX.'STEP_WIZARD',0);
-                    if (!Tools::isSubmit('createnewsite'))
-                        $step++;
-                    else
-                        $step = 2;
-                }
+        require_once dirname(__FILE__).'/PiwikWizard.php';
+        // set translations (done this way to make translations work cross classes)
+        PiwikWizardHelper::$strings['4ddd9129714e7146ed2215bcbd559335'] = $this->l("I encountered an unknown error while trying to get the selected site, id #%s");
+        PiwikWizardHelper::$strings['e41246ca9fd83a123022c5c5b7a6f866'] = $this->l("I'm unable, to get admin access to the selected site id #%s");
+        PiwikWizardHelper::$strings['8a7d6b386e97596cb28878e9be5804b8'] = $this->l("Piwik sitename is missing");
+        PiwikWizardHelper::$strings['7948cb754538ab57b44c956c22aa5517'] = $this->l("Piwik main url is missing");
+        PiwikWizardHelper::$strings['0f30ab07916f20952f2e6ef70a91d364'] = $this->l("Piwik currency is missing");
+        PiwikWizardHelper::$strings['f7472169e468dd1fd901720f4bae1957'] = $this->l("Piwik timezone is missing");
+        PiwikWizardHelper::$strings['75e263846f84003f0180137e79542d38'] = $this->l("Error while creating site in piwik please check the following messages for clues");
+        // start wizard process
+        PiwikWizardHelper::setUsePiwikSite($_currentIndex);
+        PiwikWizardHelper::createNewSite();
+        $step = 1;
+        if (empty($this->_errors) && empty($_html)) {
+            if (Tools::getIsset(PACONF::PREFIX.'STEP_WIZARD')) {
+                $step = (int)Tools::getValue(PACONF::PREFIX.'STEP_WIZARD',0);
+                if (!Tools::isSubmit('createnewsite'))
+                    $step++;
+                else
+                    $step = 2;
             }
+        }
 
-            $pkToken = null;
-            if ($step == 2) {
-                PiwikWizardHelper::getFormValuesInternal(true);
-                $pkToken = PKHelper::getTokenAuth(PiwikWizardHelper::$username,PiwikWizardHelper::$password);
-                if (!empty(PKHelper::$error)) {
-                    $step = 1;
-                } else {
-                    if ($pkToken !== false) {
-                        if (Tools::isSubmit('createnewsite')) {
-                            $step = 99;
-                        } else {
-                            if ($_pkSites = PKHelper::getSitesWithAdminAccess(false,array(
-                                        'idSite' => 0,'pkHost' => PKHelper::$piwikHost,
-                                        'https' => (strpos(PiwikWizardHelper::$piwikhost,'https://') !== false),
-                                        'pkModule' => 'API','isoCode' => NULL,'tokenAuth' => $pkToken))) {
-                                if (!empty($_pkSites)) {
-                                    $pkSites = array();
-                                    foreach ($_pkSites as $value) {
-                                        $pkSites[] = array(
-                                            'idsite' => $value->idsite,
-                                            'name' => $value->name,
-                                            'main_url' => $value->main_url,
-                                        );
-                                    }
-                                    $this->context->smarty->assign(array('pkSites' => $pkSites));
-                                }
-                                unset($_pkSites);
-                            }
-                            if (!empty(PKHelper::$error)) {
-                                $step = 1;
-                            }
-                        }
+        $pkToken = null;
+        if ($step == 2) {
+            PiwikWizardHelper::getFormValuesInternal(true);
+            $pkToken = PKHelper::getTokenAuth(PiwikWizardHelper::$username,PiwikWizardHelper::$password);
+            if (!empty(PKHelper::$error)) {
+                $step = 1;
+            } else {
+                if ($pkToken !== false) {
+                    if (Tools::isSubmit('createnewsite')) {
+                        $step = 99;
                     } else {
-                        $step = 1;
-                        $this->_errors[] = $this->displayError($this->l("Unknown error, Piwik auth token returned NULL, check your username and password"));
+                        if ($_pkSites = PKHelper::getSitesWithAdminAccess(false,array(
+                                    'idSite' => 0,'pkHost' => PKHelper::$piwikHost,
+                                    'https' => (strpos(PiwikWizardHelper::$piwikhost,'https://') !== false),
+                                    'pkModule' => 'API','isoCode' => NULL,'tokenAuth' => $pkToken))) {
+                            if (!empty($_pkSites)) {
+                                $pkSites = array();
+                                foreach ($_pkSites as $value) {
+                                    $pkSites[] = array(
+                                        'idsite' => $value->idsite,
+                                        'name' => $value->name,
+                                        'main_url' => $value->main_url,
+                                    );
+                                }
+                                $this->context->smarty->assign(array('pkSites' => $pkSites));
+                            }
+                            unset($_pkSites);
+                        }
+                        if (!empty(PKHelper::$error)) {
+                            $step = 1;
+                        }
                     }
+                } else {
+                    $step = 1;
+                    $this->_errors[] = $this->displayError($this->l("Unknown error, Piwik auth token returned NULL, check your username and password"));
                 }
             }
-            $saved_piwik_host = Configuration::get(PACONF::PREFIX.'HOST');
-            if (!empty($saved_piwik_host)) {
-                $saved_piwik_host = "http://".$saved_piwik_host;
+        }
+        $saved_piwik_host = $this->config->host;
+        if (!empty($saved_piwik_host)) {
+            $saved_piwik_host = "http://".$saved_piwik_host;
+        }
+        $this->context->smarty->assign(array(
+            'pscurrentIndex' => $_currentIndex.'&pkwizard',
+            'pscurrentIndexLnk' => $_currentIndex,
+            'wizardStep' => $step,
+            'pkfvHOST' => $saved_piwik_host,
+        ));
+        if ($step >= 2) {
+            $this->context->smarty->assign(array(
+                'pkfvHOST_WIZARD' => PiwikWizardHelper::$piwikhost,
+                'pkfvUSRNAME_WIZARD' => PiwikWizardHelper::$username,
+                'pkfvUSRPASSWD_WIZARD' => PiwikWizardHelper::$password,
+                'pkfvPAUTHUSR_WIZARD' => PiwikWizardHelper::$usernamehttp,
+                'pkfvPAUTHPWD_WIZARD' => PiwikWizardHelper::$passwordhttp,
+            ));
+            if ($step == 99)
+                $Currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
+            if (!is_object($Currency)) {
+                $Currency = new stdClass();
+                $Currency->iso_code = 'EUR';
             }
             $this->context->smarty->assign(array(
-                'pscurrentIndex' => $_currentIndex.'&pkwizard',
-                'pscurrentIndexLnk' => $_currentIndex,
-                'wizardStep' => $step,
-                'pkfvHOST' => $saved_piwik_host,
+                'PKNewSiteName' => Configuration::get('PS_SHOP_NAME'),'PKNewAddtionalUrls' => '','PKNewEcommerce' => 1,
+                'PKNewSiteSearch' => 1,'PKNewKeepURLFragments' => 0,'PKNewTimezone' => 'UTC',
+                'PKNewSearchKeywordParameters' => '','PKNewExcludedUserAgents' => '','PKNewSearchCategoryParameters' => '',
+                'PKNewCurrency' => Context::getContext()->currency->iso_code,'PKNewExcludedQueryParameters' => '',
+                'PKNewMainUrl' => Tools::getShopDomainSsl(true,true).Context::getContext()->shop->getBaseURI(),
+                'PKNewExcludedIps' => Configuration::get('PS_MAINTENANCE_IP'),
+                'pkfvMyIPis' => $_SERVER['REMOTE_ADDR'],
+                'pkfvTimezoneList' => $this->getTimezonesList($pkToken,PiwikWizardHelper::$piwikhost),
+                'pkfvCurrencies' => $currencies,
+                'PKNewCurrency' => $Currency->iso_code,
             ));
-            if ($step >= 2) {
-                $this->context->smarty->assign(array(
-                    'pkfvHOST_WIZARD' => PiwikWizardHelper::$piwikhost,
-                    'pkfvUSRNAME_WIZARD' => PiwikWizardHelper::$username,
-                    'pkfvUSRPASSWD_WIZARD' => PiwikWizardHelper::$password,
-                    'pkfvPAUTHUSR_WIZARD' => PiwikWizardHelper::$usernamehttp,
-                    'pkfvPAUTHPWD_WIZARD' => PiwikWizardHelper::$passwordhttp,
-                ));
-                if ($step == 99)
-                    $Currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
-                if (!is_object($Currency)) {
-                    $Currency = new stdClass();
-                    $Currency->iso_code = 'EUR';
-                }
-                $this->context->smarty->assign(array(
-                    'PKNewSiteName' => Configuration::get('PS_SHOP_NAME'),'PKNewAddtionalUrls' => '','PKNewEcommerce' => 1,
-                    'PKNewSiteSearch' => 1,'PKNewKeepURLFragments' => 0,'PKNewTimezone' => 'UTC',
-                    'PKNewSearchKeywordParameters' => '','PKNewExcludedUserAgents' => '','PKNewSearchCategoryParameters' => '',
-                    'PKNewCurrency' => Context::getContext()->currency->iso_code,'PKNewExcludedQueryParameters' => '',
-                    'PKNewMainUrl' => Tools::getShopDomainSsl(true,true).Context::getContext()->shop->getBaseURI(),
-                    'PKNewExcludedIps' => Configuration::get('PS_MAINTENANCE_IP'),
-                    'pkfvMyIPis' => $_SERVER['REMOTE_ADDR'],
-                    'pkfvTimezoneList' => $this->getTimezonesList($pkToken,PiwikWizardHelper::$piwikhost),
-                    'pkfvCurrencies' => $currencies,
-                    'PKNewCurrency' => $Currency->iso_code,
-                ));
-                unset($Currency);
-            }
-            $this->displayErrorsPiwik();
-            $this->displayErrorsPiwik2();
-            if (is_array($this->_errors))
-                $_html = implode('',$this->_errors).$_html;
-            else
-                $_html = $this->_errors.$_html;
-            return $_html
-                    .$this->display(__FILE__,'views/templates/admin/piwik_wizard.tpl')
-                    .$this->display(__FILE__,'views/templates/admin/jsfunctions.tpl')
-                    .$this->display(__FILE__,'views/templates/admin/piwik_site_lookup.tpl');
+            unset($Currency);
         }
+        $this->displayErrorsPiwik();
+        $this->displayErrorsPiwik2();
+        if (is_array($this->_errors))
+            $_html = implode('',$this->_errors).$_html;
+        else
+            $_html = $this->_errors.$_html;
+        return $_html
+                .$this->display(__FILE__,'views/templates/admin/piwik_wizard.tpl')
+                .$this->display(__FILE__,'views/templates/admin/jsfunctions.tpl')
+                .$this->display(__FILE__,'views/templates/admin/piwik_site_lookup.tpl');
     }
 
     private function processWizardFormUpdate() {
@@ -399,12 +407,12 @@ class piwikanalyticsjs extends Module {
             $tmp = $piwikhost;
             if (Validate::isUrl($tmp) || Validate::isUrl('http://'.$tmp)) {
                 if (preg_match("/https:/i",$tmp))
-                    Configuration::updateValue($KEY_PREFIX.'CRHTTPS',1);
+                    $this->config->update('CRHTTPS',1);
                 $tmp = str_ireplace(array('http://','https://','//'),"",$tmp);
                 if (substr($tmp,-1) != "/") {
                     $tmp .= "/";
                 }
-                Configuration::updateValue($KEY_PREFIX.'HOST',$tmp);
+                $this->config->update('HOST',$tmp);
             } else {
                 $this->_errors[] = $this->displayError($this->l('Piwik host url is not valid'));
             }
@@ -413,15 +421,15 @@ class piwikanalyticsjs extends Module {
         }
         if (($username !== false && strlen($username) > 2) && ($password !== false && strlen($password) > 2)) {
             if ($saveusrpwd == 1 || $saveusrpwd !== false) {
-                Configuration::updateValue($KEY_PREFIX."USRPASSWD",$password);
-                Configuration::updateValue($KEY_PREFIX."USRNAME",$username);
+                $this->config->update("USRPASSWD",$password);
+                $this->config->update("USRNAME",$username);
             }
         } else {
             $this->_errors[] = $this->displayError($this->l('Username and/or password is missing/to short'));
         }
         if (($usernamehttp !== false && strlen($usernamehttp) > 0) && ($passwordhttp !== false && strlen($passwordhttp) > 0)) {
-            Configuration::updateValue($KEY_PREFIX."PAUTHUSR",$usernamehttp);
-            Configuration::updateValue($KEY_PREFIX."PAUTHPWD",$passwordhttp);
+                $this->config->update("PAUTHUSR",$usernamehttp);
+                $this->config->update("PAUTHPWD",$passwordhttp);
         }
     }
 
@@ -444,7 +452,7 @@ class piwikanalyticsjs extends Module {
                         if (substr($tmp,-1) != "/") {
                             $tmp .= "/";
                         }
-                        Configuration::updateValue($KEY_PREFIX.'HOST',$tmp);
+                        $this->config->update('HOST',$tmp);
                     } else {
                         $this->_errors[] = $this->displayError($this->l('Piwik host url is not valid'));
                     }
@@ -455,7 +463,7 @@ class piwikanalyticsjs extends Module {
             // [PIWIK_SITEID] Piwik site id
             if (Tools::getIsset($KEY_PREFIX.'SITEID')) {
                 $tmp = (int)Tools::getValue($KEY_PREFIX.'SITEID',0);
-                Configuration::updateValue($KEY_PREFIX.'SITEID',$tmp);
+                $this->config->update('SITEID',$tmp);
                 if ($tmp <= 0) {
                     $this->_errors[] = $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
                 }
@@ -463,30 +471,30 @@ class piwikanalyticsjs extends Module {
             // [PIWIK_TOKEN_AUTH] Piwik authentication token
             if (Tools::getIsset($KEY_PREFIX.'TOKEN_AUTH')) {
                 $tmp = Tools::getValue($KEY_PREFIX.'TOKEN_AUTH','');
-                Configuration::updateValue($KEY_PREFIX.'TOKEN_AUTH',$tmp);
+                $this->config->update('TOKEN_AUTH',$tmp);
                 if (empty($tmp)) {
                     $this->_errors[] = $this->displayError($this->l('Piwik auth token is empty'));
                 }
             }
             // [PIWIK_DNT] 
             if (Tools::getIsset($KEY_PREFIX.'DNT')) {
-                Configuration::updateValue($KEY_PREFIX.'DNT',1);
+                $this->config->update('DNT',1);
             } else {
-                Configuration::updateValue($KEY_PREFIX.'DNT',0);
+                $this->config->update('DNT',0);
             }
             // [PIWIK_DEFAULT_CURRENCY]
             if (Tools::getIsset($KEY_PREFIX.'DEFAULT_CURRENCY'))
-                Configuration::updateValue($KEY_PREFIX."DEFAULT_CURRENCY",Tools::getValue($KEY_PREFIX.'DEFAULT_CURRENCY','EUR'));
+                $this->config->update("DEFAULT_CURRENCY",Tools::getValue($KEY_PREFIX.'DEFAULT_CURRENCY','EUR'));
             // [PIWIK_DREPDATE] (default report date)
             if (Tools::getIsset($KEY_PREFIX.'DREPDATE'))
-                Configuration::updateValue($KEY_PREFIX."DREPDATE",Tools::getValue($KEY_PREFIX.'DREPDATE','day|today'));
+                $this->config->update("DREPDATE",Tools::getValue($KEY_PREFIX.'DREPDATE','day|today'));
             // [PIWIK_USRNAME] 
             if (Tools::getIsset('username_changed') && (((int)Tools::getValue('username_changed')) == 1) && Tools::getIsset($KEY_PREFIX.'USRNAME')) {
-                Configuration::updateValue($KEY_PREFIX."USRNAME",Tools::getValue($KEY_PREFIX.'USRNAME',''));
+                $this->config->update("USRNAME",Tools::getValue($KEY_PREFIX.'USRNAME',''));
             }
             // [PIWIK_USRPASSWD] 
             if (Tools::getIsset('password_changed') && (((int)Tools::getValue('password_changed')) == 1) && Tools::getIsset($KEY_PREFIX.'USRPASSWD')) {
-                Configuration::updateValue($KEY_PREFIX."USRPASSWD",Tools::getValue($KEY_PREFIX.'USRPASSWD',''));
+                $this->config->update("USRPASSWD",Tools::getValue($KEY_PREFIX.'USRPASSWD',''));
             }
         }
         // handle submission from proxy tab
@@ -494,21 +502,21 @@ class piwikanalyticsjs extends Module {
             $isPost = true;
             // [PIWIK_USE_PROXY] 
             if (Tools::getIsset($KEY_PREFIX.'USE_PROXY')) {
-                Configuration::updateValue($KEY_PREFIX.'USE_PROXY',1);
+                $this->config->update('USE_PROXY',1);
             } else {
-                Configuration::updateValue($KEY_PREFIX.'USE_PROXY',0);
+                $this->config->update('USE_PROXY',0);
             }
             // [PIWIK_USE_CURL] 
             if (Tools::getIsset($KEY_PREFIX.'USE_CURL')) {
-                Configuration::updateValue($KEY_PREFIX.'USE_CURL',1);
+                $this->config->update('USE_CURL',1);
             } else {
-                Configuration::updateValue($KEY_PREFIX.'USE_CURL',0);
+                $this->config->update('USE_CURL',0);
             }
             // [PIWIK_CRHTTPS] 
             if (Tools::getIsset($KEY_PREFIX.'CRHTTPS')) {
-                Configuration::updateValue($KEY_PREFIX.'CRHTTPS',1);
+                $this->config->update('CRHTTPS',1);
             } else {
-                Configuration::updateValue($KEY_PREFIX.'CRHTTPS',0);
+                $this->config->update('CRHTTPS',0);
             }
             // [PIWIK_PROXY_TIMEOUT] 
             if (Tools::getIsset($KEY_PREFIX.'PROXY_TIMEOUT')) {
@@ -517,18 +525,18 @@ class piwikanalyticsjs extends Module {
                     $this->_errors[] = $this->displayError($this->l('Piwik proxy timeout must be an integer and larger than 0 (zero)'));
                     $tmp = 5;
                 }
-                Configuration::updateValue($KEY_PREFIX.'PROXY_TIMEOUT',$tmp);
+                $this->config->update('PROXY_TIMEOUT',$tmp);
             }
             // [PIWIK_PROXY_TIMEOUT] 
             if (Tools::getIsset($KEY_PREFIX.'PROXY_SCRIPT'))
-                Configuration::updateValue($KEY_PREFIX.'PROXY_SCRIPT',str_replace(array("http://","https://",'//'),'',Tools::getValue($KEY_PREFIX.'PROXY_SCRIPT')));
+                $this->config->update('PROXY_SCRIPT',str_replace(array("http://","https://",'//'),'',Tools::getValue($KEY_PREFIX.'PROXY_SCRIPT')));
             // [PIWIK_PAUTHUSR] 
             if (Tools::getIsset('pusername_changed') && (((int)Tools::getValue('pusername_changed')) == 1) && Tools::getIsset($KEY_PREFIX.'PAUTHUSR')) {
-                Configuration::updateValue($KEY_PREFIX."PAUTHUSR",Tools::getValue($KEY_PREFIX.'PAUTHUSR',''));
+                $this->config->update("PAUTHUSR",Tools::getValue($KEY_PREFIX.'PAUTHUSR',''));
             }
             // [PIWIK_PAUTHPWD] 
             if (Tools::getIsset('ppassword_changed') && (((int)Tools::getValue('ppassword_changed')) == 1) && Tools::getIsset($KEY_PREFIX.'PAUTHPWD')) {
-                Configuration::updateValue($KEY_PREFIX."PAUTHPWD",Tools::getValue($KEY_PREFIX.'PAUTHPWD',''));
+                $this->config->update("PAUTHPWD",Tools::getValue($KEY_PREFIX.'PAUTHPWD',''));
             }
         }
         // handle submission from extra tab
@@ -543,7 +551,7 @@ class piwikanalyticsjs extends Module {
                     $this->_errors[] = $this->displayError($this->l('Product id V1: missing variable {ATTRID}'));
                 if (!preg_match("/{REFERENCE}/",$tmp))
                     $this->_errors[] = $this->displayError($this->l('Product id V1: missing variable {REFERENCE}'));
-                Configuration::updateValue($KEY_PREFIX.'PRODID_V1',$tmp);
+                $this->config->update('PRODID_V1',$tmp);
             }
             // [PIWIK_PRODID_V2] 
             if (Tools::getIsset($KEY_PREFIX.'PRODID_V2')) {
@@ -552,7 +560,7 @@ class piwikanalyticsjs extends Module {
                     $this->_errors[] = $this->displayError($this->l('Product id V2: missing variable {ID}'));
                 if (!preg_match("/{REFERENCE}/",$tmp))
                     $this->_errors[] = $this->displayError($this->l('Product id V2: missing variable {REFERENCE}'));
-                Configuration::updateValue($KEY_PREFIX.'PRODID_V2',Tools::getValue($KEY_PREFIX.'PRODID_V2','{ID}#{REFERENCE}'));
+                $this->config->update('PRODID_V2',Tools::getValue($KEY_PREFIX.'PRODID_V2','{ID}#{REFERENCE}'));
             }
             // [PIWIK_PRODID_V3] 
             if (Tools::getIsset($KEY_PREFIX.'PRODID_V3')) {
@@ -561,7 +569,7 @@ class piwikanalyticsjs extends Module {
                     $this->_errors[] = $this->displayError($this->l('Product id V3: missing variable {ID}'));
                 if (!preg_match("/{ATTRID}/",$tmp))
                     $this->_errors[] = $this->displayError($this->l('Product id V3: missing variable {ATTRID}'));
-                Configuration::updateValue($KEY_PREFIX.'PRODID_V3',Tools::getValue($KEY_PREFIX.'PRODID_V3','{ID}-{ATTRID}'));
+                $this->config->update('PRODID_V3',Tools::getValue($KEY_PREFIX.'PRODID_V3','{ID}-{ATTRID}'));
             }
             // [PIWIK_SEARCH_QUERY]
             if (Tools::getIsset($KEY_PREFIX.'SEARCH_QUERY')) {
@@ -570,7 +578,7 @@ class piwikanalyticsjs extends Module {
                     $this->_errors[] = $this->displayError($this->l('Searche template: missing variable {QUERY}'));
                 if (!preg_match("/{PAGE}/",$tmp))
                     $this->_errors[] = $this->displayError($this->l('Searche template: missing variable {PAGE}'));
-                Configuration::updateValue($KEY_PREFIX."SEARCH_QUERY",$tmp);
+                $this->config->update("SEARCH_QUERY",$tmp);
             }
             // [PIWIK_SET_DOMAINS]
             if (Tools::getIsset($KEY_PREFIX.'SET_DOMAINS')) {
@@ -582,19 +590,19 @@ class piwikanalyticsjs extends Module {
 //                        $this->_errors[] = $this->displayError(sprintf($this->l('known alias URL \'%s\' is not valid an has been removed'), $sUrl));
 //                    }
 //                }
-                Configuration::updateValue($KEY_PREFIX.'SET_DOMAINS',trim(str_replace(',,',',',$tmp),','));
+                $this->config->update('SET_DOMAINS',trim(str_replace(',,',',',$tmp),','));
             }
             // [PIWIK_DHashTag] 
             if (Tools::getIsset($KEY_PREFIX.'DHashTag')) {
-                Configuration::updateValue($KEY_PREFIX.'DHashTag',1);
+                $this->config->update('DHashTag',1);
             } else {
-                Configuration::updateValue($KEY_PREFIX.'DHashTag',0);
+                $this->config->update('DHashTag',0);
             }
             // [PIWIK_APTURL] 
             if (Tools::getIsset($KEY_PREFIX.'APTURL')) {
-                Configuration::updateValue($KEY_PREFIX.'APTURL',1);
+                $this->config->update('APTURL',1);
             } else {
-                Configuration::updateValue($KEY_PREFIX.'APTURL',0);
+                $this->config->update('APTURL',0);
             }
         }
         // handle submission from html tab
@@ -602,22 +610,22 @@ class piwikanalyticsjs extends Module {
             $isPost = true;
             // [PIWIK_EXHTML] 
             if (Tools::getIsset($KEY_PREFIX.'EXHTML'))
-                Configuration::updateValue($KEY_PREFIX.'EXHTML',Tools::getValue($KEY_PREFIX.'EXHTML'),TRUE);
+                $this->config->update('EXHTML',Tools::getValue($KEY_PREFIX.'EXHTML'),TRUE);
             // [PIWIK_LINKTRACK] 
             if (Tools::getIsset($KEY_PREFIX.'LINKTRACK')) {
-                Configuration::updateValue($KEY_PREFIX.'LINKTRACK',1);
+                $this->config->update('LINKTRACK',1);
             } else {
-                Configuration::updateValue($KEY_PREFIX.'LINKTRACK',0);
+                $this->config->update('LINKTRACK',0);
             }
             // [PIWIK_LINKClS] 
             if (Tools::getIsset($KEY_PREFIX.'LINKClS'))
-                Configuration::updateValue($KEY_PREFIX.'LINKClS',Tools::getValue($KEY_PREFIX.'LINKClS',''));
+                $this->config->update('LINKClS',Tools::getValue($KEY_PREFIX.'LINKClS',''));
             // [PIWIK_LINKClSIGNORE] 
             if (Tools::getIsset($KEY_PREFIX.'LINKClSIGNORE'))
-                Configuration::updateValue($KEY_PREFIX.'LINKClSIGNORE',Tools::getValue($KEY_PREFIX.'LINKClSIGNORE',''));
+                $this->config->update('LINKClSIGNORE',Tools::getValue($KEY_PREFIX.'LINKClSIGNORE',''));
             // [PIWIK_LINKTTIME] 
             if (Tools::getIsset($KEY_PREFIX.'LINKTTIME'))
-                Configuration::updateValue($KEY_PREFIX.'LINKTTIME',Tools::getValue($KEY_PREFIX.'LINKTTIME',''));
+                $this->config->update('LINKTTIME',Tools::getValue($KEY_PREFIX.'LINKTTIME',''));
         }
         // handle submission from cookies tab
         if (Tools::isSubmit('submitUpdatePiwikAnalyticsjsCookies')) {
@@ -625,36 +633,36 @@ class piwikanalyticsjs extends Module {
 
             // [PIWIK_COOKIE_DOMAIN]
             if (Tools::getIsset($KEY_PREFIX.'COOKIE_DOMAIN'))
-                Configuration::updateValue($KEY_PREFIX.'COOKIE_DOMAIN',Tools::getValue($KEY_PREFIX.'COOKIE_DOMAIN'));
+                $this->config->update('COOKIE_DOMAIN',Tools::getValue($KEY_PREFIX.'COOKIE_DOMAIN'));
             // [PIWIK_COOKIEPREFIX]
             if (Tools::getIsset($KEY_PREFIX.'COOKIEPREFIX'))
-                Configuration::updateValue($KEY_PREFIX.'COOKIEPREFIX',Tools::getValue($KEY_PREFIX.'COOKIEPREFIX'));
+                $this->config->update('COOKIEPREFIX',Tools::getValue($KEY_PREFIX.'COOKIEPREFIX'));
             // [PIWIK_COOKIEPATH]
             if (Tools::getIsset($KEY_PREFIX.'COOKIEPATH'))
-                Configuration::updateValue($KEY_PREFIX.'COOKIEPATH',Tools::getValue($KEY_PREFIX.'COOKIEPATH'));
+                $this->config->update('COOKIEPATH',Tools::getValue($KEY_PREFIX.'COOKIEPATH'));
             // [PIWIK_RCOOKIE_TIMEOUT]
             if (Tools::getIsset($KEY_PREFIX.'RCOOKIE_TIMEOUT')) {
                 $tmp = (int)Tools::getValue($KEY_PREFIX.'RCOOKIE_TIMEOUT',self::PK_RC_TIMEOUT);
                 $tmp = ($tmp * 60); //* convert to seconds
-                Configuration::updateValue($KEY_PREFIX.'RCOOKIE_TIMEOUT',(int)$tmp);
+                $this->config->update('RCOOKIE_TIMEOUT',(int)$tmp);
             }
             // [PIWIK_COOKIE_TIMEOUT]
             if (Tools::getIsset($KEY_PREFIX.'COOKIE_TIMEOUT')) {
                 $tmp = (int)Tools::getValue($KEY_PREFIX.'COOKIE_TIMEOUT',self::PK_VC_TIMEOUT);
                 $tmp = ($tmp * 60); //* convert to seconds
-                Configuration::updateValue($KEY_PREFIX.'COOKIE_TIMEOUT',(int)$tmp);
+                $this->config->update('COOKIE_TIMEOUT',(int)$tmp);
             }
             // [PIWIK_SESSION_TIMEOUT]
             if (Tools::getIsset($KEY_PREFIX.'SESSION_TIMEOUT')) {
                 $tmp = (int)Tools::getValue($KEY_PREFIX.'SESSION_TIMEOUT',self::PK_SC_TIMEOUT);
                 $tmp = ($tmp * 60); //* convert to seconds
-                Configuration::updateValue($KEY_PREFIX.'SESSION_TIMEOUT',(int)$tmp);
+                $this->config->update('SESSION_TIMEOUT',(int)$tmp);
             }
         }
         // handle submission from site manager tab
         if (Tools::isSubmit('submitUpdatePiwikAnalyticsjsSiteManager')) {
             $isPost = true;
-            $PKAdminIdSite = (int)Configuration::get(PACONF::PREFIX.'SITEID');
+            $PKAdminIdSite = (int)$this->config->siteid;
             $PKAdminGroup = ($this->piwikSite !== FALSE ? $this->piwikSite[0]->group : '');
             //$PKAdminStartDate = ($this->piwikSite !== FALSE ? $this->piwikSite[0]->ts_created : '');
             $PKAdminStartDate = NULL;
@@ -749,7 +757,14 @@ class piwikanalyticsjs extends Module {
                 $PKAdminKeepURLFragments = false;
             }
             if ($result = PKHelper::updatePiwikSite(
-                            $PKAdminIdSite,$PKAdminSiteName,$PKAdminSiteUrls,$PKAdminEcommerce,$PKAdminSiteSearch,$PKAdminSearchKeywordParameters,$PKAdminSearchCategoryParameters,$PKAdminExcludedIps,$PKAdminExcludedQueryParameters,$PKAdminTimezone,$PKAdminCurrency,$PKAdminGroup,$PKAdminStartDate,$PKAdminExcludedUserAgents,$PKAdminKeepURLFragments,$PKAdminSiteType)) {
+                    $PKAdminIdSite,$PKAdminSiteName,$PKAdminSiteUrls,
+                    $PKAdminEcommerce,$PKAdminSiteSearch,
+                    $PKAdminSearchKeywordParameters,
+                    $PKAdminSearchCategoryParameters,$PKAdminExcludedIps,
+                    $PKAdminExcludedQueryParameters,$PKAdminTimezone,
+                    $PKAdminCurrency,$PKAdminGroup,$PKAdminStartDate,
+                    $PKAdminExcludedUserAgents,$PKAdminKeepURLFragments,
+                    $PKAdminSiteType)) {
                 /*
                  *  all is good 
                  * @todo minimize efter propper testing, "left over"
@@ -830,7 +845,7 @@ class piwikanalyticsjs extends Module {
      * @return string
      */
     public function hookdisplayRightColumnProduct($param) {
-        if ((int)Configuration::get(PACONF::PREFIX.'SITEID') <= 0)
+        if ((int)$this->config->siteid <= 0)
             return "";
         if ((int)Tools::getValue('content_only') > 0 && get_class($this->context->controller) == 'ProductController') {
             return $this->hookFooter($param);
@@ -842,13 +857,13 @@ class piwikanalyticsjs extends Module {
      * @param array $param
      */
     public function hookactionSearch($param) {
-        if ((int)Configuration::get(PACONF::PREFIX.'SITEID') <= 0)
+        if ((int)$this->config->siteid <= 0)
             return "";
         $param['total'] = intval($param['total']);
         // $param['expr'] is not the searched word if lets say search is Snitmøntre then the $param['expr'] will be Snitmontre
         $expr = Tools::getIsset('search_query') ? htmlentities(Tools::getValue('search_query')) : $param['expr'];
         /* if multi pages in search add page number of current if set! */
-        $search_tpl = Configuration::get(PACONF::PREFIX.'SEARCH_QUERY');
+        $search_tpl = $this->config->SEARCH_QUERY;
         if ($search_tpl === false)
             $search_tpl = "{QUERY} ({PAGE})";
         if (Tools::getIsset('p')) {
@@ -872,7 +887,7 @@ class piwikanalyticsjs extends Module {
     }
 
     public function hookOrderConfirmation($params) {
-        if ((int)Configuration::get(PACONF::PREFIX.'SITEID') <= 0)
+        if ((int)$this->config->siteid <= 0)
             return "";
 
         $order = $params['objOrder'];
@@ -952,7 +967,7 @@ class piwikanalyticsjs extends Module {
     }
 
     public function hookFooter($params) {
-        if ((int)Configuration::get(PACONF::PREFIX.'SITEID') <= 0)
+        if ((int)$this->config->siteid <= 0)
             return "";
 
         if (self::$_isOrder)
@@ -1139,7 +1154,7 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     public function hookSearch($params) {
-        if ((int)Configuration::get(PACONF::PREFIX.'SITEID') <= 0)
+        if ((int)$this->config->siteid <= 0)
             return "";
         $this->hookactionSearch($params);
     }
@@ -1154,13 +1169,13 @@ class piwikanalyticsjs extends Module {
     private function getProductIdTemplate($v = 1) {
         switch ($v) {
             case 1:
-                $PIWIK_PRODID_V1 = Configuration::get(PACONF::PREFIX.'PRODID_V1');
+                $PIWIK_PRODID_V1 = $this->config->PRODID_V1;
                 return !empty($PIWIK_PRODID_V1) ? $PIWIK_PRODID_V1 : '{ID}-{ATTRID}#{REFERENCE}';
             case 2:
-                $PIWIK_PRODID_V2 = Configuration::get(PACONF::PREFIX.'PRODID_V2');
+                $PIWIK_PRODID_V2 = $this->config->PRODID_V2;
                 return !empty($PIWIK_PRODID_V2) ? $PIWIK_PRODID_V2 : '{ID}#{REFERENCE}';
             case 3:
-                $PIWIK_PRODID_V3 = Configuration::get(PACONF::PREFIX.'PRODID_V3');
+                $PIWIK_PRODID_V3 = $this->config->PRODID_V3;
                 return !empty($PIWIK_PRODID_V3) ? $PIWIK_PRODID_V3 : '{ID}-{ATTRID}';
         }
         return '{ID}';
@@ -1238,13 +1253,13 @@ class piwikanalyticsjs extends Module {
 
     private function parseProductSku($id,$attrid = FALSE,$ref = FALSE) {
         if (Validate::isInt($id) && (!empty($attrid) && !is_null($attrid) && $attrid !== FALSE) && (!empty($ref) && !is_null($ref) && $ref !== FALSE)) {
-            $PIWIK_PRODID_V1 = Configuration::get(PACONF::PREFIX.'PRODID_V1');
+            $PIWIK_PRODID_V1 = $this->config->PRODID_V1;
             return str_replace(array('{ID}','{ATTRID}','{REFERENCE}'),array($id,$attrid,$ref),$PIWIK_PRODID_V1);
         } elseif (Validate::isInt($id) && (!empty($ref) && !is_null($ref) && $ref !== FALSE)) {
-            $PIWIK_PRODID_V2 = Configuration::get(PACONF::PREFIX.'PRODID_V2');
+            $PIWIK_PRODID_V2 = $this->config->PRODID_V2;
             return str_replace(array('{ID}','{REFERENCE}'),array($id,$ref),$PIWIK_PRODID_V2);
         } elseif (Validate::isInt($id) && (!empty($attrid) && !is_null($attrid) && $attrid !== FALSE)) {
-            $PIWIK_PRODID_V3 = Configuration::get(PACONF::PREFIX.'PRODID_V3');
+            $PIWIK_PRODID_V3 = $this->config->PRODID_V3;
             return str_replace(array('{ID}','{ATTRID}'),array($id,$attrid),$PIWIK_PRODID_V3);
         } else {
             return $id;
@@ -1289,7 +1304,7 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     private function currencyConvertion($params) {
-        $pkc = Configuration::get(PACONF::PREFIX."DEFAULT_CURRENCY");
+        $pkc = $this->config->DEFAULT_CURRENCY;
         if (empty($pkc))
             return (float)$params['price'];
         if ($params['conversion_rate'] === FALSE || $params['conversion_rate'] == 0.00 || $params['conversion_rate'] == 1.00) {
@@ -1454,71 +1469,14 @@ class piwikanalyticsjs extends Module {
             $this->context->smarty->assign($key_prefix.'UUID',$this->context->customer->id);
         }
     }
-
-    /** @todo revise this method it has never been used as intended ;> */
-    public function getConfigFields($form = FALSE) {
-        $fields = array(
-            PACONF::PREFIX.'USE_PROXY' => 0,
-            PACONF::PREFIX.'HOST' => "",
-            PACONF::PREFIX.'SITEID' => 0,
-            PACONF::PREFIX.'TOKEN_AUTH' => "",
-            PACONF::PREFIX.'COOKIE_TIMEOUT' => self::PK_VC_TIMEOUT,
-            PACONF::PREFIX.'SESSION_TIMEOUT' => self::PK_SC_TIMEOUT,
-            PACONF::PREFIX.'DEFAULT_CURRENCY' => 'EUR',
-            PACONF::PREFIX.'CRHTTPS' => 0,
-            PACONF::PREFIX.'PRODID_V1' => '{ID}-{ATTRID}#{REFERENCE}',
-            PACONF::PREFIX.'PRODID_V2' => '{ID}#{REFERENCE}',
-            PACONF::PREFIX.'PRODID_V3' => '{ID}-{ATTRID}',
-            PACONF::PREFIX.'COOKIE_DOMAIN' => Tools::getShopDomain(),
-            PACONF::PREFIX.'SET_DOMAINS' => "",
-            PACONF::PREFIX.'DNT' => 1,
-            PACONF::PREFIX.'EXHTML' => "",
-            PACONF::PREFIX.'RCOOKIE_TIMEOUT' => self::PK_RC_TIMEOUT,
-            PACONF::PREFIX.'USRNAME' => "",
-            PACONF::PREFIX.'USRPASSWD' => "",
-            PACONF::PREFIX.'PAUTHUSR' => "",
-            PACONF::PREFIX.'PAUTHPWD' => "",
-            PACONF::PREFIX.'DREPDATE' => "day|today",
-            PACONF::PREFIX.'USE_CURL' => 0,
-            PACONF::PREFIX.'APTURL' => 0,
-            PACONF::PREFIX.'COOKIEPATH' => "",
-            PACONF::PREFIX.'COOKIEPREFIX' => "",
-            PACONF::PREFIX.'DHashTag' => 0,
-            PACONF::PREFIX.'LINKClS' => "",
-            PACONF::PREFIX.'LINKTRACK' => 1,
-            PACONF::PREFIX.'LINKTTIME' => "",
-            PACONF::PREFIX.'PROXY_SCRIPT' => 0,
-            PACONF::PREFIX.'PROXY_TIMEOUT' => 5,
-            PACONF::PREFIX.'SEARCH_QUERY' => "",
-        );
-        if ($form)
-            foreach ($fields as $key => $value)
-                $fields[$key] = Configuration::get($value);
-
-        return $fields;
-    }
-
-    private function __wizardDefaults() {
-        // set translations
-        PiwikWizardHelper::$strings['4ddd9129714e7146ed2215bcbd559335'] = $this->l("I encountered an unknown error while trying to get the selected site, id #%s");
-        PiwikWizardHelper::$strings['e41246ca9fd83a123022c5c5b7a6f866'] = $this->l("I'm unable, to get admin access to the selected site id #%s");
-        PiwikWizardHelper::$strings['8a7d6b386e97596cb28878e9be5804b8'] = $this->l("Piwik sitename is missing");
-        PiwikWizardHelper::$strings['7948cb754538ab57b44c956c22aa5517'] = $this->l("Piwik main url is missing");
-        PiwikWizardHelper::$strings['0f30ab07916f20952f2e6ef70a91d364'] = $this->l("Piwik currency is missing");
-        PiwikWizardHelper::$strings['f7472169e468dd1fd901720f4bae1957'] = $this->l("Piwik timezone is missing");
-        PiwikWizardHelper::$strings['75e263846f84003f0180137e79542d38'] = $this->l("Error while creating site in piwik please check the following messages for clues");
-
-        // posted username and passwd etc..
-        PiwikWizardHelper::getFormValuesInternal();
-    }
-
+    
     /* INSTALL / UNINSTALL */
 
     /**
      * Reset module configuration
      */
     public function reset() {
-        foreach ($this->getConfigFields(FALSE) as $key => $value) {
+        foreach ($this->config->getAll() as $key => $value) {
             if (Shop::getContext() == Shop::CONTEXT_ALL) {
                 // delete for all shops.!
                 Configuration::deleteByName($key);
@@ -1526,7 +1484,10 @@ class piwikanalyticsjs extends Module {
                 // delete only for current shop.!
                 if (!Validate::isConfigName($key))
                     continue;
-                $id_shop = Shop::getContextShopID(true);
+                if(method_exists('Shop','getContextShopID'))
+                    $id_shop = Shop::getContextShopID(true);
+                else
+                    $id_shop = $this->context->shop->id;
                 Db::getInstance()->execute('
                     DELETE FROM `'._DB_PREFIX_.'configuration_lang`
                     WHERE `id_configuration` IN (
@@ -1545,7 +1506,6 @@ class piwikanalyticsjs extends Module {
     /**
      * Install the module
      * @return boolean false on install error
-     * @todo revise the heavy use of code used to get tabs properly installed (perhaps simplify the controller class)
      */
     public function install() {
         /* create complete new page tab */
@@ -1555,26 +1515,19 @@ class piwikanalyticsjs extends Module {
         }
         $tab->module = 'piwikanalyticsjs';
         $tab->active = TRUE;
+        if (version_compare(_PS_VERSION_,'1.5.0.5',">=") && version_compare(_PS_VERSION_,'1.5.3.999',"<=")) {
+            $tab->class_name = 'PiwikAnalytics15';
+        } else if (version_compare(_PS_VERSION_,'1.5.0.13',"<=")) {
+            $tab->class_name = 'AdminPiwikAnalytics';
+        } else {
+            $tab->class_name = 'PiwikAnalytics';
+        }
 
         if (method_exists('Tab','getInstanceFromClassName')) {
-            if (version_compare(_PS_VERSION_,'1.5.0.5',">=") && version_compare(_PS_VERSION_,'1.5.3.999',"<=")) {
-                $tab->class_name = 'PiwikAnalytics15';
-            } else if (version_compare(_PS_VERSION_,'1.5.0.13',"<=")) {
-                $tab->class_name = 'AdminPiwikAnalytics';
-            } else {
-                $tab->class_name = 'PiwikAnalytics';
-            }
             $AdminParentStats = Tab::getInstanceFromClassName('AdminStats');
-            if ($AdminParentStats == null || !($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) || $AdminParentStats->id == 0)
+            if ($AdminParentStats == null || !Validate::isLoadedObject($AdminParentStats) || (intval($AdminParentStats->id)<=0))
                 $AdminParentStats = Tab::getInstanceFromClassName('AdminParentStats');
         } else if (method_exists('Tab','getIdFromClassName')) {
-            if (version_compare(_PS_VERSION_,'1.5.0.5',">=") && version_compare(_PS_VERSION_,'1.5.3.999',"<=")) {
-                $tab->class_name = 'PiwikAnalytics15';
-            } else if (version_compare(_PS_VERSION_,'1.5.0.13',"<=")) {
-                $tab->class_name = 'AdminPiwikAnalytics';
-            } else {
-                $tab->class_name = 'PiwikAnalytics';
-            }
             $tmpId = Tab::getIdFromClassName('AdminStats');
             if ($tmpId != null && $tmpId > 0)
                 $AdminParentStats = new Tab($tmpId);
@@ -1585,39 +1538,24 @@ class piwikanalyticsjs extends Module {
             }
         }
 
-        $tab->id_parent = (isset($AdminParentStats) && ($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? $AdminParentStats->id : -1);
-        if ($tab->add())
-            Configuration::updateValue(PACONF::PREFIX.'TAPID',(int)$tab->id);
-        else {
+        $tab->id_parent = (int)(isset($AdminParentStats) && intval($AdminParentStats->id)>0 ? $AdminParentStats->id : -1);
+        if (!$tab->add()) {
             $this->_errors[] = sprintf($this->l('Unable to create new tab "Piwik Analytics", Please forward tthe following info to the developer %s'),"<br/>"
-                    .(isset($AdminParentStats) ? "isset(\$AdminParentStats): True" : "isset(\$AdminParentStats): False")
-                    ."<br/>"
-                    ."Type of \$AdminParentStats: ".gettype($AdminParentStats)
-                    ."<br/>"
-                    ."Class name of \$AdminParentStats: ".get_class($AdminParentStats)
-                    ."<br/>"
-                    .(($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats instanceof Tab: True" : "\$AdminParentStats instanceof Tab: False")
-                    ."<br/>"
-                    .(($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->id: ".$AdminParentStats->id : "\$AdminParentStats->id: ?0?")
-                    ."<br/>"
-                    .(($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->name: ".$AdminParentStats->name : "\$AdminParentStats->name: ?0?")
-                    ."<br/>"
-                    .(($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore) ? "\$AdminParentStats->class_name: ".$AdminParentStats->class_name : "\$AdminParentStats->class_name: ?0?")
-                    ."<br/>"
-                    ."Prestashop version: "._PS_VERSION_
-                    ."<br/>"
-                    ."PHP version: ".PHP_VERSION
+                    .(isset($AdminParentStats) ? "\$AdminParentStats: True" : "\$AdminParentStats:: False")
+                    ."<br/>Type of \$AdminParentStats: ".gettype($AdminParentStats)
+                    ."<br/>Class name of \$AdminParentStats: ".get_class($AdminParentStats)
+                    ."<br/>Prestashop version: "._PS_VERSION_
+                    ."<br/>PHP version: ".PHP_VERSION
             );
         }
 
         /* default values */
-        foreach ($this->getConfigFields(FALSE) as $key => $value) {
-            Configuration::updateValue($key,$value);
+        foreach ($this->config->getAll() as $key => $value) {
+            $this->config->update($key,$value);
         }
 
 //  properly not needed only here as a reminder, 
 //  if management of carts in Piwik becomes available
-//  
 //        if (!Db::getInstance()->Execute('
 //			CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'piwikanalytics` (
 //				`id_pk_analytics` int(11) NOT NULL AUTO_INCREMENT,
@@ -1630,13 +1568,14 @@ class piwikanalyticsjs extends Module {
 //				KEY `id_order` (`id_order`),
 //				KEY `sent` (`sent`)
 //			) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8 AUTO_INCREMENT=1'))
-        return (parent::install() &&
-                $this->registerHook('header') &&
-                $this->registerHook('footer') &&
-                $this->registerHook('actionSearch') &&
-                $this->registerHook('displayRightColumnProduct') &&
-                $this->registerHook('orderConfirmation') &&
-                $this->registerHook('displayMaintenance'));
+       
+        $ret = parent::install();
+        if ($ret) {
+            foreach ($this->config->getHooks() as $value) {
+                $this->registerHook($value);
+            }
+        }
+        return $ret;
     }
 
     /**
@@ -1645,9 +1584,8 @@ class piwikanalyticsjs extends Module {
      */
     public function uninstall() {
         if (parent::uninstall()) {
-            foreach ($this->getConfigFields(FALSE) as $key => $value) {
+            foreach ($this->config->getAll() as $key => $value)
                 Configuration::deleteByName($key);
-            }
             try {
                 if (method_exists('Tab','getInstanceFromClassName')) {
                     $AdminParentStats = Tab::getInstanceFromClassName('PiwikAnalytics15');
@@ -1664,13 +1602,12 @@ class piwikanalyticsjs extends Module {
                     if (!isset($tmpId) || !((bool)$tmpId) || ((int)$tmpId < 1))
                         $AdminParentStats = new Tab($tmpId);
                 }
-                if (isset($AdminParentStats) && ($AdminParentStats instanceof Tab || $AdminParentStats instanceof TabCore)) {
+                if (isset($AdminParentStats) && Validate::isLoadedObject($AdminParentStats)) {
                     $AdminParentStats->delete();
                 }
             } catch (Exception $ex) {
                 
             }
-            Configuration::deleteByName(PACONF::PREFIX.'TAPID');
             return true;
         }
         return false;

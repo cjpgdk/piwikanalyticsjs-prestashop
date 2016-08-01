@@ -38,13 +38,10 @@ class PiwikWizardHelper {
     public static $piwikhost = false;
     public static $errors = array();
     public static $strings = array(
-        '4ddd9129714e7146ed2215bcbd559335' => "I encountered an unknown error while trying to get the selected site, id #%s",
-        'e41246ca9fd83a123022c5c5b7a6f866' => "I'm unable, to get admin access to the selected site id #%s",
-        '8a7d6b386e97596cb28878e9be5804b8' => "Piwik sitename is missing",
-        '7948cb754538ab57b44c956c22aa5517' => "Piwik main url is missing",
-        '0f30ab07916f20952f2e6ef70a91d364' => "Piwik currency is missing",
-        'f7472169e468dd1fd901720f4bae1957' => "Piwik timezone is missing",
-        '75e263846f84003f0180137e79542d38' => "Error while creating site in piwik please check the following messages for clues",
+        '4ddd9129714e7146ed2215bcbd559335' => "",'e41246ca9fd83a123022c5c5b7a6f866' => "",
+        '8a7d6b386e97596cb28878e9be5804b8' => "",'7948cb754538ab57b44c956c22aa5517' => "",
+        '0f30ab07916f20952f2e6ef70a91d364' => "",'f7472169e468dd1fd901720f4bae1957' => "",
+        '75e263846f84003f0180137e79542d38' => "",
     );
 
     public static function createNewSite() {
@@ -54,17 +51,6 @@ class PiwikWizardHelper {
              * @todo add seperated functions, or just take whats posted for this to avoid multiple overides.!
              */
             PiwikWizardHelper::getFormValuesInternal(true);
-            /*
-              Array
-              (
-              [PIWIK_STEP_WIZARD] => 2
-              [PIWIK_HOST_WIZARD] => http://ps.dev.------/piwik/piwik-2.0/
-              [PIWIK_USRNAME_WIZARD] => cmj
-              [PIWIK_USRPASSWD_WIZARD] => -----------
-              [PIWIK_PAUTHUSR_WIZARD] => christian
-              [PIWIK_PAUTHPWD_WIZARD] => ----------
-             * 
-              ) */
             if (Tools::getIsset('PKNewSiteName'))
                 $siteName = Tools::getValue('PKNewSiteName');
             else {
@@ -108,7 +94,7 @@ class PiwikWizardHelper {
 
             if ($siteId = PKHelper::addPiwikSite($siteName, $urls, $ecommerce, $siteSearch, $searchKeywordParameters, $searchCategoryParameters, $excludedIps, $excludedQueryParameters, $timezone, $currency, "", "", $excludedUserAgents, $keepURLFragments)) {
 
-                Configuration::updateValue(PKHelper::CPREFIX . 'SITEID', $siteId);
+                self::getConf()->update('SITEID', $siteId);
                 Tools::redirectAdmin(AdminController::$currentIndex . '&configure=piwikanalyticsjs&token=' . Tools::getAdminTokenLite('AdminModules'));
                 return true;
             } else
@@ -166,25 +152,36 @@ class PiwikWizardHelper {
                             $pksite[0]->type /* $type */);
                     PKHelper::$error = PKHelper::$errors = null; // don't need them, we redirect
                     // save site id
-                    Configuration::updateValue(PKHelper::CPREFIX . 'SITEID', $pksiteid);
+                    self::getConf()->update('SITEID', $pksiteid);
                     Tools::redirectAdmin(str_replace('&pkwizard', '', $currentIndex) . "&token=" . Tools::getAdminTokenLite('AdminModules'));
                 } else {
                     PiwikWizardHelper::$errors[] = sprintf(PiwikWizardHelper::$strings['4ddd9129714e7146ed2215bcbd559335'], $pksiteid);
-                    PiwikWizardHelper::$password = Configuration::get(PKHelper::CPREFIX . "USRPASSWD");
-                    PiwikWizardHelper::$username = Configuration::get(PKHelper::CPREFIX . "USRNAME");
-                    PiwikWizardHelper::$usernamehttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
-                    PiwikWizardHelper::$passwordhttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
-                    PiwikWizardHelper::$piwikhost = Configuration::get(PKHelper::CPREFIX . 'HOST');
+                    PiwikWizardHelper::$password = self::getConf()->USRPASSWD;
+                    PiwikWizardHelper::$username = self::getConf()->USRNAME;
+                    PiwikWizardHelper::$usernamehttp = self::getConf()->PAUTHUSR;
+                    PiwikWizardHelper::$passwordhttp = self::getConf()->PAUTHPWD;
+                    PiwikWizardHelper::$piwikhost = self::getConf()->HOST;
                 }
             } else {
                 PiwikWizardHelper::$errors[] = sprintf(PiwikWizardHelper::$strings['e41246ca9fd83a123022c5c5b7a6f866'], $pksiteid);
-                PiwikWizardHelper::$password = Configuration::get(PKHelper::CPREFIX . "USRPASSWD");
-                PiwikWizardHelper::$username = Configuration::get(PKHelper::CPREFIX . "USRNAME");
-                PiwikWizardHelper::$usernamehttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
-                PiwikWizardHelper::$passwordhttp = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
-                PiwikWizardHelper::$piwikhost = Configuration::get(PKHelper::CPREFIX . 'HOST');
+                PiwikWizardHelper::$password = self::getConf()->USRPASSWD;
+                PiwikWizardHelper::$username = self::getConf()->USRNAME;
+                PiwikWizardHelper::$usernamehttp = self::getConf()->PAUTHUSR;
+                PiwikWizardHelper::$passwordhttp = self::getConf()->PAUTHPWD;
+                PiwikWizardHelper::$piwikhost = self::getConf()->HOST;
             }
         }
     }
 
+    /** @var PiwikAnalyticsjsConfiguration*/
+    private static $_PiwikAnalyticsjsConfiguration;
+    /** @return PiwikAnalyticsjsConfiguration */
+    public static function &getConf() {
+        if (!class_exists('PiwikAnalyticsjsConfiguration',false))
+            require_once dirname(__FILE__).'/PiwikAnalyticsjsConfiguration.php';
+        if (self::$_PiwikAnalyticsjsConfiguration === null || self::$_PiwikAnalyticsjsConfiguration === FALSE) {
+            self::$_PiwikAnalyticsjsConfiguration = new PiwikAnalyticsjsConfiguration();
+        }
+        return self::$_PiwikAnalyticsjsConfiguration;
+    }
 }

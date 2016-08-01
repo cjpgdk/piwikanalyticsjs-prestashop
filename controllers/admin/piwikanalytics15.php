@@ -246,13 +246,13 @@ class PiwikAnalytics15Controller extends ModuleAdminController {
         }
 
 
-        $http = ((bool)Configuration::get(PKHelper::CPREFIX.'CRHTTPS') ? 'https://' : 'http://');
-        $PIWIK_HOST = Configuration::get(PKHelper::CPREFIX.'HOST');
-        $PIWIK_SITEID = (int)Configuration::get(PKHelper::CPREFIX.'SITEID');
+        $http = $this->module->config->CRHTTPS;
+        $PIWIK_HOST = $this->module->config->HOST;
+        $PIWIK_SITEID = (int)$this->module->config->SITEID;
 
         $this->context->smarty->assign('help_link','https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki');
-        $user = Configuration::get(PKHelper::CPREFIX.'USRNAME');
-        $passwd = Configuration::get(PKHelper::CPREFIX.'USRPASSWD');
+        $user = $this->module->config->USRNAME;
+        $passwd = $this->module->config->USRPASSWD;
         if ((!empty($user) && $user !== FALSE) && (!empty($passwd) && $passwd !== FALSE)) {
             $this->page_header_toolbar_btn['stats'] = array(
                 'href' => $http.$PIWIK_HOST.'index.php?module=Login&action=logme&login='.$user.'&password='.md5($passwd).'&idSite='.$PIWIK_SITEID,
@@ -272,7 +272,7 @@ class PiwikAnalytics15Controller extends ModuleAdminController {
             $this->loadObject(true);
 
 
-        $PIWIK_TOKEN_AUTH = Configuration::get(PKHelper::CPREFIX.'TOKEN_AUTH');
+        $PIWIK_TOKEN_AUTH = $this->module->config->token;
         if ((empty($PIWIK_HOST) || $PIWIK_HOST === FALSE) ||
                 ($PIWIK_SITEID <= 0 || $PIWIK_SITEID === FALSE) ||
                 (empty($PIWIK_TOKEN_AUTH) || $PIWIK_TOKEN_AUTH === FALSE)) {
@@ -294,7 +294,7 @@ EOF;
             if (_PS_VERSION_ < '1.6')
                 $this->content .= '<h3><a target="_blank" href="'.$this->page_header_toolbar_btn['stats']['href'].'">'.$this->page_header_toolbar_btn['stats']['desc'].'</a> | <a target="_blank" href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki">'.$this->l('Help').'</a></h3>';
 
-            $DREPDATE = Configuration::get(PKHelper::CPREFIX.'DREPDATE');
+            $DREPDATE = $this->module->config->DREPDATE;
             if ($DREPDATE !== FALSE && (strpos($DREPDATE,'|') !== FALSE)) {
                 list($period,$date) = explode('|',$DREPDATE);
             } else {
@@ -303,8 +303,8 @@ EOF;
             }
 
             $http_auth = "";
-            $http_user = Configuration::get(PKHelper::CPREFIX.'PAUTHUSR');
-            $http_password = Configuration::get(PKHelper::CPREFIX.'PAUTHPWD');
+            $http_user = $this->module->config->PAUTHUSR;
+            $http_password = $this->module->config->PAUTHPWD;
             if ((!empty($http_user) && strlen($http_user) > 1) &&
                     (!empty($http_password) && strlen($http_password) > 1))
                 $http_auth = "{$http_user}:{$http_password}@";
@@ -354,17 +354,17 @@ EOF;
             PKHelper::$piwikHost = Tools::getValue('PKLOOKUPTOKENHOST');
 
             if (Tools::getIsset('PKLOOKUPTOKENSAVEUSRPWD',false)) {
-                Configuration::updateValue(PKHelper::CPREFIX.'USRNAME',Tools::getValue('PKLOOKUPTOKENUSRNAME',''));
-                Configuration::updateValue(PKHelper::CPREFIX.'USRPASSWD',Tools::getValue('PKLOOKUPTOKENUSRPASSWD',''));
+                $this->module->config->update('USRNAME',Tools::getValue('PKLOOKUPTOKENUSRNAME',''));
+                $this->module->config->update('USRPASSWD',Tools::getValue('PKLOOKUPTOKENUSRPASSWD',''));
             }
 
             PKHelper::$httpAuthUsername = Tools::getValue('PKLOOKUPTOKENPAUTHUSR','');
             PKHelper::$httpAuthPassword = Tools::getValue('PKLOOKUPTOKENPAUTHPWD','');
-            Configuration::updateValue(PKHelper::CPREFIX.'PAUTHUSR',PKHelper::$httpAuthUsername);
-            Configuration::updateValue(PKHelper::CPREFIX.'PAUTHPWD',PKHelper::$httpAuthPassword);
+            $this->module->config->update('PAUTHUSR',PKHelper::$httpAuthUsername);
+            $this->module->config->update('PAUTHPWD',PKHelper::$httpAuthPassword);
 
             if ($token = PKHelper::getTokenAuth(Tools::getValue('PKLOOKUPTOKENUSRNAME'),Tools::getValue('PKLOOKUPTOKENUSRPASSWD'),NULL)) {
-                Configuration::updateValue(PKHelper::CPREFIX.'TOKEN_AUTH',$token);
+                $this->module->config->update('TOKEN_AUTH',$token);
                 $this->context->smarty->assign(array('piwikToken' => $token));
             } else {
                 foreach (PKHelper::$errors as $key => $value) {
