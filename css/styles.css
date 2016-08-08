@@ -46,5 +46,5 @@ a.pkbutton { border-radius: 0; padding:5px 10px; display:inline-block;
 .pkforms .tagify-container {    margin-bottom: 5px;    width: 100%;}.pkforms .tagify-container input {    float: left;    width: auto;}
 .pkforms.small { max-width: 500px; }.pkforms label.has-error input {border: 1px solid #ff0000;}.tagify-container {height: 60px !important;}.tabs-pk.not-tab > li {
     display: inline-block;
-    margin: 5px auto;
+    margin: 5px;
 }

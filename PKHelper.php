@@ -95,6 +95,16 @@ class PKHelper {
         }
         self::$_debug_logger->logDebug($message);
     }
+    
+    /**
+     * is value of $var null or empty
+     * @param mixed $var value to check
+     * @return boolean true if $var is null or empty
+     * @since 0.8.4
+     */
+    public static function isNullOrEmpty($var) {
+        return is_null($var) || empty($var);
+    }
 
     /**
      * validate IPv4
@@ -131,23 +141,27 @@ class PKHelper {
             return false;
         return true;
     }
-
+    
     /**
-     * adds a new site to piwik
-     * @param type $siteName
-     * @param string $urls eg. www.example.com,web.example.com, ...
-     * @param boolean $ecommerce
+     * Add new website to Piwik
+     * Requires Super User access.
+     * 
+     * @param string $siteName Site name
+     * @param array|string $urls The URLs array must contain at least one URL called the 'main_url' ;
+     *                        if several URLs are provided in the array, they will be recorded
+     *                        as Alias URLs for this website.
+     * @param boolean $ecommerce Is Ecommerce Reporting enabled for this website?
      * @param boolean $siteSearch
-     * @param string $searchKeywordParameters eg. param,param2,param3, ...
-     * @param string $searchCategoryParameters eg. param,param2,param3, ..
-     * @param string $excludedIps eg. ip1,ip2,ip3 ...
+     * @param string $searchKeywordParameters Comma separated list of search keyword parameter names. eg. param,param2,param3, ...
+     * @param string $searchCategoryParameters Comma separated list of search category parameter names eg. param,param2,param3, ..
+     * @param string $excludedIps Comma separated list of IPs to exclude from the reports (allows wildcards), eg. ip1,ip2,ip3 ...
      * @param string $excludedQueryParameterseg. param,param2,param3, ..
-     * @param type $timezone
-     * @param type $currency
-     * @param type $group
-     * @param type $startDate
-     * @param type $excludedUserAgents
-     * @param boolean $keepURLFragments
+     * @param string $timezone Timezone string, eg. 'Europe/London'
+     * @param string $currency Currency, eg. 'EUR'
+     * @param string $group Website group identifier
+     * @param string $startDate Date at which the statistics for this website will start. Defaults to today's date in YYYY-MM-DD format
+     * @param string $excludedUserAgents
+     * @param int $keepURLFragments If 1, URL fragments will be kept when tracking. If 2, they will be removed. If 0, the default global behavior will be used.
      * @param type $type
      * @param type $settings
      * @return int|boolean boolean false on error, new siteid on success
@@ -184,8 +198,18 @@ class PKHelper {
             $url_params['searchKeywordParameters'] = $searchKeywordParameters;
         if ($searchCategoryParameters !== NULL && !empty($searchCategoryParameters))
             $url_params['searchCategoryParameters'] = $searchCategoryParameters;
-        if ($excludedIps !== NULL && !empty($excludedIps))
-            $url_params['excludedIps'] = $excludedIps;
+        if ($excludedIps !== NULL && !empty($excludedIps)) {
+            if (is_array($excludedIps)) {
+                $excludedIps = array_map('trim', $excludedIps);
+                $excludedIps = array_filter($excludedIps, 'strlen');
+            } else {
+                $excludedIps = explode(',', $excludedIps);
+                $excludedIps = array_map('trim', $excludedIps);
+                $excludedIps = array_filter($excludedIps, 'strlen');
+            }
+            // @todo validation on ips here as Piwik API, minimize the faulty requests to Piwik
+            $url_params['excludedIps'] = implode(',', $excludedIps);
+        }
         if ($excludedQueryParameters !== NULL && !empty($excludedQueryParameters))
             $url_params['excludedQueryParameters'] = $excludedQueryParameters;
         if ($timezone !== NULL && !empty($timezone))
@@ -265,12 +289,15 @@ class PKHelper {
             $url .= "&searchCategoryParameters=".urlencode($searchCategoryParameters);
         if ($excludedIps !== NULL) {
             if (is_array($excludedIps)) {
-                $url .= "&excludedIps=";
-                foreach ($excludedIps as $value)
-                    $url .= urlencode(trim($value)).',';
-                $url = trim($url,',');
-            } else
-                $url .= "&excludedIps=".urlencode($excludedIps);
+                $excludedIps = array_map('trim', $excludedIps);
+                $excludedIps = array_filter($excludedIps, 'strlen');
+            } else {
+                $excludedIps = explode(',', $excludedIps);
+                $excludedIps = array_map('trim', $excludedIps);
+                $excludedIps = array_filter($excludedIps, 'strlen');
+            }
+            // @todo validation on ips here as Piwik API, minimize the faulty requests to Piwik
+            $url .= "&excludedIps=".implode(',', $excludedIps);
         }
         if ($excludedQueryParameters !== NULL)
             $url .= "&excludedQueryParameters=".urlencode($excludedQueryParameters);
@@ -350,7 +377,7 @@ class PKHelper {
         } else
             $password = md5($password);
 
-        $url = self::getBaseURL(0,NULL,NULL,'API',NULL,'');
+        $url = self::getBaseURL(0,NULL,NULL,'API',NULL,FALSE);
         $url .= "&method=UsersManager.getTokenAuth&userLogin={$userLogin}&md5Password={$password}&format=JSON";
         if ($result = self::getAsJsonDecoded($url)) {
             if (isset($result->result)) {
@@ -597,7 +624,11 @@ class PKHelper {
         if ($idSite === NULL)
             $idSite = self::getConf()->SITEID;
         if ($tokenAuth === NULL)
-            $tokenAuth = self::getConf()->TOKEN_AUTH;
+            $tokenAuth_param = "&token_auth=".self::getConf()->TOKEN_AUTH;
+        else if ($tokenAuth === FALSE)
+            $tokenAuth_param = "";
+        else
+            $tokenAuth_param = "&token_auth={$tokenAuth}";
 
         $idSite_param = "&idSite={$idSite}";
         if ($idSite <= 0) {
@@ -606,7 +637,7 @@ class PKHelper {
             $idSite_param = "";
         }
 
-        return ($https ? 'https' : 'http')."://{$pkHost}index.php?module={$pkModule}&language={$isoCode}{$idSite_param}&token_auth={$tokenAuth}";
+        return ($https ? 'https' : 'http')."://{$pkHost}index.php?module={$pkModule}&language={$isoCode}{$idSite_param}{$tokenAuth_param}";
     }
 
     /**
@@ -678,8 +709,8 @@ class PKHelper {
         if (self::$httpAuthPassword == "" || self::$httpAuthPassword === false)
             self::$httpAuthPassword = self::getConf()->PAUTHPWD;
 
-        $httpauth_usr = self::$httpAuthUsername;
-        $httpauth_pwd = self::$httpAuthPassword;
+        $httpauth_usr = (string)self::$httpAuthUsername;
+        $httpauth_pwd = (string)self::$httpAuthPassword;
 
         $use_cURL = (bool)self::getConf()->USE_CURL;
         if ($use_cURL === FALSE) {
@@ -737,20 +768,34 @@ class PKHelper {
                 curl_setopt($ch,CURLOPT_URL,$url);
                 PKHelper::DebugLogger("\t: curl_setopt(\$ch, CURLOPT_URL, $url)");
                 // @TODO make this work, but how to filter out the headers from returned result??
-                //curl_setopt($ch, CURLOPT_HEADER, 1);
+                curl_setopt($ch, CURLOPT_HEADER, 0);
+                PKHelper::DebugLogger("\t: curl_setopt(\$ch, CURLOPT_HTTPHEADER, array(...))");
+                // set USER-AGENT
+                curl_setopt($ch,CURLOPT_USERAGENT,(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : PKHelper::FAKEUSERAGENT));
+                // set Username+Password
+                
+                if ((!empty($httpauth_usr) && !is_null($httpauth_usr) && $httpauth_usr !== false) &&
+                        (!empty($httpauth_pwd) && !is_null($httpauth_pwd) && $httpauth_pwd !== false)){
+                    curl_setopt($ch,CURLOPT_USERPWD,$httpauth_usr.":".$httpauth_pwd);
+                    // we use both. curl_setopt and header, as some systems dont accept 
+                    // the use of CURLOPT_USERPWD (BAD BAD Hosts or just a cra*** admin)
+                    $headers[] = "Authorization: Basic " . base64_encode($httpauth_usr.":".$httpauth_pwd);
+                    if(!in_array("Accept-language: {$lng}", $headers))
+                            $headers[] = "Accept-language: {$lng}";
+                }
                 (!empty($headers) ?
                                 curl_setopt($ch,CURLOPT_HTTPHEADER,$headers) :
-                                curl_setopt($ch,CURLOPT_HTTPHEADER,array("Accept-language: {$lng}\r\n"))
+                                curl_setopt($ch,CURLOPT_HTTPHEADER,array("Accept-language: {$lng}"))
                         );
-                PKHelper::DebugLogger("\t: curl_setopt(\$ch, CURLOPT_HTTPHEADER, array(...))");
-                curl_setopt($ch,CURLOPT_USERAGENT,(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : PKHelper::FAKEUSERAGENT));
-                if ((!empty($httpauth_usr) && !is_null($httpauth_usr) && $httpauth_usr !== false) &&
-                        (!empty($httpauth_pwd) && !is_null($httpauth_pwd) && $httpauth_pwd !== false))
-                    curl_setopt($ch,CURLOPT_USERPWD,$httpauth_usr.":".$httpauth_pwd);
+                
+                
+                
+                curl_setopt($ch,CURLOPT_COOKIESESSION,1); // new cookie "session", out with the old.
+                curl_setopt($ch,CURLOPT_FOLLOWLOCATION,0); // DO not follow, if host changed maybe they were hacked
                 curl_setopt($ch,CURLOPT_TIMEOUT,$timeout);
                 curl_setopt($ch,CURLOPT_HTTPGET,1); // just to be safe
-                curl_setopt($ch,CURLOPT_RETURNTRANSFER,TRUE);
-                curl_setopt($ch,CURLOPT_FAILONERROR,true);
+                curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+                curl_setopt($ch,CURLOPT_FAILONERROR,1);
                 if (($return = curl_exec($ch)) === false) {
                     if (!$_error2) {
                         self::$error = curl_error($ch);

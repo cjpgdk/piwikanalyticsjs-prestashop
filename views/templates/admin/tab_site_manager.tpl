@@ -86,7 +86,7 @@
             <span style="margin: 0px auto; float: none;">{l s='Keep URL Fragments' mod='piwikanalyticsjs'}</span>
             <input id="PKAdminKeepURLFragments" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $PKAdminKeepURLFragments==1} checked="checked"{/if} name="PKAdminKeepURLFragments" onchange="tabContentChanged(true);"/>
             <label for="PKAdminKeepURLFragments" data-on="{l s='Yes' mod='piwikanalyticsjs'}" data-off="{l s='No' mod='piwikanalyticsjs'}" style="margin: 0px auto; float: none;"></label>
-            <small>{l s='Is this site an ecommerce site?' mod='piwikanalyticsjs'}</small>
+            <small></small>
         </label>
     </div>
     <label>

@@ -21,12 +21,8 @@ if (!defined('_PS_VERSION_'))
  * You should have received a copy of the GNU General Public License
  * along with PiwikAnalyticsJS for prestashop.  If not, see <http://www.gnu.org/licenses/>.
  *
- *
- * @author Christian M. Jensen
- * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
- * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  */
-if (!class_exists('PKHelper',false)) {
+if (!class_exists('PKHelper', false)){
     require_once dirname(__FILE__).'/PKHelper.php';
 }
 
@@ -35,54 +31,328 @@ class PACONF extends PiwikAnalyticsjsConfiguration {
 }
 
 /**
- * @property string $token Piwik auth token
+ *
+ * @author Christian M. Jensen
+ * @link http://cmjnisse.github.io/piwikanalyticsjs-prestashop
+ * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ * @since 0.9
+ * @access public
+ * 
+ * @property string $token Piwik auth token, alias of '$TOKEN_AUTH'
+ * @property boolean $use_https use HTTPS when talking to Piwik, alias of '$CRHTTPS'
+ * @property boolean $usehttps use HTTPS when talking to Piwik, alias of '$CRHTTPS'
+ * @property int $site_id Piwik site is, alias of '$SITEID'
+ * @property string $host Piwik host url
+ * @property string $currency currency to use as default when posting cart/orders to Piwik, alias of '$DEFAULT_CURRENCY'
+ * @property boolean $use_proxy use proxy script or not
+ * @property boolean $useproxy use proxy script or not, alias of '$USE_PROXY'
+ * @property boolean $use_curl use cURL or not
+ * @property boolean $usecurl use cURL or not, alias of '$USE_CURL'
+ * @property int $proxytimeout proxy script timeout, alias of '$PROXY_TIMEOUT'
+ * @property string $proxyscript proxy script url, alias of '$PROXY_SCRIPT'
+ * @property string $producttplv1 Product id template v1, alias of '$PRODID_V1'
+ * @property string $producttplv2 Product id template v2, alias of '$PRODID_V2'
+ * @property string $producttplv3 Product id template v3, alias of '$PRODID_V3'
+ * @property string $searchquery Search query template, alias of '$SEARCH_QUERY'
+ * @property string $setdomains Search query template, alias of '$SET_DOMAINS'
+ * @property boolean $apiurl set Piwik api url or not
+ * @property boolean $dhashtag Discard hash tag or not
+ * 
+ *  
+ * @method boolean validate_save_token(string $post_key) validate and save TOKEN_AUTH with value from _POST or _GET in that order
+ * @method boolean validate_save_siteid(string $post_key) validate and save SITEID with value from _POST or _GET in that order
+ * @method boolean validate_save_host(string $post_key) validate and save HOST with value from _POST or _GET in that order
+ * @method boolean validate_save_isset_boolean_dnt(string $post_key) validate and save DNT, if isset set as boolean, if isset == true | false
+ * @method boolean validate_save_currency(string $post_key) validate and save DEFAULT_CURRENCY with value from _POST or _GET in that order
+ * @method boolean validate_save_drepdate(string $post_key) validate and save DREPDATE with value from _POST or _GET in that order
+ * @method boolean validate_save_isset_boolean_useproxy(string $post_key) validate and save USE_PROXY, if isset set as boolean, if isset == true | false
+ * @method boolean validate_save_isset_boolean_usecurl(string $post_key) validate and save USE_CURL, if isset set as boolean, if isset == true | false
+ * @method boolean validate_save_isset_boolean_usehttps(string $post_key) validate and save CRHTTPS, if isset set as boolean, if isset == true | false
+ * @method boolean validate_save_isint_proxytimeout(string $post_key, integer $minimum_value, integer $default_value) validate and save PROXY_TIMEOUT with value from _POST or _GET in that order
+ * @method boolean validate_save_proxyscript(string $post_key) validate and save PROXY_SCRIPT with value from _POST or _GET in that order
+ * @method boolean validate_save_producttplv1(string $post_key) validate and save PRODID_V1 with value from _POST or _GET in that order
+ * @method boolean validate_save_producttplv2(string $post_key) validate and save PRODID_V2 with value from _POST or _GET in that order
+ * @method boolean validate_save_producttplv3(string $post_key) validate and save PRODID_V3 with value from _POST or _GET in that order
+ * @method boolean validate_save_searchquery(string $post_key) validate and save SEARCH_QUERY with value from _POST or _GET in that order
+ * @method boolean validate_save_setdomains(string $post_key) validate and save SET_DOMAINS with value from _POST or _GET in that order
+ * @method boolean validate_save_isset_boolean_apiurl(string $post_key) validate and save APIURL, if isset set as boolean, if isset == true | false
+ * @method boolean validate_save_isset_boolean_dhashtag(string $post_key) validate and save DHashTag, if isset set as boolean, if isset == true | false
+ * @method boolean validate_save_exhtml(string $post_key) validate and save EXHTML with value from _POST or _GET in that order
+ * @method boolean validate_save_isset_boolean_linktrack(string $post_key) validate and save LINKTRACK, if isset set as boolean, if isset == true | false
+ * 
+ *  
+ * 
  */
 class PiwikAnalyticsjsConfiguration {
 
     /** Default Referral Cookie Timeout */
-    const PK_RC_TIMEOUT = 262974;
+    const PK_RC_TIMEOUT=262974;
 
     /** Default Visitor Cookie Timeout */
-    const PK_VC_TIMEOUT = 569777;
+    const PK_VC_TIMEOUT=569777;
 
     /** Default Session Cookie Timeout */
-    const PK_SC_TIMEOUT = 30;
+    const PK_SC_TIMEOUT=30;
 
     /**  prefix useed for configuration item name */
-    const PREFIX = "PIWIK_";
+    const PREFIX="PIWIK_";
 
-    private $config_fields = array(
-        'USE_PROXY' => 0,'HOST' => "",'SITEID' => 0,
-        'TOKEN_AUTH' => "",'COOKIE_TIMEOUT' => self::PK_VC_TIMEOUT,
-        'SESSION_TIMEOUT' => self::PK_SC_TIMEOUT,'DEFAULT_CURRENCY' => 'EUR',
-        'CRHTTPS' => 0,'PRODID_V1' => '{ID}-{ATTRID}#{REFERENCE}',
-        'PRODID_V2' => '{ID}#{REFERENCE}','PRODID_V3' => '{ID}-{ATTRID}',
-        'COOKIE_DOMAIN' => '','SET_DOMAINS' => "",'DNT' => 1,
-        'EXHTML' => "",'RCOOKIE_TIMEOUT' => self::PK_RC_TIMEOUT,
-        'USRNAME' => "",'USRPASSWD' => "",'PAUTHUSR' => "",'PAUTHPWD' => "",
-        'DREPDATE' => "day|today",'USE_CURL' => 0,'APTURL' => 0,
-        'COOKIEPATH' => "",'COOKIEPREFIX' => "",'DHashTag' => 0,'LINKClS' => "",
-        'LINKTRACK' => 1,'LINKTTIME' => "",'PROXY_SCRIPT' => 0,
-        'PROXY_TIMEOUT' => 5,'SEARCH_QUERY' => "{QUERY} ({PAGE})",
+    private $config_fields=array(
+        'USE_PROXY' => 0, 'HOST' => "", 'SITEID' => 0,
+        'TOKEN_AUTH' => "", 'COOKIE_TIMEOUT' => self::PK_VC_TIMEOUT,
+        'SESSION_TIMEOUT' => self::PK_SC_TIMEOUT, 'DEFAULT_CURRENCY' => 'EUR',
+        'CRHTTPS' => 0, 'PRODID_V1' => '{ID}-{ATTRID}#{REFERENCE}',
+        'PRODID_V2' => '{ID}#{REFERENCE}', 'PRODID_V3' => '{ID}-{ATTRID}',
+        'COOKIE_DOMAIN' => '', 'SET_DOMAINS' => "", 'DNT' => 1,
+        'EXHTML' => "", 'RCOOKIE_TIMEOUT' => self::PK_RC_TIMEOUT,
+        'USRNAME' => "", 'USRPASSWD' => "", 'PAUTHUSR' => "", 'PAUTHPWD' => "",
+        'DREPDATE' => "day|today", 'USE_CURL' => 0, 'APTURL' => 0,
+        'COOKIEPATH' => "", 'COOKIEPREFIX' => "", 'DHashTag' => 0, 'LINKClS' => "",
+        'LINKTRACK' => 1, 'LINKTTIME' => "", 'PROXY_SCRIPT' => 0,
+        'PROXY_TIMEOUT' => 5, 'SEARCH_QUERY' => "{QUERY} ({PAGE})",
     );
 
-    public function __construct() {
-        foreach ($this->config_fields as $key => & $value) {
-            if ($_value = Configuration::get(self::PREFIX.$key))
-                $value = $_value;
+    public function __construct($load=true) {
+        if ($load){
+            foreach ($this->config_fields as $key => & $value){
+                switch ($key){
+                    case 'DNT':
+                    case 'CRHTTPS':
+                    case 'USE_PROXY':
+                    case 'USE_CURL':
+                    case 'APTURL':
+                    /* case 'APIURL': */
+                    case 'DHashTag':
+                    case 'LINKTRACK':
+                        // boolean values, if 0 or false default will not work
+                        $value=Configuration::get(self::PREFIX.$key);
+                        break;
+                    default:
+                        if ($_value=Configuration::get(self::PREFIX.$key))
+                            $value=$_value;
+                        break;
+                }
+            }
         }
     }
 
-    public function getAll() {
-        $return = array();
-        foreach ($this->config_fields as $key => $value) {
-            $return[self::PREFIX.$key] = $value;
+    public $validate_output=array();
+
+    /**
+     * save current configuration or configuration settings by name
+     * @param null|string $name if null save all configuration settings, otherwise save the configuration by name
+     * @return void no return value
+     */
+    public function save($name=NULL) {
+        if ($name===NULL){
+            foreach ($this->config_fields as $key => $value){
+                $html=false;
+                if ($key=="EXHTML")
+                    $html=true;
+                Configuration::updateValue(self::PREFIX.$key, $value, $html);
+            }
+        }else{
+            $name=$this->getInternalConfigName($name);
+            if (isset($this->config_fields[$name])){
+                $html=false;
+                if ($key=="EXHTML")
+                    $html=true;
+                Configuration::updateValue(self::PREFIX.$name, $this->config_fields[$name], $html);
+            }
         }
-        return $return;
     }
 
+    /**
+     * validate configuration
+     * @param string $section the section or setting to validate, if section then validation results are saved in $validate_output
+     * @return boolean
+     */
+    public function validate($section='piwik') {
+        $this->validate_output=array();
+        switch ($section){
+            case 'piwik':
+                $this->validate_output=array(
+                    'token' => false, 'siteid' => false, 'host' => false,
+                    'piwik_connection' => array(
+                        'result' => false,
+                        'errors' => array(),
+                    ),
+                );
+                if (PKHelper::isNullOrEmpty($this->token)||!Validate::isString($this->token)){
+                    return false;
+                } else
+                    $this->validate_output['token']=true;
+                if (PKHelper::isNullOrEmpty($this->siteid)||!Validate::isInt($this->siteid)){
+                    return false;
+                } else
+                    $this->validate_output['siteid']=true;
+                if (!PKHelper::isNullOrEmpty($this->host)){
+                    if (PKHelper::isValidUrl('http://'.$this->host)){
+                        if (substr($this->host, -1)!="/"){
+                            $this->host .= "/";
+                            $this->update('HOST', $this->host);
+                        }
+                        $this->validate_output['host']=true;
+                    } else{
+                        return false;
+                    }
+                } else{
+                    return false;
+                }
+                if ($site=PKHelper::getPiwikSite($this->siteid)){
+                    $this->validate_output['piwik_connection']['result']=true;
+                    return true;
+                } else{
+                    $this->validate_output['piwik_connection']['errors']=PKHelper::$errors;
+                    PKHelper::$error=null;
+                    PKHelper::$errors=array();
+                    return false;
+                }
+                break;
+            case 'proxy_script':
+                break;
+
+            default:
+                $section=$this->getInternalConfigName($section);
+                if (isset($this->config_fields[$section])){
+                    switch ($section){
+                        case 'TOKEN_AUTH':
+                            if (PKHelper::isNullOrEmpty($this->TOKEN_AUTH)||!Validate::isString($this->TOKEN_AUTH))
+                                return false;
+                            return true;
+                        case 'SITEID':
+                            if (PKHelper::isNullOrEmpty($this->SITEID)||!Validate::isInt($this->SITEID)||((int) $this->SITEID<=0))
+                                return false;
+                            return true;
+                        case 'HOST':
+                            $HOST=$this->HOST;
+                            if (!PKHelper::isNullOrEmpty($HOST)){
+                                $HOST=str_replace(array('http://', 'https://', '//'), "", $HOST);
+                                if (substr($HOST, -1)!="/")
+                                    $HOST .= "/";
+                                if (PKHelper::isValidUrl($HOST)||PKHelper::isValidUrl('http://'.$HOST)){
+                                    if ($HOST!=$this->HOST)
+                                        $this->update('HOST', $HOST);
+                                    return true;
+                                }
+                            }
+                            return false;
+                        case 'DNT':
+                            return (Validate::isBool($this->DNT));
+                        case 'DEFAULT_CURRENCY':
+                            if (!PKHelper::isNullOrEmpty($this->DEFAULT_CURRENCY)&&(strlen($this->DEFAULT_CURRENCY)==3))
+                                return true;
+                            return false;
+                        case 'DREPDATE':
+                            $DREPDATE=$this->DREPDATE;
+                            if (!PKHelper::isNullOrEmpty($DREPDATE)){
+                                return (strpos($DREPDATE, '|')!==false);
+                            }
+                            return false;
+                        case 'USE_PROXY':
+                            return (Validate::isBool($this->USE_PROXY));
+                        case 'USE_CURL':
+                            return (Validate::isBool($this->USE_CURL));
+                        case 'CRHTTPS':
+                            return (Validate::isBool($this->CRHTTPS));
+                        case 'PROXY_TIMEOUT':
+                            return (Validate::isInt($this->PROXY_TIMEOUT))&&((int) $this->PROXY_TIMEOUT>0);
+                        case 'PROXY_SCRIPT':
+                            $PROXY_SCRIPT=$this->PROXY_SCRIPT;
+                            if (!PKHelper::isNullOrEmpty($PROXY_SCRIPT)){
+                                $PROXY_SCRIPT=str_replace(array('http://', 'https://', '//'), "", $PROXY_SCRIPT);
+                                if (PKHelper::isValidUrl($PROXY_SCRIPT)||PKHelper::isValidUrl('http://'.$PROXY_SCRIPT)){
+                                    if ($PROXY_SCRIPT!=$this->PROXY_SCRIPT)
+                                        $this->update('PROXY_SCRIPT', $PROXY_SCRIPT);
+                                    return true;
+                                }
+                            }
+                            return false;
+                        case 'PRODID_V1':
+                        case 'PRODID_V2':
+                        case 'PRODID_V3':
+                            $_PRODID_=$this->{$section};
+                            if (!preg_match("/{ID}/", $_PRODID_)){
+                                $this->validate_output['ID']=1;
+                                return false;
+                            }
+                            if ($section=="PRODID_V1"||$section=="PRODID_V2"){
+                                if (!preg_match("/{REFERENCE}/", $_PRODID_)){
+                                    $this->validate_output['REFERENCE']=1;
+                                    return false;
+                                }
+                            }
+                            if ($section=="PRODID_V1"||$section=="PRODID_V3"){
+                                if (!preg_match("/{ATTRID}/", $_PRODID_)){
+                                    $this->validate_output['ATTRID']=1;
+                                    return false;
+                                }
+                            }
+                            return true;
+                        case 'SEARCH_QUERY':
+                            $SEARCH_QUERY=$this->SEARCH_QUERY;
+                            if (!preg_match("/{QUERY}/", $tmp)){
+                                $this->validate_output['QUERY']=1;
+                                return false;
+                            }
+                            //PAGE not required so only set error
+                            if (!preg_match("/{PAGE}/", $tmp))
+                                $this->validate_output['PAGE']=1;
+                            return true;
+                        case 'SET_DOMAINS':
+                            /*
+                             * @todo some validating on SET_DOMAINS
+                             */
+                            return true;
+                        case 'DHASHTAG':
+                            return (Validate::isBool($this->DHASHTAG));
+                        case 'APTURL':
+                        case 'APIURL':
+                            return (Validate::isBool($this->APIURL));
+                        case 'EXHTML':
+                            /*
+                             * @todo some validating on EXHTML
+                             */
+                            return true;
+                        case 'LINKTRACK':
+                            return (Validate::isBool($this->LINKTRACK));
+                        default:
+                            trigger_error("Config setting {$section} do not exists", E_USER_WARNING);
+                            break;
+                    }
+                } else{
+                    trigger_error("Unable to validate unkown section={$section}", E_USER_WARNING);
+                }
+                break;
+        }
+        return false;
+    }
+
+    private function getInternalConfigName($s) {
+        $aliases=array(
+            'token' => 'TOKEN_AUTH', 'site_id' => 'SITEID',
+            'use_https' => 'CRHTTPS', 'currency' => 'DEFAULT_CURRENCY',
+            'useproxy' => 'USE_PROXY', 'usehttps' => 'CRHTTPS',
+            'usecurl' => 'USE_CURL', 'proxytimeout' => 'PROXY_TIMEOUT',
+            'proxyscript' => 'PROXY_SCRIPT', 'producttplv1' => 'PRODID_V1',
+            'producttplv2' => 'PRODID_V2', 'producttplv3' => 'PRODID_V3',
+            'searchquery' => 'SEARCH_QUERY', 'setdomains' => 'SET_DOMAINS',
+            'apiurl' => 'APTURL',
+        );
+        if (isset($aliases[strtolower($s)]))
+            return $aliases[strtolower($s)];
+        return str_replace(self::PREFIX, '', strtoupper($s));
+    }
+
+    /**
+     * get module default hooks for the current version of PrestaShop
+     * @return array
+     */
     public function getHooks() {
-        $hooks = array(
+        $hooks=array(
+            'defaults' => array(
+            /* hooks with same name on all supported ps versions */
+            ),
             'PS15' => array(
                 /* 'header', */
                 'displayHeader',
@@ -95,113 +365,44 @@ class PiwikAnalyticsjsConfiguration {
                 'displayMaintenance'
             ),
         );
-        if (version_compare(substr(_PS_VERSION_,0,3),'1.5','<=')) {
-            return $hooks['PS15'];
+        if (version_compare(substr(_PS_VERSION_, 0, 3), '1.5', '<=')){
+            return array_merge($hooks['defaults'], $hooks['PS15']);
         }
+        return $hooks['defaults'];
     }
 
+    /**
+     * get all configuration items including value
+     * @param bool $prefix include configuration prefix (PACONF::PREFIX) in configuration name
+     * @return array
+     */
+    public function getAll($prefix=true) {
+        $return=array();
+        foreach ($this->config_fields as $key => $value){
+            $return[($prefix?self::PREFIX:'').$key]=$value;
+        }
+        return $return;
+    }
+
+    /**
+     * get url that points to piwik including http(s) based on the configuration
+     * @return string
+     */
     public function getPiwikUrl() {
-        return ((bool)$this->use_https ? 'https://' : 'http://').$this->host;
-    }
-
-    public $validate_output = array();
-
-    public function validate($section = 'piwik') {
-
-        switch ($section) {
-            case 'piwik':
-                $this->validate_output = array(
-                    'token' => false,'siteid' => false,'host' => false,
-                    'piwik_connection' => array(
-                        'result' => false,
-                        'errors' => array(),
-                    ),
-                );
-                if ($this->isNullOrEmpty($this->token) || !Validate::isString($this->token)) {
-                    return false;
-                } else
-                    $this->validate_output['token'] = true;
-                if ($this->isNullOrEmpty($this->siteid) || !Validate::isInt($this->siteid)) {
-                    return false;
-                } else
-                    $this->validate_output['siteid'] = true;
-                if (!$this->isNullOrEmpty($this->host)) {
-                    if (PKHelper::isValidUrl('http://'.$this->host)) {
-                        if (substr($this->host,-1) != "/") {
-                            $this->host .= "/";
-                            Configuration::updateValue(self::PREFIX.'HOST',$this->host);
-                        }
-                        $this->validate_output['host'] = true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-                if ($site = PKHelper::getPiwikSite($this->siteid)) {
-                    $this->validate_output['piwik_connection']['result'] = true;
-                    return true;
-                } else {
-                    $this->validate_output['piwik_connection']['errors'] = PKHelper::$errors;
-                    PKHelper::$error = null;
-                    PKHelper::$errors = array();
-                    return false;
-                }
-                break;
-            case 'proxy_script':
-                break;
-
-            default:
-                if (isset($this->{$section})) {
-                    $section = $this->getInternalConfigName($section);
-                    switch ($section) {
-                        case 'TOKEN_AUTH':
-                            if (!isset($this->TOKEN_AUTH) || !Validate::isString($this->TOKEN_AUTH))
-                                return false;
-                            return true;
-                        case 'SITEID':
-                            if (!isset($this->SITEID) || !Validate::isInt($this->SITEID))
-                                return false;
-                            return true;
-                        case 'HOST':
-                            if (isset($this->HOST) && !empty($this->HOST)) {
-                                if (PKHelper::isValidUrl('http://'.$this->HOST)) {
-                                    return true;
-                                }
-                            }
-                            return false;
-                        default:
-                            break;
-                    }
-                }
-                break;
-        }
-        return false;
-    }
-
-    private function isNullOrEmpty($var) {
-        return is_null($var) || empty($var);
-    }
-
-    private function getInternalConfigName($s) {
-        $aliases = array(
-            'token' => 'TOKEN_AUTH',
-            'site_id' => 'SITEID',
-            'use_https' => 'CRHTTPS'
-        );
-        if (isset($aliases[strtolower($s)]))
-            return $aliases[strtolower($s)];
-        return str_replace(self::PREFIX,'',strtoupper($s));
+        return ((bool) $this->use_https?'https://':'http://').$this->host;
     }
 
     /**
      * Get the value of configuration item by name
      * @param string $name
-     * @return boolean
+     * @return boolean|mixed boolean false if configuration setting is not isset
      */
     public function __get($name) {
-        $name = $this->getInternalConfigName($name);
-        if (isset($this->config_fields[$name])) {
+        if (strtoupper($name)=='APTURL'){
+            trigger_error("The use of {$name} is deprecated please use 'APIURL', wrongly named", E_DEPRECATED);
+        }
+        $name=$this->getInternalConfigName($name);
+        if (isset($this->config_fields[$name])){
             return $this->config_fields[$name];
         }
         return FALSE;
@@ -212,11 +413,14 @@ class PiwikAnalyticsjsConfiguration {
      * @param string $name Key
      * @param mixed $value
      */
-    public function __set($name,$value) {
-        $name = $this->getInternalConfigName($name);
+    public function __set($name, $value) {
+        if (strtoupper($name)=='APTURL'){
+            trigger_error("The use of {$name} is deprecated please use 'APIURL', wrongly named", E_DEPRECATED);
+        }
+        $name=$this->getInternalConfigName($name);
         if (is_bool($value))
-            $value = ($value ? 1 : 0);
-        $this->config_fields[$name] = $value;
+            $value=($value?1:0);
+        $this->config_fields[$name]=$value;
     }
 
     /**
@@ -225,11 +429,110 @@ class PiwikAnalyticsjsConfiguration {
      * @param mixed $values $values is an array if the configuration is multilingual, a single string else.
      * @param boolean $html Specify if html is authorized in value
      */
-    public function update($key,$value,$html = false) {
-        $key = $this->getInternalConfigName($key);
+    public function update($key, $value, $html=false) {
+        $key=$this->getInternalConfigName($key);
         if (is_bool($value))
-            $value = ($value ? 1 : 0);
-        $this->config_fields[$key] = $value;
-        Configuration::updateValue(self::PREFIX.$key,$value,$html);
+            $value=($value?1:0);
+        $this->config_fields[$key]=$value;
+        Configuration::updateValue(self::PREFIX.$key, $value, $html);
     }
+
+    /**
+     * supports<br>
+     * validate_save_{CONFIG-NAME}("POST|GET-VAR_NAME"): Validate and save from post/get values
+     * @param string $name
+     * @param mixed $arguments values for what ever function your are trying to call 
+     * @return mixed
+     */
+    public function __call($name, $arguments) {
+        $name=explode('_', strtolower($name));
+        if (!isset($name[0]))
+            return false;
+        switch ($name[0]){
+            case 'validate':
+                // START: 'validate' Overload method
+                if (!isset($name[1]))
+                    return false;
+                switch ($name[1]){
+                    // START: 'validate_save_' Overload method
+                    case 'save':
+                        if (!isset($name[2]))
+                            return false;
+                        if (!isset($arguments[0])||is_null($arguments[0]))
+                            return false;
+                        if ($name[2]=="isset"){
+                            // START: 'validate_save_isset_' Overload method
+                            if (!isset($name[3])) // type, eg. boolean
+                                return false;
+                            if (!isset($name[4])) // config name
+                                return false;
+                            switch ($name[3]){
+                                // START: 'validate_save_isset_boolean' Overload method
+                                case 'bool':
+                                case 'boolean':
+                                    $validate_key=$this->getInternalConfigName($name[4]);
+                                    if (Tools::getIsset(self::PREFIX.$arguments[0]))
+                                        $this->{$validate_key}=1;
+                                    else if (Tools::getIsset($arguments[0]))
+                                        $this->{$validate_key}=1;
+                                    else
+                                        $this->{$validate_key}=0;
+                                    return $this->validateSaveInternal($validate_key);
+                                    // END: 'validate_save_isset_boolean' Overload method
+                                    break;
+                            }
+                            // END: 'validate_save_isset_' Overload method
+                        } else if ($name[2]=="isint"){
+                            // START: 'validate_save_isint_' Overload method
+                            if (!isset($name[3]))
+                                return false;
+                            $is_error=false;
+                            $validate_key=$this->getInternalConfigName($name[3]);
+                            if (Tools::getIsset(self::PREFIX.$arguments[0]))
+                                $this->{$validate_key}=(int) Tools::getValue(self::PREFIX.$arguments[0], 0);
+                            else if (Tools::getIsset($arguments[0]))
+                                $this->{$validate_key}=(int) Tools::getValue(self::PREFIX.$arguments[0], 0);
+                            else{ /* defaults to $default_value ($arguments[2]) if isset else $minimum_value */
+                                $is_error=true;
+                                $this->{$validate_key}=(isset($arguments[2])?(int) $arguments[2]:(isset($arguments[1])?(int) $arguments[1]:0));
+                            }
+
+                            if (isset($arguments[1])&&isset($arguments[2])&&($this->{$validate_key}<(int) $arguments[1])){
+                                $this->{$validate_key}=(int) $arguments[2];
+                                $is_error=true;
+                            } else if (isset($arguments[1])&&($this->{$validate_key}<(int) $arguments[1])){
+                                $this->{$validate_key}=(int) $arguments[1];
+                                $is_error=true;
+                            }
+                            $validate_key_error=$this->validateSaveInternal($validate_key);
+                            return (($is_error===false)?$validate_key_error:($is_error===false));
+                            // END: 'validate_save_isint_' Overload method
+                        } else{
+                            $validate_key=$this->getInternalConfigName($name[2]);
+                            if (Tools::getIsset(self::PREFIX.$arguments[0]))
+                                $this->{$validate_key}=Tools::getValue(self::PREFIX.$arguments[0], '');
+                            else if (Tools::getIsset($arguments[0]))
+                                $this->{$validate_key}=Tools::getValue($arguments[0], '');
+                            else
+                                return false;
+                            return $this->validateSaveInternal($validate_key);
+                        }
+                        // END: 'validate_save_' Overload method
+                        break;
+                }
+                // END: 'validate' Overload method
+                break;
+        }
+        return false;
+    }
+
+    private function validateSaveInternal($validate_key) {
+        if ($this->validate($validate_key)){
+            $this->save($validate_key);
+            return true;
+        } else{
+            return false;
+        }
+    }
+
 }

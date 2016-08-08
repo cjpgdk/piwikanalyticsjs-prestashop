@@ -41,7 +41,7 @@
 
     <label class="switch">
         <span>{l s='Enable client side DoNotTrack detection' mod='piwikanalyticsjs'}</span>
-        <input id="{$pkCPREFIX}DNT" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $pkfvDNT==1} checked="checked"{/if} name="{$pkCPREFIX}DNT" onchange="tabContentChanged(true);" />
+        <input id="{$pkCPREFIX}DNT" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $pkfvDNT eq true}checked="checked"{/if} name="{$pkCPREFIX}DNT" onchange="tabContentChanged(true);" />
         <label for="{$pkCPREFIX}DNT" data-on="Yes" data-off="No" style="clear: both;"></label>
         <small>{l s='Tracking requests will not be sent if visitors do not wish to be tracked.' mod='piwikanalyticsjs'}</small>
     </label>

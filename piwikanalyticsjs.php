@@ -27,6 +27,7 @@ if (!defined('_PS_VERSION_'))
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  * 
  * @todo config wiz, set currency to use.
+ * @todo fix $keepURLFragments in add/update piwik site, this is not a boolean value but an int of 0,1 and 2
  */
 class piwikanalyticsjs extends Module {
 
@@ -81,6 +82,7 @@ class piwikanalyticsjs extends Module {
         require_once dirname(__FILE__).'/PiwikAnalyticsjsConfiguration.php';
         require_once dirname(__FILE__).'/PKHelper.php';
 
+        $this->config = & PKHelper::getConf();
         //* warnings on module list page
         if ($this->id && !$this->config->token)
             $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning.',<br/> ' : '').$this->l('You need to configure the auth token');
@@ -100,7 +102,6 @@ class piwikanalyticsjs extends Module {
             if (version_compare(_PS_VERSION_,'1.5.0.13',"<="))
                 PKHelper::$_module = & $this;
         }
-        $this->config = & PKHelper::getConf();
     }
 
     /**
@@ -160,7 +161,7 @@ class piwikanalyticsjs extends Module {
         }
 
         $config_wizard_link = $this->context->link->getAdminLink('AdminModules').
-                "&configure={$this->name}&tab_module=analytics_stats&module_name={$this->name}&pkwizard";
+                "&configure={$this->name}&tab_module=analytics_stats&module_name={$this->name}&pkwizard=1";
 
         // Piwik image tracking
         $image_tracking = array(
@@ -357,8 +358,8 @@ class piwikanalyticsjs extends Module {
                 'pkfvPAUTHPWD_WIZARD' => PiwikWizardHelper::$passwordhttp,
             ));
             if ($step == 99)
-                $Currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
-            if (!is_object($Currency)) {
+                $Currency = new Currency((int)Configuration::get('PS_CURRENCY_DEFAULT'));
+            if (!is_object($Currency) || !Validate::isLoadedObject($Currency)) {
                 $Currency = new stdClass();
                 $Currency->iso_code = 'EUR';
             }
@@ -377,7 +378,7 @@ class piwikanalyticsjs extends Module {
             unset($Currency);
         }
         $this->displayErrorsPiwik();
-        $this->displayErrorsPiwik2();
+        $this->displayErrorsPiwikWizard();
         if (is_array($this->_errors))
             $_html = implode('',$this->_errors).$_html;
         else
@@ -405,7 +406,7 @@ class piwikanalyticsjs extends Module {
             $passwordhttp = Tools::getValue($KEY_PREFIX.'PAUTHPWD_WIZARD',"");
         if ($piwikhost !== false && !empty($piwikhost)) {
             $tmp = $piwikhost;
-            if (Validate::isUrl($tmp) || Validate::isUrl('http://'.$tmp)) {
+            if (PKHelper::isValidUrl($tmp) || PKHelper::isValidUrl('http://'.$tmp)) {
                 if (preg_match("/https:/i",$tmp))
                     $this->config->update('CRHTTPS',1);
                 $tmp = str_ireplace(array('http://','https://','//'),"",$tmp);
@@ -444,50 +445,29 @@ class piwikanalyticsjs extends Module {
         if (Tools::isSubmit('submitUpdatePiwikAnalyticsjsDefaults')) {
             $isPost = true;
             // [PIWIK_HOST] Piwik host URL
-            if (Tools::getIsset($KEY_PREFIX.'HOST')) {
-                $tmp = Tools::getValue($KEY_PREFIX.'HOST','');
-                if (!empty($tmp)) {
-                    if (Validate::isUrl($tmp) || Validate::isUrl('http://'.$tmp)) {
-                        $tmp = str_replace(array('http://','https://','//'),"",$tmp);
-                        if (substr($tmp,-1) != "/") {
-                            $tmp .= "/";
-                        }
-                        $this->config->update('HOST',$tmp);
-                    } else {
-                        $this->_errors[] = $this->displayError($this->l('Piwik host url is not valid'));
-                    }
-                } else {
+            if (!$this->config->validate_save_host("HOST")){
+                if(PKHelper::isNullOrEmpty($this->config->host))
                     $this->_errors[] = $this->displayError($this->l('Piwik host cannot be empty'));
-                }
+                else
+                    $this->_errors[] = $this->displayError(sprintf($this->l('Piwik host url is not valid (%s)'), $this->config->host));
             }
             // [PIWIK_SITEID] Piwik site id
-            if (Tools::getIsset($KEY_PREFIX.'SITEID')) {
-                $tmp = (int)Tools::getValue($KEY_PREFIX.'SITEID',0);
-                $this->config->update('SITEID',$tmp);
-                if ($tmp <= 0) {
-                    $this->_errors[] = $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
-                }
-            }
+            if (!$this->config->validate_save_siteid("SITEID"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('Piwik site id is not valid (%s)'), $this->config->siteid));
             // [PIWIK_TOKEN_AUTH] Piwik authentication token
-            if (Tools::getIsset($KEY_PREFIX.'TOKEN_AUTH')) {
-                $tmp = Tools::getValue($KEY_PREFIX.'TOKEN_AUTH','');
-                $this->config->update('TOKEN_AUTH',$tmp);
-                if (empty($tmp)) {
-                    $this->_errors[] = $this->displayError($this->l('Piwik auth token is empty'));
-                }
-            }
-            // [PIWIK_DNT] 
-            if (Tools::getIsset($KEY_PREFIX.'DNT')) {
-                $this->config->update('DNT',1);
-            } else {
-                $this->config->update('DNT',0);
-            }
+            if (!$this->config->validate_save_token("TOKEN_AUTH"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('Piwik auth token is not valid (%s)'), $this->config->token));
+            // [PIWIK_DNT]
+            if (!$this->config->validate_save_isset_boolean_dnt("DNT"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("DoNotTrack")));
             // [PIWIK_DEFAULT_CURRENCY]
-            if (Tools::getIsset($KEY_PREFIX.'DEFAULT_CURRENCY'))
-                $this->config->update("DEFAULT_CURRENCY",Tools::getValue($KEY_PREFIX.'DEFAULT_CURRENCY','EUR'));
+            if (!$this->config->validate_save_currency("DEFAULT_CURRENCY"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('Currency is not valid (%s)'), $this->config->currency));
             // [PIWIK_DREPDATE] (default report date)
-            if (Tools::getIsset($KEY_PREFIX.'DREPDATE'))
-                $this->config->update("DREPDATE",Tools::getValue($KEY_PREFIX.'DREPDATE','day|today'));
+            if (!$this->config->validate_save_drepdate("DREPDATE"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('Piwik Report date is not valid (%s)'), $this->config->drepdate));
+
+            /* don't validate there is no default requirements */
             // [PIWIK_USRNAME] 
             if (Tools::getIsset('username_changed') && (((int)Tools::getValue('username_changed')) == 1) && Tools::getIsset($KEY_PREFIX.'USRNAME')) {
                 $this->config->update("USRNAME",Tools::getValue($KEY_PREFIX.'USRNAME',''));
@@ -501,35 +481,24 @@ class piwikanalyticsjs extends Module {
         if (Tools::isSubmit('submitUpdatePiwikAnalyticsjsProxyScript')) {
             $isPost = true;
             // [PIWIK_USE_PROXY] 
-            if (Tools::getIsset($KEY_PREFIX.'USE_PROXY')) {
-                $this->config->update('USE_PROXY',1);
-            } else {
-                $this->config->update('USE_PROXY',0);
-            }
+            if (!$this->config->validate_save_isset_boolean_useproxy("USE_PROXY"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Use proxy script")));
             // [PIWIK_USE_CURL] 
-            if (Tools::getIsset($KEY_PREFIX.'USE_CURL')) {
-                $this->config->update('USE_CURL',1);
-            } else {
-                $this->config->update('USE_CURL',0);
-            }
+            if (!$this->config->validate_save_isset_boolean_usecurl("USE_CURL"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Use cURL")));
             // [PIWIK_CRHTTPS] 
-            if (Tools::getIsset($KEY_PREFIX.'CRHTTPS')) {
-                $this->config->update('CRHTTPS',1);
-            } else {
-                $this->config->update('CRHTTPS',0);
-            }
+            if (!$this->config->validate_save_isset_boolean_usehttps("CRHTTPS"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Use HTTPS")));
             // [PIWIK_PROXY_TIMEOUT] 
-            if (Tools::getIsset($KEY_PREFIX.'PROXY_TIMEOUT')) {
-                $tmp = (int)Tools::getValue($KEY_PREFIX.'PROXY_TIMEOUT',5);
-                if ($tmp <= 0) {
-                    $this->_errors[] = $this->displayError($this->l('Piwik proxy timeout must be an integer and larger than 0 (zero)'));
-                    $tmp = 5;
-                }
-                $this->config->update('PROXY_TIMEOUT',$tmp);
+            if (!$this->config->validate_save_isint_proxytimeout("PROXY_TIMEOUT", 1, 5))
+                $this->_errors[] = $this->displayError($this->l('Proxy timeout validation error, must be an integer and larger than 0 (zero), timeout has been set to 5 (five)'));
+            // [PROXY_SCRIPT] 
+            if (!$this->config->validate_save_proxyscript('PROXY_SCRIPT')){
+                    if($this->config->useproxy) /* only show error if we are supposed to be using proxy script */
+                        $this->_errors[] = $this->displayError(sprintf($this->l('Proxy script url is not valid (%s)'), $this->config->proxyscript));
             }
-            // [PIWIK_PROXY_TIMEOUT] 
-            if (Tools::getIsset($KEY_PREFIX.'PROXY_SCRIPT'))
-                $this->config->update('PROXY_SCRIPT',str_replace(array("http://","https://",'//'),'',Tools::getValue($KEY_PREFIX.'PROXY_SCRIPT')));
+            
+            /* don't validate there is no default requirements */
             // [PIWIK_PAUTHUSR] 
             if (Tools::getIsset('pusername_changed') && (((int)Tools::getValue('pusername_changed')) == 1) && Tools::getIsset($KEY_PREFIX.'PAUTHUSR')) {
                 $this->config->update("PAUTHUSR",Tools::getValue($KEY_PREFIX.'PAUTHUSR',''));
@@ -543,80 +512,41 @@ class piwikanalyticsjs extends Module {
         if (Tools::isSubmit('submitUpdatePiwikAnalyticsjsExtra')) {
             $isPost = true;
             // [PIWIK_PRODID_V1] 
-            if (Tools::getIsset($KEY_PREFIX.'PRODID_V1')) {
-                $tmp = Tools::getValue($KEY_PREFIX.'PRODID_V1','{ID}-{ATTRID}#{REFERENCE}');
-                if (!preg_match("/{ID}/",$tmp))
-                    $this->_errors[] = $this->displayError($this->l('Product id V1: missing variable {ID}'));
-                if (!preg_match("/{ATTRID}/",$tmp))
-                    $this->_errors[] = $this->displayError($this->l('Product id V1: missing variable {ATTRID}'));
-                if (!preg_match("/{REFERENCE}/",$tmp))
-                    $this->_errors[] = $this->displayError($this->l('Product id V1: missing variable {REFERENCE}'));
-                $this->config->update('PRODID_V1',$tmp);
-            }
+            if (!$this->config->validate_save_producttplv1('PRODID_V1'))
+                    $this->__validateHelperProductId($key, 1);
             // [PIWIK_PRODID_V2] 
-            if (Tools::getIsset($KEY_PREFIX.'PRODID_V2')) {
-                $tmp = Tools::getValue($KEY_PREFIX.'PRODID_V2','{ID}#{REFERENCE}');
-                if (!preg_match("/{ID}/",$tmp))
-                    $this->_errors[] = $this->displayError($this->l('Product id V2: missing variable {ID}'));
-                if (!preg_match("/{REFERENCE}/",$tmp))
-                    $this->_errors[] = $this->displayError($this->l('Product id V2: missing variable {REFERENCE}'));
-                $this->config->update('PRODID_V2',Tools::getValue($KEY_PREFIX.'PRODID_V2','{ID}#{REFERENCE}'));
-            }
+            if (!$this->config->validate_save_producttplv2('PRODID_V2'))
+                    $this->__validateHelperProductId($key, 2);
             // [PIWIK_PRODID_V3] 
-            if (Tools::getIsset($KEY_PREFIX.'PRODID_V3')) {
-                $tmp = Tools::getValue($KEY_PREFIX.'PRODID_V3','{ID}-{ATTRID}');
-                if (!preg_match("/{ID}/",$tmp))
-                    $this->_errors[] = $this->displayError($this->l('Product id V3: missing variable {ID}'));
-                if (!preg_match("/{ATTRID}/",$tmp))
-                    $this->_errors[] = $this->displayError($this->l('Product id V3: missing variable {ATTRID}'));
-                $this->config->update('PRODID_V3',Tools::getValue($KEY_PREFIX.'PRODID_V3','{ID}-{ATTRID}'));
-            }
+            if (!$this->config->validate_save_producttplv3('PRODID_V3'))
+                    $this->__validateHelperProductId($key, 3);
             // [PIWIK_SEARCH_QUERY]
-            if (Tools::getIsset($KEY_PREFIX.'SEARCH_QUERY')) {
-                $tmp = Tools::getValue($KEY_PREFIX.'SEARCH_QUERY','{QUERY} ({PAGE})');
-                if (!preg_match("/{QUERY}/",$tmp))
-                    $this->_errors[] = $this->displayError($this->l('Searche template: missing variable {QUERY}'));
-                if (!preg_match("/{PAGE}/",$tmp))
-                    $this->_errors[] = $this->displayError($this->l('Searche template: missing variable {PAGE}'));
-                $this->config->update("SEARCH_QUERY",$tmp);
+            if (!$this->config->validate_save_searchquery('SEARCH_QUERY')){
+                if (isset($this->config->validate_output['QUERY']))
+                    $this->_errors[]=$this->displayError($this->l('Search template: missing variable {QUERY}'));
+                if (isset($this->config->validate_output['PAGE']))
+                    $this->_errors[]=$this->displayError($this->l('Search template: missing variable {PAGE}'));
             }
             // [PIWIK_SET_DOMAINS]
-            if (Tools::getIsset($KEY_PREFIX.'SET_DOMAINS')) {
-                $tmp = Tools::getValue($KEY_PREFIX.'SET_DOMAINS');
-//                //this may result in unwanted removal of correct domains like "*.domain.tld" so commented for now
-//                foreach (explode(',', $tmp) as $sUrl) {
-//                    if (!Validate::isUrl($sUrl) && !Validate::isUrl('http://'.$sUrl)){
-//                        $tmp = str_ireplace($sUrl, '', $tmp);
-//                        $this->_errors[] = $this->displayError(sprintf($this->l('known alias URL \'%s\' is not valid an has been removed'), $sUrl));
-//                    }
-//                }
-                $this->config->update('SET_DOMAINS',trim(str_replace(',,',',',$tmp),','));
-            }
+            if (!$this->config->validate_save_setdomains('SET_DOMAINS'))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Hide known alias URLs")));
             // [PIWIK_DHashTag] 
-            if (Tools::getIsset($KEY_PREFIX.'DHashTag')) {
-                $this->config->update('DHashTag',1);
-            } else {
-                $this->config->update('DHashTag',0);
-            }
+            if (!$this->config->validate_save_isset_boolean_dhashtag("DHashTag"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Discard hash tag")));
             // [PIWIK_APTURL] 
-            if (Tools::getIsset($KEY_PREFIX.'APTURL')) {
-                $this->config->update('APTURL',1);
-            } else {
-                $this->config->update('APTURL',0);
-            }
+            if (!$this->config->validate_save_isset_boolean_apiurl("APIURL"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Set api url")));
         }
         // handle submission from html tab
         if (Tools::isSubmit('submitUpdatePiwikAnalyticsjsHTML')) {
             $isPost = true;
-            // [PIWIK_EXHTML] 
-            if (Tools::getIsset($KEY_PREFIX.'EXHTML'))
-                $this->config->update('EXHTML',Tools::getValue($KEY_PREFIX.'EXHTML'),TRUE);
+            // [PIWIK_EXHTML]
+            if (!$this->config->validate_save_exhtml('EXHTML'))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Extra HTML")));
+            
             // [PIWIK_LINKTRACK] 
-            if (Tools::getIsset($KEY_PREFIX.'LINKTRACK')) {
-                $this->config->update('LINKTRACK',1);
-            } else {
-                $this->config->update('LINKTRACK',0);
-            }
+            if (!$this->config->validate_save_isset_boolean_linktrack("LINKTRACK"))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Enable link tracking")));
             // [PIWIK_LINKClS] 
             if (Tools::getIsset($KEY_PREFIX.'LINKClS'))
                 $this->config->update('LINKClS',Tools::getValue($KEY_PREFIX.'LINKClS',''));
@@ -767,7 +697,7 @@ class piwikanalyticsjs extends Module {
                     $PKAdminSiteType)) {
                 /*
                  *  all is good 
-                 * @todo minimize efter propper testing, "left over"
+                 * @todo minimize after propper testing, "left over"
                  */
             } else {
                 $this->displayErrors(PKHelper::$errors);
@@ -826,6 +756,9 @@ class piwikanalyticsjs extends Module {
 //            'extraAction' => Tools::getValue('op'),
 //            'qty' => (int)Tools::getValue('qty',1)
 //        );
+//        $this->context->smarty->assign(array(
+//            PACONF::PREFIX.'CART_UPDATED' => "CART_UPDATED"
+//        ));
     }
 
     /**
@@ -1161,6 +1094,19 @@ class piwikanalyticsjs extends Module {
 
     /* HELPERS */
 
+    
+    private function __validateHelperProductId($key, $v) {
+        foreach ($this->config->validate_output as $key => $value){
+            if ($key=="ID"){
+                $this->_errors[]=$this->displayError(sprintf($this->l('Product id %s: missing variable {ID}'), "V{$v}"));
+            } else if ($key=="ATTRID"){
+                $this->_errors[]=$this->displayError(sprintf($this->l('Product id %s: missing variable {ATTRID}'), "V{$v}"));
+            } else if ($key=="REFERENCE"){
+                $this->_errors[]=$this->displayError(sprintf($this->l('Product id %s: missing variable {REFERENCE}'), "V{$v}"));
+            }
+        }
+    }
+
     /**
      * get template for product id
      * @param int $v
@@ -1266,7 +1212,7 @@ class piwikanalyticsjs extends Module {
         }
     }
 
-    public function displayErrorsPiwik2() {
+    public function displayErrorsPiwikWizard() {
         $this->displayErrors(PiwikWizardHelper::$errors);
         PiwikWizardHelper::$errors = "";
     }
@@ -1387,8 +1333,8 @@ class piwikanalyticsjs extends Module {
         $this->context->smarty->assign($key_prefix.'COOKIEPREFIX',(empty($configuration["{$key_prefix}COOKIEPREFIX"]) ? FALSE : $configuration["{$key_prefix}COOKIEPREFIX"]));
         $this->context->smarty->assign($key_prefix.'COOKIEPATH',(empty($configuration["{$key_prefix}COOKIEPATH"]) ? FALSE : $configuration["{$key_prefix}COOKIEPATH"]));
         $this->context->smarty->assign($key_prefix.'SITEID',$configuration["{$key_prefix}SITEID"]);
-        $this->context->smarty->assign(PACONF::PREFIX.'VER',$this->piwikVersion);
-        $this->context->smarty->assign(PACONF::PREFIX.'USE_PROXY',(bool)$configuration["{$key_prefix}USE_PROXY"]);
+        $this->context->smarty->assign($key_prefix.'VER',$this->piwikVersion);
+        $this->context->smarty->assign($key_prefix.'USE_PROXY',(bool)$configuration["{$key_prefix}USE_PROXY"]);
         $this->context->smarty->assign($key_prefix.'DHashTag',(bool)$configuration[$key_prefix.'DHashTag']);
         $this->context->smarty->assign($key_prefix.'APTURL',(bool)$configuration[$key_prefix.'APTURL']);
         $this->context->smarty->assign($key_prefix.'HOSTAPI',$configuration["{$key_prefix}HOST"]);
@@ -1462,7 +1408,6 @@ class piwikanalyticsjs extends Module {
             $this->context->smarty->assign($key_prefix.'LINKTTIME',(int)($tmp * 60));
         }
 
-
         if (version_compare(_PS_VERSION_,'1.5','<') && $this->context->cookie->isLogged()) {
             $this->context->smarty->assign($key_prefix.'UUID',$this->context->cookie->id_customer);
         } else if ($this->context->customer->isLogged()) {
@@ -1472,9 +1417,7 @@ class piwikanalyticsjs extends Module {
     
     /* INSTALL / UNINSTALL */
 
-    /**
-     * Reset module configuration
-     */
+    /** Reset module configuration */
     public function reset() {
         foreach ($this->config->getAll() as $key => $value) {
             if (Shop::getContext() == Shop::CONTEXT_ALL) {
@@ -1540,7 +1483,7 @@ class piwikanalyticsjs extends Module {
 
         $tab->id_parent = (int)(isset($AdminParentStats) && intval($AdminParentStats->id)>0 ? $AdminParentStats->id : -1);
         if (!$tab->add()) {
-            $this->_errors[] = sprintf($this->l('Unable to create new tab "Piwik Analytics", Please forward tthe following info to the developer %s'),"<br/>"
+            $this->_errors[] = sprintf($this->l('Unable to create new tab "Piwik Analytics", Please forward the following info to the developer %s'),"<br/>"
                     .(isset($AdminParentStats) ? "\$AdminParentStats: True" : "\$AdminParentStats:: False")
                     ."<br/>Type of \$AdminParentStats: ".gettype($AdminParentStats)
                     ."<br/>Class name of \$AdminParentStats: ".get_class($AdminParentStats)

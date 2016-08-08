@@ -28,6 +28,7 @@ if (!defined('_PS_VERSION_'))
  * 
  * 
  * @todo !use same protocol in iframe as the one used in admin.!, !unless https has been set in module admin!
+ * @property piwikanalyticsjs $module
  */
 class PiwikAnalyticsController extends ModuleAdminController {
 
@@ -66,15 +67,13 @@ class PiwikAnalyticsController extends ModuleAdminController {
             $this->bootstrap = false;
         else
             $this->initPageHeaderToolbar();
-        $http = ((bool)Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://');
-        $PIWIK_HOST = Configuration::get('PIWIK_HOST');
-        $PIWIK_SITEID = (int)Configuration::get('PIWIK_SITEID');
+        $http = ((bool)$this->module->config->CRHTTPS ? 'https://' : 'http://');
+        $PIWIK_HOST = $this->module->config->HOST;
+        $PIWIK_SITEID = (int)$this->module->config->SITEID;
 
         $this->context->smarty->assign('help_link','https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki');
-        // PKHelper::CPREFIX . 'USRNAME'
-        $user = Configuration::get('PIWIK_USRNAME');
-        // PKHelper::CPREFIX . 'USRPASSWD'
-        $passwd = Configuration::get('PIWIK_USRPASSWD');
+        $user = $this->module->config->USRNAME;
+        $passwd = $this->module->config->USRPASSWD;
         if ((!empty($user) && $user !== FALSE) && (!empty($passwd) && $passwd !== FALSE)) {
             $this->page_header_toolbar_btn['stats'] = array(
                 'href' => $http.$PIWIK_HOST.'index.php?module=Login&action=logme&login='.$user.'&password='.md5($passwd).'&idSite='.$PIWIK_SITEID,
@@ -95,7 +94,7 @@ class PiwikAnalyticsController extends ModuleAdminController {
                 $this->loadObject(true);
 
 
-            $PIWIK_TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
+            $PIWIK_TOKEN_AUTH = $this->module->config->token;
             if ((empty($PIWIK_HOST) || $PIWIK_HOST === FALSE) ||
                     ($PIWIK_SITEID <= 0 || $PIWIK_SITEID === FALSE) ||
                     (empty($PIWIK_TOKEN_AUTH) || $PIWIK_TOKEN_AUTH === FALSE)) {
@@ -112,12 +111,12 @@ class PiwikAnalyticsController extends ModuleAdminController {
   }
 </script>   
 EOF;
-                $lng = new LanguageCore($this->context->cookie->id_lang);
+                $lng = new Language($this->context->cookie->id_lang);
 
                 if (_PS_VERSION_ < '1.6')
                     $this->content .= '<h3><a target="_blank" href="'.$this->page_header_toolbar_btn['stats']['href'].'">'.$this->page_header_toolbar_btn['stats']['desc'].'</a> | <a target="_blank" href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki">'.$this->l('Help').'</a></h3>';
 
-                $DREPDATE = Configuration::get('PIWIK_DREPDATE');
+                $DREPDATE = $this->module->config->DREPDATE;
                 if ($DREPDATE !== FALSE && (strpos($DREPDATE,'|') !== FALSE)) {
                     list($period,$date) = explode('|',$DREPDATE);
                 } else {
@@ -126,8 +125,8 @@ EOF;
                 }
 
                 $http_auth = "";
-                $http_user = Configuration::get('PIWIK_PAUTHUSR');
-                $http_password = Configuration::get('PIWIK_PAUTHPWD');
+                $http_user = $this->module->config->PAUTHUSR;
+                $http_password = $this->module->config->PAUTHPWD;
                 if ((!empty($http_user) && strlen($http_user) > 1) &&
                         (!empty($http_password) && strlen($http_password) > 1))
                     $http_auth = "{$http_user}:{$http_password}@";

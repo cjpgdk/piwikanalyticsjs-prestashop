@@ -46,11 +46,11 @@ class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
         // Edit the line below, and replace http://your-piwik-domain.example.org/piwik/
         // with your Piwik URL ending with a slash.
         // This URL will never be revealed to visitors or search engines.
-        $PIWIK_URL = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://') . Configuration::get('PIWIK_HOST');
+        $PIWIK_URL = PKHelper::getConf()->getPiwikUrl();
 
         // Edit the line below, and replace xyz by the token_auth for the user "UserTrackingAPI"
         // which you created when you followed instructions above.
-        $TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
+        $TOKEN_AUTH = PKHelper::getConf()->token;
 
         // 1) PIWIK.JS PROXY: No _GET parameter, we serve the JS file
         // @todo change to post, starting to get errors on server#a7 with to long request length
