@@ -110,9 +110,9 @@ class piwikanalyticsjs extends Module {
      */
     public function getContent() {
         $_html = "";
-        $this->piwikVersion = PKHelper::getPiwikVersion(); // after settings update
         $this->setMedia();
         $this->processFormsUpdate();
+        $this->piwikVersion = PKHelper::getPiwikVersion(); // after settings update
         if (Tools::isSubmit('submitPiwikAnalyticsjsWizard')) {
             $this->processWizardFormUpdate();
         }
