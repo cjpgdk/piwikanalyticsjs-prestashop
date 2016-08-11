@@ -1,5 +1,9 @@
 Version: ???
 
+    * moved all settings into class PiwikAnalyticsjsConfiguration
+    - the class handles all related to the configuration
+    - get, update, validate etc..
+
     * add setApiUrl
 
     * added admin option to set cookie 'Path' and 'Name Prefix'

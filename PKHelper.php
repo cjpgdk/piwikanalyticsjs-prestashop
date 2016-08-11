@@ -394,15 +394,11 @@ class PKHelper {
      * @return array
      */
     public static function getPiwikImageTrackingCode() {
-        $ret = array(
-            'default' => self::l('I need Site ID and Auth Token before i can get your image tracking code'),
-            'proxy' => self::l('I need Site ID and Auth Token before i can get your image tracking code')
-        );
+        $ret = array('default' =>'', 'proxy' => '');
 
         $idSite = (int)self::getConf()->SITEID;
         if (!self::baseTest() || ($idSite <= 0))
             return $ret;
-
         $url = self::getBaseURL();
         $url .= "&method=SitesManager.getImageTrackingCode&format=JSON&actionName=NoJavaScript";
         $url .= "&piwikUrl=".urlencode(rtrim(self::getConf()->HOST,'/'));
@@ -877,6 +873,7 @@ class PKHelper {
      * @author Tim Groeneveld
      * @link http://stackoverflow.com/users/2143004/timgws
      * @link http://stackoverflow.com/a/21872143
+     * @changed to remove PHP Notice error from missing scheme
      */
     public static function isValidUrl($url) {
         // First check: is the url just a domain name? (allow a slash at the end)
@@ -884,12 +881,13 @@ class PKHelper {
         if (preg_match($_domain_regex,$url)) {
             return true;
         }
-
         // Second: Check if it's a url with a scheme and all
         $_regex = '#^([a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))$#';
         if (preg_match($_regex,$url,$matches)) {
             // pull out the domain name, and make sure that the domain is valid.
             $_parts = parse_url($url);
+            if(!isset($_parts['scheme']))
+                return false;
             if (!in_array($_parts['scheme'],array('http','https')))
                 return false;
 

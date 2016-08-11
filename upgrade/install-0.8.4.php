@@ -28,10 +28,16 @@
  * @param piwikanalyticsjs $module
  * @return boolean
  */
-function upgrade_module_0_8_4($module) {
+function upgrade_module_0_8_4($module) { //* @todo not actually in version 0.8.4 any more, more like 0.9  !
     if (!Configuration::hasKey('PIWIK_SEARCH_QUERY'))
         Configuration::updateValue('PIWIK_SEARCH_QUERY', '{QUERY} ({PAGE})');
-    if (!Configuration::hasKey(PKHelper::CPREFIX . 'PROXY_TIMEOUT'))
+    if (!Configuration::hasKey('PIWIK_PROXY_TIMEOUT'))
         Configuration::updateValue('PROXY_TIMEOUT', 5);
+
+    if (Configuration::hasKey('PIWIK_PRODID_V3')){
+        $tmp=Configuration::get('PIWIK_PRODID_V3');
+        if ($tmp=="{ID}#{ATTRID}") // old value
+            Configuration::updateValue('PIWIK_PRODID_V3', "{ID}-{ATTRID}"); // new value
+    }
     return true;
 }

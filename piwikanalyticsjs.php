@@ -110,7 +110,7 @@ class piwikanalyticsjs extends Module {
      */
     public function getContent() {
         $_html = "";
-        $this->piwikVersion = PKHelper::getPiwikVersion();
+        $this->piwikVersion = PKHelper::getPiwikVersion(); // after settings update
         $this->setMedia();
         $this->processFormsUpdate();
         if (Tools::isSubmit('submitPiwikAnalyticsjsWizard')) {
@@ -169,9 +169,7 @@ class piwikanalyticsjs extends Module {
             'proxy' => false
         );
         if (version_compare($this->piwikVersion,'2.0','>')) {
-            if ($this->config->token !== false)
-                $image_tracking = PKHelper::getPiwikImageTrackingCode();
-            else
+            if ($this->config->token === false || !($image_tracking = PKHelper::getPiwikImageTrackingCode()))
                 $image_tracking = array(
                     'default' => $this->l('I need Site ID and Auth Token before i can get your image tracking code'),
                     'proxy' => $this->l('I need Site ID and Auth Token before i can get your image tracking code')
@@ -513,20 +511,21 @@ class piwikanalyticsjs extends Module {
             $isPost = true;
             // [PIWIK_PRODID_V1] 
             if (!$this->config->validate_save_producttplv1('PRODID_V1'))
-                    $this->__validateHelperProductId($key, 1);
+                    $this->__validateHelperProductId(1);
             // [PIWIK_PRODID_V2] 
             if (!$this->config->validate_save_producttplv2('PRODID_V2'))
-                    $this->__validateHelperProductId($key, 2);
+                    $this->__validateHelperProductId(2);
             // [PIWIK_PRODID_V3] 
             if (!$this->config->validate_save_producttplv3('PRODID_V3'))
-                    $this->__validateHelperProductId($key, 3);
+                    $this->__validateHelperProductId(3);
             // [PIWIK_SEARCH_QUERY]
             if (!$this->config->validate_save_searchquery('SEARCH_QUERY')){
                 if (isset($this->config->validate_output['QUERY']))
                     $this->_errors[]=$this->displayError($this->l('Search template: missing variable {QUERY}'));
-                if (isset($this->config->validate_output['PAGE']))
-                    $this->_errors[]=$this->displayError($this->l('Search template: missing variable {PAGE}'));
-            }
+                
+            } else if (isset($this->config->validate_output['PAGE']))
+                    $this->_errors[]=$this->displayWarning($this->l('Search template: missing optional variable {PAGE}'));
+            
             // [PIWIK_SET_DOMAINS]
             if (!$this->config->validate_save_setdomains('SET_DOMAINS'))
                 $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Hide known alias URLs")));
@@ -534,7 +533,7 @@ class piwikanalyticsjs extends Module {
             if (!$this->config->validate_save_isset_boolean_dhashtag("DHashTag"))
                 $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Discard hash tag")));
             // [PIWIK_APTURL] 
-            if (!$this->config->validate_save_isset_boolean_apiurl("APIURL"))
+            if (!$this->config->validate_save_isset_boolean_apiurl("APTURL"/*"APIURL*/))
                 $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Set api url")));
         }
         // handle submission from html tab
@@ -543,51 +542,45 @@ class piwikanalyticsjs extends Module {
             // [PIWIK_EXHTML]
             if (!$this->config->validate_save_exhtml('EXHTML'))
                 $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Extra HTML")));
-            
             // [PIWIK_LINKTRACK] 
             if (!$this->config->validate_save_isset_boolean_linktrack("LINKTRACK"))
                 $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Enable link tracking")));
             // [PIWIK_LINKClS] 
-            if (Tools::getIsset($KEY_PREFIX.'LINKClS'))
-                $this->config->update('LINKClS',Tools::getValue($KEY_PREFIX.'LINKClS',''));
+            if (!$this->config->validate_save_linkcls('LINKClS'))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Link classes")));
             // [PIWIK_LINKClSIGNORE] 
-            if (Tools::getIsset($KEY_PREFIX.'LINKClSIGNORE'))
-                $this->config->update('LINKClSIGNORE',Tools::getValue($KEY_PREFIX.'LINKClSIGNORE',''));
+            if (!$this->config->validate_save_linkclsignore('LINKClSIGNORE'))
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Ignore link classes")));
             // [PIWIK_LINKTTIME] 
-            if (Tools::getIsset($KEY_PREFIX.'LINKTTIME'))
-                $this->config->update('LINKTTIME',Tools::getValue($KEY_PREFIX.'LINKTTIME',''));
+            if (!$this->config->validate_save_isint_linktime("LINKTTIME", 0, 0))
+                $this->_errors[] = $this->displayError($this->l('Link tracking timer validation error, must be a positive integer, timeout has been set to 0 (zero) using piwik default value'));
         }
         // handle submission from cookies tab
         if (Tools::isSubmit('submitUpdatePiwikAnalyticsjsCookies')) {
             $isPost = true;
-
             // [PIWIK_COOKIE_DOMAIN]
-            if (Tools::getIsset($KEY_PREFIX.'COOKIE_DOMAIN'))
-                $this->config->update('COOKIE_DOMAIN',Tools::getValue($KEY_PREFIX.'COOKIE_DOMAIN'));
+            if (!$this->config->validate_save_cookiedomain('COOKIE_DOMAIN'))
+                $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Track visitors across subdomains")));
             // [PIWIK_COOKIEPREFIX]
-            if (Tools::getIsset($KEY_PREFIX.'COOKIEPREFIX'))
-                $this->config->update('COOKIEPREFIX',Tools::getValue($KEY_PREFIX.'COOKIEPREFIX'));
+            if (!$this->config->validate_save_cookieprefix('COOKIEPREFIX'))
+                $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Cookie name prefix")));
             // [PIWIK_COOKIEPATH]
-            if (Tools::getIsset($KEY_PREFIX.'COOKIEPATH'))
-                $this->config->update('COOKIEPATH',Tools::getValue($KEY_PREFIX.'COOKIEPATH'));
+            if (!$this->config->validate_save_cookiepath('COOKIEPATH')){
+                if ($this->config->validate_output=='/'){
+                    $this->_errors[]=$this->displayError(sprintf($this->l('Cookie path must start with "/" or be empty')));
+                } else{
+                    $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Cookie path")));
+                }
+            }
             // [PIWIK_RCOOKIE_TIMEOUT]
-            if (Tools::getIsset($KEY_PREFIX.'RCOOKIE_TIMEOUT')) {
-                $tmp = (int)Tools::getValue($KEY_PREFIX.'RCOOKIE_TIMEOUT',self::PK_RC_TIMEOUT);
-                $tmp = ($tmp * 60); //* convert to seconds
-                $this->config->update('RCOOKIE_TIMEOUT',(int)$tmp);
-            }
+            if (!$this->config->validate_save_isint_rcookietimeout("RCOOKIE_TIMEOUT", 0, (self::PK_RC_TIMEOUT*60)))
+                $this->_errors[] = $this->displayError($this->l('Referral Cookie timeout validation error, must be an positive integer, timeout has been set to default value of 6 months'));
             // [PIWIK_COOKIE_TIMEOUT]
-            if (Tools::getIsset($KEY_PREFIX.'COOKIE_TIMEOUT')) {
-                $tmp = (int)Tools::getValue($KEY_PREFIX.'COOKIE_TIMEOUT',self::PK_VC_TIMEOUT);
-                $tmp = ($tmp * 60); //* convert to seconds
-                $this->config->update('COOKIE_TIMEOUT',(int)$tmp);
-            }
+            if (!$this->config->validate_save_isint_cookietimeout("COOKIE_TIMEOUT", 0, (self::PK_VC_TIMEOUT*60)))
+                $this->_errors[] = $this->displayError($this->l('Visitor Cookie timeout validation error, must be an positive integer, timeout has been set to default value of 13 months'));
             // [PIWIK_SESSION_TIMEOUT]
-            if (Tools::getIsset($KEY_PREFIX.'SESSION_TIMEOUT')) {
-                $tmp = (int)Tools::getValue($KEY_PREFIX.'SESSION_TIMEOUT',self::PK_SC_TIMEOUT);
-                $tmp = ($tmp * 60); //* convert to seconds
-                $this->config->update('SESSION_TIMEOUT',(int)$tmp);
-            }
+            if (!$this->config->validate_save_isint_sessiontimeout("SESSION_TIMEOUT", 0, (self::PK_SC_TIMEOUT*60)))
+                $this->_errors[] = $this->displayError($this->l('Session Cookie timeout validation error, must be an positive integer, timeout has been set to default value of 30 minutes'));
         }
         // handle submission from site manager tab
         if (Tools::isSubmit('submitUpdatePiwikAnalyticsjsSiteManager')) {
@@ -1094,8 +1087,12 @@ class piwikanalyticsjs extends Module {
 
     /* HELPERS */
 
+
+    public function displayWarning($error) {
+        return'<div class="module_warning alert warning"><img src="'._PS_IMG_.'admin/warning.gif" alt="" title="" /> '.$error.'</div>';
+    }
     
-    private function __validateHelperProductId($key, $v) {
+    private function __validateHelperProductId($v) {
         foreach ($this->config->validate_output as $key => $value){
             if ($key=="ID"){
                 $this->_errors[]=$this->displayError(sprintf($this->l('Product id %s: missing variable {ID}'), "V{$v}"));
