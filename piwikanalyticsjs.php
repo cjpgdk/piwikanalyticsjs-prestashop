@@ -27,7 +27,8 @@ if (!defined('_PS_VERSION_'))
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  * 
  * @todo config wiz, set currency to use.
- * @todo fix $keepURLFragments in add/update piwik site, this is not a boolean value but an int of 0,1 and 2
+ * @todo fix $keepURLFragments in add/update piwik site, this is not a boolean value but an int of 0=Use Global, 1=Yes or 2N=No
+ * @todo allow user to go back in config wiz in case auth fails
  */
 class piwikanalyticsjs extends Module {
 
@@ -168,12 +169,10 @@ class piwikanalyticsjs extends Module {
             'default' => false,
             'proxy' => false
         );
-        if (version_compare($this->piwikVersion,'2.0','>')) {
+        if (version_compare($this->piwikVersion,'2.1','>')) {
             if ($this->config->token === false || !($image_tracking = PKHelper::getPiwikImageTrackingCode()))
-                $image_tracking = array(
-                    'default' => $this->l('I need Site ID and Auth Token before i can get your image tracking code'),
-                    'proxy' => $this->l('I need Site ID and Auth Token before i can get your image tracking code')
-                );
+                $image_tracking = array('default' => $this->l('I need Site ID and Auth Token before i can get your image tracking code'),
+                    'proxy' => $this->l('I need Site ID and Auth Token before i can get your image tracking code'));
         }
         $this->displayErrorsPiwik();
 
@@ -347,6 +346,7 @@ class piwikanalyticsjs extends Module {
             'wizardStep' => $step,
             'pkfvHOST' => $saved_piwik_host,
         ));
+        
         if ($step >= 2) {
             $this->context->smarty->assign(array(
                 'pkfvHOST_WIZARD' => PiwikWizardHelper::$piwikhost,
@@ -355,8 +355,7 @@ class piwikanalyticsjs extends Module {
                 'pkfvPAUTHUSR_WIZARD' => PiwikWizardHelper::$usernamehttp,
                 'pkfvPAUTHPWD_WIZARD' => PiwikWizardHelper::$passwordhttp,
             ));
-            if ($step == 99)
-                $Currency = new Currency((int)Configuration::get('PS_CURRENCY_DEFAULT'));
+            $Currency = new Currency((int)Configuration::get('PS_CURRENCY_DEFAULT'));
             if (!is_object($Currency) || !Validate::isLoadedObject($Currency)) {
                 $Currency = new stdClass();
                 $Currency->iso_code = 'EUR';
@@ -457,7 +456,7 @@ class piwikanalyticsjs extends Module {
                 $this->_errors[] = $this->displayError(sprintf($this->l('Piwik auth token is not valid (%s)'), $this->config->token));
             // [PIWIK_DNT]
             if (!$this->config->validate_save_isset_boolean_dnt("DNT"))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("DoNotTrack")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("DoNotTrack")));
             // [PIWIK_DEFAULT_CURRENCY]
             if (!$this->config->validate_save_currency("DEFAULT_CURRENCY"))
                 $this->_errors[] = $this->displayError(sprintf($this->l('Currency is not valid (%s)'), $this->config->currency));
@@ -480,13 +479,13 @@ class piwikanalyticsjs extends Module {
             $isPost = true;
             // [PIWIK_USE_PROXY] 
             if (!$this->config->validate_save_isset_boolean_useproxy("USE_PROXY"))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Use proxy script")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Use proxy script")));
             // [PIWIK_USE_CURL] 
             if (!$this->config->validate_save_isset_boolean_usecurl("USE_CURL"))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Use cURL")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Use cURL")));
             // [PIWIK_CRHTTPS] 
             if (!$this->config->validate_save_isset_boolean_usehttps("CRHTTPS"))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Use HTTPS")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Use HTTPS")));
             // [PIWIK_PROXY_TIMEOUT] 
             if (!$this->config->validate_save_isint_proxytimeout("PROXY_TIMEOUT", 1, 5))
                 $this->_errors[] = $this->displayError($this->l('Proxy timeout validation error, must be an integer and larger than 0 (zero), timeout has been set to 5 (five)'));
@@ -528,29 +527,29 @@ class piwikanalyticsjs extends Module {
             
             // [PIWIK_SET_DOMAINS]
             if (!$this->config->validate_save_setdomains('SET_DOMAINS'))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Hide known alias URLs")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Hide known alias URLs")));
             // [PIWIK_DHashTag] 
             if (!$this->config->validate_save_isset_boolean_dhashtag("DHashTag"))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Discard hash tag")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Discard hash tag")));
             // [PIWIK_APTURL] 
             if (!$this->config->validate_save_isset_boolean_apiurl("APTURL"/*"APIURL*/))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Set api url")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Set api url")));
         }
         // handle submission from html tab
         if (Tools::isSubmit('submitUpdatePiwikAnalyticsjsHTML')) {
             $isPost = true;
             // [PIWIK_EXHTML]
             if (!$this->config->validate_save_exhtml('EXHTML'))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Extra HTML")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Extra HTML")));
             // [PIWIK_LINKTRACK] 
             if (!$this->config->validate_save_isset_boolean_linktrack("LINKTRACK"))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Enable link tracking")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Enable link tracking")));
             // [PIWIK_LINKClS] 
             if (!$this->config->validate_save_linkcls('LINKClS'))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Link classes")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Link classes")));
             // [PIWIK_LINKClSIGNORE] 
             if (!$this->config->validate_save_linkclsignore('LINKClSIGNORE'))
-                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Ignore link classes")));
+                $this->_errors[] = $this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Ignore link classes")));
             // [PIWIK_LINKTTIME] 
             if (!$this->config->validate_save_isint_linktime("LINKTTIME", 0, 0))
                 $this->_errors[] = $this->displayError($this->l('Link tracking timer validation error, must be a positive integer, timeout has been set to 0 (zero) using piwik default value'));
@@ -560,16 +559,16 @@ class piwikanalyticsjs extends Module {
             $isPost = true;
             // [PIWIK_COOKIE_DOMAIN]
             if (!$this->config->validate_save_cookiedomain('COOKIE_DOMAIN'))
-                $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Track visitors across subdomains")));
+                $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Track visitors across subdomains")));
             // [PIWIK_COOKIEPREFIX]
             if (!$this->config->validate_save_cookieprefix('COOKIEPREFIX'))
-                $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Cookie name prefix")));
+                $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Cookie name prefix")));
             // [PIWIK_COOKIEPATH]
             if (!$this->config->validate_save_cookiepath('COOKIEPATH')){
                 if ($this->config->validate_output=='/'){
                     $this->_errors[]=$this->displayError(sprintf($this->l('Cookie path must start with "/" or be empty')));
                 } else{
-                    $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unkown system error'), $this->l("Cookie path")));
+                    $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'), $this->l("Cookie path")));
                 }
             }
             // [PIWIK_RCOOKIE_TIMEOUT]

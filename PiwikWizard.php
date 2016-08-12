@@ -89,6 +89,7 @@ class PiwikWizardHelper {
             }
             if (Tools::getIsset('PKNewExcludedUserAgents'))
                 $excludedUserAgents=Tools::getValue('PKNewExcludedUserAgents');
+            $keepURLFragments=0; // avoid 'PHP Notice:  Undefined variable:'
             if (Tools::getIsset('PKNewKeepURLFragments'))
                 $keepURLFragments=Tools::getValue('PKNewKeepURLFragments');
 

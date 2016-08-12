@@ -151,7 +151,8 @@
     <label>
         <span>{l s='Excluded User Agents' mod='piwikanalyticsjs'}</span>
         <textarea rows="10" cols="50" id="PKAdminExcludedUserAgents" name="PKAdminExcludedUserAgents" onchange="tabContentChanged(true);">{$pkfvEXHTML}</textarea>
-        <small>{l s='please read: http://piwik.org/faq/how-to/faq_17483/' mod='piwikanalyticsjs'}</small>
+        <small>{l s='please read: http://piwik.org/faq/how-to/faq_17483/, NOTE* this setting requires that website specific user agent exclusion is enabled in piwik' mod='piwikanalyticsjs'}<br>
+            {l s='If the visitor\'s user agent string contains any of the strings you specify, the visitor will be excluded from Piwik.' mod='piwikanalyticsjs'}</small>
     </label>
     {*
     * <label>

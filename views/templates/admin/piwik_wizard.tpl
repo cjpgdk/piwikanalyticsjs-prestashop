@@ -100,7 +100,7 @@
     {else if $wizardStep == "99"}
     
         <script type="text/javascript">
-            $().ready(function () {
+            $(document).ready(function () {
                 $('#PKNewAddtionalUrls').tagify({ldelim}delimiters: [13, 44], addTagPrompt: '{l s='Add URL' mod='piwikanalyticsjs'}'{rdelim});
                 $('#PKNewSearchKeywordParameters').tagify({ldelim}delimiters: [13, 44], addTagPrompt: '{l s='Add Parameter' mod='piwikanalyticsjs'}'{rdelim});
                 $('#PKNewSearchCategoryParameters').tagify({ldelim}delimiters: [13, 44], addTagPrompt: '{l s='Add Parameter' mod='piwikanalyticsjs'}'{rdelim});
@@ -121,7 +121,7 @@
     
     
         <legend><img alt='{l s='Piwik Analytics' mod='piwikanalyticsjs'}' src='{$piwik_module_dir}/logox22.png'>{l s='Piwik Analytics - Create new site [Step 2/2]' mod='piwikanalyticsjs'}</legend>
-        <form action='' method='post' class='pkforms small' autocomplete="off" name="formPiwikAnalyticsjsWizard">
+        <form action='' method='post' class='pkforms small' autocomplete="off" name="formPiwikAnalyticsjsWizard" id="formPiwikAnalyticsjsWizard">
             <input id="{$pkCPREFIX}STEP_WIZARD" type="hidden" value="2" name="{$pkCPREFIX}STEP_WIZARD">
             <input type="hidden" name="{$pkCPREFIX}HOST_WIZARD" id="{$pkCPREFIX}HOST_WIZARD" value="{$pkfvHOST_WIZARD}" />
             <input type="hidden" name="{$pkCPREFIX}USRNAME_WIZARD" id="{$pkCPREFIX}USRNAME_WIZARD" value="{$pkfvUSRNAME_WIZARD}" />
@@ -166,7 +166,7 @@
             </label>
             
             <label>
-                <span>{l s='Addtional Urls' mod='piwikanalyticsjs'}</span>
+                <span>{l s='Search Keyword Parameters' mod='piwikanalyticsjs'}</span>
                 <input id='PKNewSearchKeywordParameters' type='text' class="tagify" name='PKNewSearchKeywordParameters' value="{$PKNewSearchKeywordParameters}"/>
                 <small><strong>tag</strong> & <strong>search_query</strong> {l s='keyword parameters must be excluded to avoid normal page views to be interpreted as searches (the tracking code will see them and make the required postback to Piwik if it is a real search), if you are only using PrestaShop with this site setting this to empty, will be sufficient' mod='piwikanalyticsjs'}</small>
             </label>
@@ -200,7 +200,7 @@
                         </optgroup>
                     {/foreach}
                 </select>
-                <small>{l s='The timezone for this site' mod='piwikanalyticsjs'} {$pkfvCURRENCY_DEFAULT}</small>
+                <small>{l s='The timezone for this site' mod='piwikanalyticsjs'}</small>
             </label>
 
             <label>
