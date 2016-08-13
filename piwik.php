@@ -38,7 +38,6 @@ $PIWIK_URL = PKHelper::getConf()->getPiwikUrl();
 // Edit the line below, and replace xyz by the token_auth for the user "UserTrackingAPI"
 // which you created when you followed instructions above.
 $TOKEN_AUTH = PKHelper::getConf()->token;
-
 function sendHeader($header, $replace = true) {
     headers_sent() || header($header, $replace);
 }

@@ -476,6 +476,9 @@ class PiwikAnalyticsjsConfiguration {
             trigger_error("The use of {$name} is deprecated please use 'LINKTIME', wrongly named", E_USER_DEPRECATED);
         }
         $name=$this->getInternalConfigName($name);
+        if (preg_match("/^fix/i",$name)) {
+            trigger_error("The use of fix variables are not allowed, use Configuration::get({$name})", E_USER_ERROR);
+        }
         if (isset($this->config_fields[$name])){
             return $this->config_fields[$name];
         }
@@ -495,6 +498,9 @@ class PiwikAnalyticsjsConfiguration {
             trigger_error("The use of {$name} is deprecated please use 'LINKTIME', wrongly named", E_USER_DEPRECATED);
         }
         $name=$this->getInternalConfigName($name);
+        if (preg_match("/^fix/i",$name)) {
+            trigger_error("The use of fix variables are not allowed, use Configuration::updateValue({$name})", E_USER_ERROR);
+        }
         if (is_bool($value))
             $value=($value?1:0);
         $this->config_fields[$name]=$value;
@@ -508,6 +514,9 @@ class PiwikAnalyticsjsConfiguration {
      */
     public function update($key, $value, $html=false) {
         $key=$this->getInternalConfigName($key);
+        if (preg_match("/^fix/i",$key)) {
+            trigger_error("The use of fix variables are not allowed, use Configuration::updateValue({$name})", E_USER_ERROR);
+        }
         if (is_bool($value))
             $value=($value?1:0);
         $this->config_fields[$key]=$value;

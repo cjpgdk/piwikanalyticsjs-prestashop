@@ -74,6 +74,13 @@
         $('#ppassword_changed').val(1);tabContentChanged(true);{rdelim}"/>
         <small>{l s='this field along with username can be used if piwik installation is protected by HTTP Basic Authorization' mod='piwikanalyticsjs'}</small>
     </label>
+    <hr class="bd-blue" />
+    <label class="switch">
+        <span>{l s='Apply cURL 401 fix' mod='piwikanalyticsjs'}</span>
+        <input id="{$pkCPREFIX}FIX401_1" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $pkfvFIX401_1==1} checked="checked"{/if} name="{$pkCPREFIX}FIX401_1" onchange="tabContentChanged(true);" />
+        <label for="{$pkCPREFIX}FIX401_1" data-on="Yes" data-off="No" style="clear: both;"></label>
+        <small>{l s='Apply authentication fix for cURL, ONLY USE this if you are having trouble with authentication using cURL it is an workaround for really bad servers..!' mod='piwikanalyticsjs'}</small>
+    </label>
     <hr/>
     <input type='submit' class='button pkbutton bg-blue' value='{l s='Save' mod='piwikanalyticsjs'}' name='submitUpdatePiwikAnalyticsjsProxyScript' />
 </form>
