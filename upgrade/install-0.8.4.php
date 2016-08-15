@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Copyright (C) 2016 Christian Jensen
  *
@@ -30,14 +29,16 @@
  */
 function upgrade_module_0_8_4($module) { //* @todo not actually in version 0.8.4 any more, more like 0.9  !
     if (!Configuration::hasKey('PIWIK_SEARCH_QUERY'))
-        Configuration::updateValue('PIWIK_SEARCH_QUERY', '{QUERY} ({PAGE})');
+        Configuration::updateValue('PIWIK_SEARCH_QUERY','{QUERY} ({PAGE})');
     if (!Configuration::hasKey('PIWIK_PROXY_TIMEOUT'))
-        Configuration::updateValue('PROXY_TIMEOUT', 5);
+        Configuration::updateValue('PROXY_TIMEOUT',5);
 
-    if (Configuration::hasKey('PIWIK_PRODID_V3')){
+    if (Configuration::hasKey('PIWIK_PRODID_V3')) {
         $tmp=Configuration::get('PIWIK_PRODID_V3');
         if ($tmp=="{ID}#{ATTRID}") // old value
-            Configuration::updateValue('PIWIK_PRODID_V3', "{ID}-{ATTRID}"); // new value
+            Configuration::updateValue('PIWIK_PRODID_V3',"{ID}-{ATTRID}"); // new value
     }
+    if (version_compare(_PS_VERSION_,'1.5','>='))
+        $this->registerHook('actionCartSave');
     return true;
 }

@@ -433,7 +433,9 @@ class PiwikAnalyticsjsConfiguration {
                 'displayRightColumnProduct',
                 /* 'orderConfirmation', */
                 'displayOrderConfirmation',
-                'displayMaintenance'
+                'displayMaintenance',
+                /* 'cart', */
+                'actionCartSave',
             ),
         );
         if (version_compare(substr(_PS_VERSION_, 0, 3), '1.5', '<=')){
@@ -454,13 +456,23 @@ class PiwikAnalyticsjsConfiguration {
         }
         return $return;
     }
-
+    
     /**
      * get url that points to piwik including http(s) based on the configuration
+     * @param boolean $add_auth if true adds 'USER:PASSWORD@' to the returned url
      * @return string
      */
-    public function getPiwikUrl() {
-        return ((bool) $this->use_https?'https://':'http://').$this->host;
+    public function getPiwikUrl($add_auth=false) {
+        if ($add_auth) {
+            $http_auth="";
+            $http_user=$this->PAUTHUSR;
+            $http_password=$this->PAUTHPWD;
+            if ((!empty($http_user)&&strlen($http_user)>1)&&
+                    (!empty($http_password)&&strlen($http_password)>1))
+                $http_auth="{$http_user}:{$http_password}@";
+            return ((bool)$this->use_https?'https://':'http://').$http_auth.$this->host;
+        } else
+            return ((bool)$this->use_https?'https://':'http://').$this->host;
     }
 
     /**

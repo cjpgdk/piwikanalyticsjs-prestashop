@@ -730,27 +730,78 @@ class piwikanalyticsjs extends Module {
          */
     }
 
+    /**
+     * experimental .. experimental
+     * submit cart updates when they occur, this allows for all carts to be tracked without the need for users to reload/continue navigating the site
+     * but the current status is experimental, if ANY timeout occurs the users browser can lock up, and throw javascript error to the client, and they will not like your site after that..!
+     * @return void
+     * @remarks always use the latest revision of PiwikTracker, not included you must download and upload it your self..
+     * @link http://piwik.org/docs/tracking-api/ tracking docs
+     * @link https://github.com/piwik/piwik-php-tracker Piwik PHP tracking client source code
+     */
     public function hookActionCartSave() {
-        /*
-         * @todo research [ps 1.6]
-         * hmm, called on cart add and update
-         * 
-         * if (version_compare(_PS_VERSION_, '1.5', '>=')
-         *     $this->registerHook('actionCartSave')
-         */
-//        if (!isset($this->context->cart))
-//            return;
-//
-//        $cart = array(
-//            'controller' => Tools::getValue('controller'),
-//            'addAction' => Tools::getValue('add') ? 'add' : '',
-//            'removeAction' => Tools::getValue('delete') ? 'delete' : '',
-//            'extraAction' => Tools::getValue('op'),
-//            'qty' => (int)Tools::getValue('qty',1)
-//        );
-//        $this->context->smarty->assign(array(
-//            PACONF::PREFIX.'CART_UPDATED' => "CART_UPDATED"
-//        ));
+        if (!isset($this->context->cart))
+            return;
+        if (!class_exists('PiwikTracker',false)&&file_exists(dirname(__FILE__).'/piwik-php-tracker/PiwikTracker.php')) {
+            require_once dirname(__FILE__).'/piwik-php-tracker/PiwikTracker.php';
+        }
+        try { /* no need to get errors here it will disrupt the customers shopping experience */
+            $t=null;
+            if (class_exists('PiwikTracker',false)) {
+                $t=new PiwikTracker($this->config->site_id,$this->config->getPiwikUrl(true));
+                //$t->setVisitorId($visitorId);
+                /*
+                 * to set cookieprefix ($this->config->cookieprefix)
+                 * you need to modify const FIRST_PARTY_COOKIES_PREFIX to match your settings
+                 * DEFAULT: const FIRST_PARTY_COOKIES_PREFIX = '_pk_';
+                 */
+                $t->setBrowserHasCookies(true);
+                $cookiedomain = $this->config->cookiedomain;
+                if (PKHelper::isNullOrEmpty($cookiedomain))
+                    $cookiedomain = Tools::getShopDomain();
+                $t->enableCookies($this->config->cookiedomain,$this->config->cookiepath);
+                $t->setTokenAuth($this->config->token);
+                $t->setRequestTimeout((int)$this->config->proxytimeout);
+            } else {
+                return;
+            }
+            
+            // if hook is called something in db is updated so no check on the time.!
+            $date_upd=strtotime($this->context->cart->date_upd);
+            $this->context->cookie->PIWIKTrackCartFooter=$date_upd+2;
+            $Currency=new Currency($this->context->cart->id_currency);
+            $cart=$this->getCartProducts($Currency);
+
+            // we could do this if the user is logged in!!
+            //$t->setCity($city);
+            //$t->setCountry($country);
+            
+            if (isset($_SERVER['HTTP_USER_AGENT'])&&!empty($_SERVER['HTTP_USER_AGENT']))
+                $t->setUserAgent($_SERVER['HTTP_USER_AGENT']);
+            if (isset($_SERVER['REMOTE_ADDR'])&&!empty($_SERVER['REMOTE_ADDR']))
+                $t->setIp($_SERVER['REMOTE_ADDR']);
+            if (version_compare(_PS_VERSION_,'1.5','<')&&$this->context->cookie->isLogged()) {
+                $t->setUserId($this->context->cookie->id_customer);
+            } else if ($this->context->customer->isLogged()) {
+                $t->setUserId($this->context->customer->id);
+            }
+            $t->setUrl(Tools::getShopDomain(true).$_SERVER['REQUEST_URI']);
+            $t->setUrlReferrer($_SERVER['HTTP_REFERER']);
+
+            if (count($cart)>0) {
+                foreach ($cart as $pk=> $pv) {
+                    $t->addEcommerceItem($pv['SKU'],$pv['NAME'],$pv['CATEGORY'],$pv['PRICE'],$pv['QUANTITY']);
+                }
+            }
+            $result = $t->doTrackEcommerceCartUpdate(
+                    $this->currencyConvertion(
+                            array(
+                                'price'=>$this->context->cart->getOrderTotal(),
+                                'conversion_rate'=>$Currency->conversion_rate)));
+            PKHelper::DebugLogger("hookActionCartSave: result = {$result}");// should be a 1x1 gif..
+        } catch (Exception $exc) {
+            PKHelper::ErrorLogger($exc->getMessage()." : ".$exc->getFile().":".$exc->getLine());
+        }
     }
 
     /**
@@ -917,24 +968,8 @@ class piwikanalyticsjs extends Module {
         $date_upd=strtotime($this->context->cart->date_upd);
         if ($date_upd>=$this->context->cookie->PIWIKTrackCartFooter) {
             $this->context->cookie->PIWIKTrackCartFooter=$date_upd+2;
-            $smarty_ad=array();
             $Currency=new Currency($this->context->cart->id_currency);
-            foreach ($this->context->cart->getProducts() as $key=> $value) {
-                if (isset($value['id_product'])||isset($value['name'])||isset($value['total_wt'])||isset($value['quantity'])) {
-                    $smarty_ad[]=array(
-                        'SKU'=>$this->parseProductSku($value['id_product'],(isset($value['id_product_attribute'])&&$value['id_product_attribute']>0?$value['id_product_attribute']:FALSE),(isset($value['reference'])?$value['reference']:FALSE)),
-                        'NAME'=>$value['name'].(isset($value['attributes'])?' ('.$value['attributes'].')':''),
-                        'CATEGORY'=>$this->get_category_names_by_product($value['id_product'],FALSE),
-                        'PRICE'=>$this->currencyConvertion(
-                                array(
-                                    'price'=>$value['total_wt'],
-                                    'conversion_rate'=>$Currency->conversion_rate,
-                                )
-                        ),
-                        'QUANTITY'=>$value['quantity'],
-                    );
-                }
-            }
+            $smarty_ad=$this->getCartProducts($Currency);
             if (count($smarty_ad)>0) {
                 $this->context->smarty->assign(PACONF::PREFIX.'CART',TRUE);
                 $this->context->smarty->assign(PACONF::PREFIX.'CART_PRODUCTS',$smarty_ad);
@@ -947,11 +982,10 @@ class piwikanalyticsjs extends Module {
             } else {
                 $this->context->smarty->assign(PACONF::PREFIX.'CART',FALSE);
             }
-            unset($smarty_ad);
+            unset($smarty_ad,$Currency);
         } else {
             $this->context->smarty->assign(PACONF::PREFIX.'CART',FALSE);
         }
-        // die("$date_upd<pre>".print_r($this->context->cookie, true).print_r($smarty_ad, true).print_r($this->context->cart->getProducts(), true));
         $is404=false;
         if (!empty($this->context->controller->errors)) {
             foreach ($this->context->controller->errors as $key=> $value) {
@@ -968,14 +1002,11 @@ class piwikanalyticsjs extends Module {
         ) {
             $is404=true;
         }
-
         $this->context->smarty->assign(array("PK404"=>$is404));
-
         if (_PS_VERSION_<'1.5.6')
             $this->_hookFooterPS14($params,$page_name);
         else if (_PS_VERSION_>='1.5')
             $this->_hookFooter($params);
-
         return $this->display(__FILE__,'views/templates/hook/jstracking.tpl');
     }
 
@@ -1087,6 +1118,33 @@ class piwikanalyticsjs extends Module {
 
     public function displayWarning($error) {
         return'<div class="module_warning alert warning"><img src="'._PS_IMG_.'admin/warning.gif" alt="" title="" /> '.$error.'</div>';
+    }
+    
+    /**
+     * get products from cart
+     * @return array
+     */
+    private function getCartProducts($currency= null) {
+        $cart=array();
+        if (!is_null($currency)||!Validate::isLoadedObject($currency))
+            $currency=new Currency($this->context->cart->id_currency);
+        foreach ($this->context->cart->getProducts() as $key=> $value) {
+            if (isset($value['id_product'])||isset($value['name'])||isset($value['total_wt'])||isset($value['quantity'])) {
+                $cart[]=array(
+                    'SKU'=>$this->parseProductSku($value['id_product'],(isset($value['id_product_attribute'])&&$value['id_product_attribute']>0?$value['id_product_attribute']:FALSE),(isset($value['reference'])?$value['reference']:FALSE)),
+                    'NAME'=>$value['name'].(isset($value['attributes'])?' ('.$value['attributes'].')':''),
+                    'CATEGORY'=>$this->get_category_names_by_product($value['id_product'],FALSE),
+                    'PRICE'=>$this->currencyConvertion(
+                            array(
+                                'price'=>$value['total_wt'],
+                                'conversion_rate'=>$currency->conversion_rate,
+                            )
+                    ),
+                    'QUANTITY'=>$value['quantity'],
+                );
+            }
+        }
+        return $cart;
     }
 
     private function __validateHelperProductId($v) {
@@ -1489,7 +1547,7 @@ class piwikanalyticsjs extends Module {
         }
 
         /* default values */
-        foreach ($this->config->getAll() as $key=> $value) {
+        foreach ($this->config->getAll() as $key => $value) {
             $this->config->update($key,$value);
         }
 
