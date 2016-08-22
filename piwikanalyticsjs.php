@@ -1459,7 +1459,7 @@ class piwikanalyticsjs extends Module {
         // link track time
         $tmp=$configuration["{$key_prefix}LINKTTIME"];
         if ($tmp!=0&&$tmp!==FALSE) {
-            $this->context->smarty->assign($key_prefix.'LINKTTIME',(int)($tmp*60));
+            $this->context->smarty->assign($key_prefix.'LINKTTIME',(int)$tmp);
         }
 
         if (version_compare(_PS_VERSION_,'1.5','<')&&$this->context->cookie->isLogged()) {

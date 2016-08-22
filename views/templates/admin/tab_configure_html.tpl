@@ -69,7 +69,7 @@
     <label>
         <span>{l s='Set link tracking timer' mod='piwikanalyticsjs'}</span>
         <input id='{$pkCPREFIX}LINKTTIME' type='text' name='{$pkCPREFIX}LINKTTIME' value="{$pkfvLINKTTIME}" onchange="tabContentChanged(true);"/>
-        <small>{l s='Set delay for link tracking in seconds. (set to 0 uses piwik default)' mod='piwikanalyticsjs'}</small>
+        <small>{l s='Set delay for link tracking in milliseconds. (set to 0 uses piwik default)' mod='piwikanalyticsjs'}</small>
     </label>
     
     <script type="text/javascript">
