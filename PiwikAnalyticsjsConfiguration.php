@@ -1,5 +1,4 @@
 <?php
-
 if (!defined('_PS_VERSION_'))
     exit;
 
@@ -22,7 +21,7 @@ if (!defined('_PS_VERSION_'))
  * along with PiwikAnalyticsJS for prestashop.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-if (!class_exists('PKHelper', false)){
+if (!class_exists('PKHelper',false)) {
     require_once dirname(__FILE__).'/PKHelper.php';
 }
 
@@ -59,7 +58,7 @@ class PACONF extends PiwikAnalyticsjsConfiguration {
  * @property boolean $dhashtag Discard hash tag or not
  * @property string $linkclsignore ignore link classes 
  * @property string $linkcls link classes 
- * @property int $linktime link tracking time
+ * @property int $linkttime link tracking time
  * @property string $cookiedomain cookie domain, alias of '$COOKIE_DOMAIN'
  * @property string $cookieprefix cookie name prefix
  * @property string $cookiepath cookie path
@@ -85,12 +84,12 @@ class PACONF extends PiwikAnalyticsjsConfiguration {
  * @method boolean validate_save_searchquery(string $post_key) validate and save SEARCH_QUERY with value from _POST or _GET in that order
  * @method boolean validate_save_setdomains(string $post_key) validate and save SET_DOMAINS with value from _POST or _GET in that order
  * @method boolean validate_save_isset_boolean_apiurl(string $post_key) validate and save APIURL, if isset set as boolean, if isset == true | false
- * @method boolean validate_save_isset_boolean_dhashtag(string $post_key) validate and save DHashTag, if isset set as boolean, if isset == true | false
+ * @method boolean validate_save_isset_boolean_dhashtag(string $post_key) validate and save DHASHTAG, if isset set as boolean, if isset == true | false
  * @method boolean validate_save_exhtml(string $post_key) validate and save EXHTML with value from _POST or _GET in that order
  * @method boolean validate_save_isset_boolean_linktrack(string $post_key) validate and save LINKTRACK, if isset set as boolean, if isset == true | false
  * @method boolean validate_save_linkclsignore(string $post_key) validate and save LINKCLSIGNORE with value from _POST or _GET in that order
  * @method boolean validate_save_linkcls(string $post_key) validate and save LINKCLS with value from _POST or _GET in that order
- * @method boolean validate_save_isint_linktime(string $post_key, integer $minimum_value, integer $default_value) validate and save LINKTIME with value from _POST or _GET in that order
+ * @method boolean validate_save_isint_linkttime(string $post_key, integer $minimum_value, integer $default_value) validate and save LINKTIME with value from _POST or _GET in that order
  * @method boolean validate_save_cookiedomain(string $post_key) validate and save COOKIE_DOMAIN with value from _POST or _GET in that order
  * @method boolean validate_save_cookieprefix(string $post_key) validate and save COOKIEPREFIX with value from _POST or _GET in that order
  * @method boolean validate_save_cookiepath(string $post_key) validate and save COOKIEPATH with value from _POST or _GET in that order
@@ -115,31 +114,31 @@ class PiwikAnalyticsjsConfiguration {
     const PREFIX="PIWIK_";
 
     private $config_fields=array(
-        'USE_PROXY' => 0, 'HOST' => "", 'SITEID' => 0,
-        'TOKEN_AUTH' => "", 'COOKIE_TIMEOUT' => self::PK_VC_TIMEOUT,
-        'SESSION_TIMEOUT' => self::PK_SC_TIMEOUT, 'DEFAULT_CURRENCY' => 'EUR',
-        'CRHTTPS' => 0, 'PRODID_V1' => '{ID}-{ATTRID}#{REFERENCE}',
-        'PRODID_V2' => '{ID}#{REFERENCE}', 'PRODID_V3' => '{ID}-{ATTRID}',
-        'COOKIE_DOMAIN' => '', 'SET_DOMAINS' => "", 'DNT' => 1,
-        'EXHTML' => "", 'RCOOKIE_TIMEOUT' => self::PK_RC_TIMEOUT,
-        'USRNAME' => "", 'USRPASSWD' => "", 'PAUTHUSR' => "", 'PAUTHPWD' => "",
-        'DREPDATE' => "day|today", 'USE_CURL' => 0, 'APTURL' => 0,
-        'COOKIEPATH' => "", 'COOKIEPREFIX' => "", 'DHashTag' => 0, 'LINKCLS' => "",
-        'LINKTRACK' => 1, 'LINKTTIME' => "", 'LINKCLSIGNORE' => "", 'PROXY_SCRIPT' => 0,
-        'PROXY_TIMEOUT' => 5, 'SEARCH_QUERY' => "{QUERY} ({PAGE})",
+        'USE_PROXY'=>0,'HOST'=>"",'SITEID'=>0,
+        'TOKEN_AUTH'=>"",'COOKIE_TIMEOUT'=>self::PK_VC_TIMEOUT,
+        'SESSION_TIMEOUT'=>self::PK_SC_TIMEOUT,'DEFAULT_CURRENCY'=>'EUR',
+        'CRHTTPS'=>0,'PRODID_V1'=>'{ID}-{ATTRID}#{REFERENCE}',
+        'PRODID_V2'=>'{ID}#{REFERENCE}','PRODID_V3'=>'{ID}-{ATTRID}',
+        'COOKIE_DOMAIN'=>'','SET_DOMAINS'=>"",'DNT'=>1,
+        'EXHTML'=>"",'RCOOKIE_TIMEOUT'=>self::PK_RC_TIMEOUT,
+        'USRNAME'=>"",'USRPASSWD'=>"",'PAUTHUSR'=>"",'PAUTHPWD'=>"",
+        'DREPDATE'=>"day|today",'USE_CURL'=>0,'APTURL'=>0,
+        'COOKIEPATH'=>"",'COOKIEPREFIX'=>"",'DHASHTAG'=>0,'LINKCLS'=>"",
+        'LINKTRACK'=>1,'LINKTTIME'=>"",'LINKCLSIGNORE'=>"",'PROXY_SCRIPT'=>0,
+        'PROXY_TIMEOUT'=>5,'SEARCH_QUERY'=>"{QUERY} ({PAGE})",
     );
 
     public function __construct($load=true) {
-        if ($load){
-            foreach ($this->config_fields as $key => & $value){
-                switch ($key){
+        if ($load) {
+            foreach ($this->config_fields as $key=> & $value) {
+                switch ($key) {
                     case 'DNT':
                     case 'CRHTTPS':
                     case 'USE_PROXY':
                     case 'USE_CURL':
                     case 'APTURL':
                     /* case 'APIURL': */
-                    case 'DHashTag':
+                    case 'DHASHTAG':
                     case 'LINKTRACK':
                     case 'LINKTTIME':
                         /* case 'LINKTIME': */
@@ -163,20 +162,20 @@ class PiwikAnalyticsjsConfiguration {
      * @return void no return value
      */
     public function save($name=NULL) {
-        if ($name===NULL){
-            foreach ($this->config_fields as $key => $value){
+        if ($name===NULL) {
+            foreach ($this->config_fields as $key=> $value) {
                 $html=false;
                 if ($key=="EXHTML")
                     $html=true;
-                Configuration::updateValue(self::PREFIX.$key, $value, $html);
+                Configuration::updateValue(self::PREFIX.$key,$value,$html);
             }
-        }else{
+        }else {
             $name=$this->getInternalConfigName($name);
-            if (isset($this->config_fields[$name])){
+            if (isset($this->config_fields[$name])) {
                 $html=false;
                 if ($name=="EXHTML")
                     $html=true;
-                Configuration::updateValue(self::PREFIX.$name, $this->config_fields[$name], $html);
+                Configuration::updateValue(self::PREFIX.$name,$this->config_fields[$name],$html);
             }
         }
     }
@@ -188,40 +187,40 @@ class PiwikAnalyticsjsConfiguration {
      */
     public function validate($section='piwik') {
         $this->validate_output=array();
-        switch ($section){
+        switch ($section) {
             case 'piwik':
                 $this->validate_output=array(
-                    'token' => false, 'siteid' => false, 'host' => false,
-                    'piwik_connection' => array(
-                        'result' => false,
-                        'errors' => array(),
+                    'token'=>false,'siteid'=>false,'host'=>false,
+                    'piwik_connection'=>array(
+                        'result'=>false,
+                        'errors'=>array(),
                     ),
                 );
-                if (PKHelper::isNullOrEmpty($this->token)||!Validate::isString($this->token)){
+                if (PKHelper::isNullOrEmpty($this->token)||!Validate::isString($this->token)) {
                     return false;
                 } else
                     $this->validate_output['token']=true;
-                if (PKHelper::isNullOrEmpty($this->siteid)||!Validate::isInt($this->siteid)){
+                if (PKHelper::isNullOrEmpty($this->siteid)||!Validate::isInt($this->siteid)) {
                     return false;
                 } else
                     $this->validate_output['siteid']=true;
-                if (!PKHelper::isNullOrEmpty($this->host)){
-                    if (PKHelper::isValidUrl('http://'.$this->host)){
-                        if (substr($this->host, -1)!="/"){
+                if (!PKHelper::isNullOrEmpty($this->host)) {
+                    if (PKHelper::isValidUrl('http://'.$this->host)) {
+                        if (substr($this->host,-1)!="/") {
                             $this->host .= "/";
-                            $this->update('HOST', $this->host);
+                            $this->update('HOST',$this->host);
                         }
                         $this->validate_output['host']=true;
-                    } else{
+                    } else {
                         return false;
                     }
-                } else{
+                } else {
                     return false;
                 }
-                if ($site=PKHelper::getPiwikSite($this->siteid)){
+                if ($site=PKHelper::getPiwikSite($this->siteid)) {
                     $this->validate_output['piwik_connection']['result']=true;
                     return true;
-                } else{
+                } else {
                     $this->validate_output['piwik_connection']['errors']=PKHelper::$errors;
                     PKHelper::$error=null;
                     PKHelper::$errors=array();
@@ -233,25 +232,25 @@ class PiwikAnalyticsjsConfiguration {
 
             default:
                 $section=$this->getInternalConfigName($section);
-                if (isset($this->config_fields[$section])){
-                    switch ($section){
+                if (isset($this->config_fields[$section])) {
+                    switch ($section) {
                         case 'TOKEN_AUTH':
                             if (PKHelper::isNullOrEmpty($this->TOKEN_AUTH)||!Validate::isString($this->TOKEN_AUTH))
                                 return false;
                             return true;
                         case 'SITEID':
-                            if (PKHelper::isNullOrEmpty($this->SITEID)||!Validate::isInt($this->SITEID)||((int) $this->SITEID<=0))
+                            if (PKHelper::isNullOrEmpty($this->SITEID)||!Validate::isInt($this->SITEID)||((int)$this->SITEID<=0))
                                 return false;
                             return true;
                         case 'HOST':
                             $HOST=$this->HOST;
-                            if (!PKHelper::isNullOrEmpty($HOST)){
-                                $HOST=str_replace(array('http://', 'https://', '//'), "", $HOST);
-                                if (substr($HOST, -1)!="/")
+                            if (!PKHelper::isNullOrEmpty($HOST)) {
+                                $HOST=str_replace(array('http://','https://','//'),"",$HOST);
+                                if (substr($HOST,-1)!="/")
                                     $HOST .= "/";
-                                if (PKHelper::isValidUrl($HOST)||PKHelper::isValidUrl('http://'.$HOST)){
+                                if (PKHelper::isValidUrl($HOST)||PKHelper::isValidUrl('http://'.$HOST)) {
                                     if ($HOST!=$this->HOST)
-                                        $this->update('HOST', $HOST);
+                                        $this->update('HOST',$HOST);
                                     return true;
                                 }
                             }
@@ -264,8 +263,8 @@ class PiwikAnalyticsjsConfiguration {
                             return false;
                         case 'DREPDATE':
                             $DREPDATE=$this->DREPDATE;
-                            if (!PKHelper::isNullOrEmpty($DREPDATE)){
-                                return (strpos($DREPDATE, '|')!==false);
+                            if (!PKHelper::isNullOrEmpty($DREPDATE)) {
+                                return (strpos($DREPDATE,'|')!==false);
                             }
                             return false;
                         case 'USE_PROXY':
@@ -275,14 +274,14 @@ class PiwikAnalyticsjsConfiguration {
                         case 'CRHTTPS':
                             return (Validate::isBool($this->CRHTTPS));
                         case 'PROXY_TIMEOUT':
-                            return (Validate::isInt($this->PROXY_TIMEOUT))&&((int) $this->PROXY_TIMEOUT>0);
+                            return (Validate::isInt($this->PROXY_TIMEOUT))&&((int)$this->PROXY_TIMEOUT>0);
                         case 'PROXY_SCRIPT':
                             $PROXY_SCRIPT=$this->PROXY_SCRIPT;
-                            if (!PKHelper::isNullOrEmpty($PROXY_SCRIPT)){
-                                $PROXY_SCRIPT=str_replace(array('http://', 'https://', '//'), "", $PROXY_SCRIPT);
-                                if (PKHelper::isValidUrl($PROXY_SCRIPT)||PKHelper::isValidUrl('http://'.$PROXY_SCRIPT)){
+                            if (!PKHelper::isNullOrEmpty($PROXY_SCRIPT)) {
+                                $PROXY_SCRIPT=str_replace(array('http://','https://','//'),"",$PROXY_SCRIPT);
+                                if (PKHelper::isValidUrl($PROXY_SCRIPT)||PKHelper::isValidUrl('http://'.$PROXY_SCRIPT)) {
                                     if ($PROXY_SCRIPT!=$this->PROXY_SCRIPT)
-                                        $this->update('PROXY_SCRIPT', $PROXY_SCRIPT);
+                                        $this->update('PROXY_SCRIPT',$PROXY_SCRIPT);
                                     return true;
                                 }
                             }
@@ -293,18 +292,18 @@ class PiwikAnalyticsjsConfiguration {
                         case 'PRODID_V2':
                         case 'PRODID_V3':
                             $_PRODID_=$this->{$section};
-                            if (!preg_match("/{ID}/", $_PRODID_)){
+                            if (!preg_match("/{ID}/",$_PRODID_)) {
                                 $this->validate_output['ID']=1;
                                 return false;
                             }
-                            if ($section=="PRODID_V1"||$section=="PRODID_V2"){
-                                if (!preg_match("/{REFERENCE}/", $_PRODID_)){
+                            if ($section=="PRODID_V1"||$section=="PRODID_V2") {
+                                if (!preg_match("/{REFERENCE}/",$_PRODID_)) {
                                     $this->validate_output['REFERENCE']=1;
                                     return false;
                                 }
                             }
-                            if ($section=="PRODID_V1"||$section=="PRODID_V3"){
-                                if (!preg_match("/{ATTRID}/", $_PRODID_)){
+                            if ($section=="PRODID_V1"||$section=="PRODID_V3") {
+                                if (!preg_match("/{ATTRID}/",$_PRODID_)) {
                                     $this->validate_output['ATTRID']=1;
                                     return false;
                                 }
@@ -312,12 +311,12 @@ class PiwikAnalyticsjsConfiguration {
                             return true;
                         case 'SEARCH_QUERY':
                             $SEARCH_QUERY=$this->SEARCH_QUERY;
-                            if (!preg_match("/{QUERY}/", $SEARCH_QUERY)){
+                            if (!preg_match("/{QUERY}/",$SEARCH_QUERY)) {
                                 $this->validate_output['QUERY']=1;
                                 return false;
                             }
                             //PAGE not required so only set error
-                            if (!preg_match("/{PAGE}/", $SEARCH_QUERY))
+                            if (!preg_match("/{PAGE}/",$SEARCH_QUERY))
                                 $this->validate_output['PAGE']=1;
                             return true;
                         case 'SET_DOMAINS':
@@ -338,14 +337,18 @@ class PiwikAnalyticsjsConfiguration {
                         case 'LINKTRACK':
                             return (Validate::isBool($this->LINKTRACK));
                         case 'LINKCLS':
-                            $this->LINKCLS=$this->__mapFilterString($this->LINKCLS, ',', "trim", "strlen");
+                            $this->LINKCLS=$this->__mapFilterString($this->LINKCLS,',',"trim","strlen");
                             return true;
                         case 'LINKCLSIGNORE':
-                            $this->LINKCLSIGNORE=$this->__mapFilterString($this->LINKCLSIGNORE, ',', "trim", "strlen");
+                            $this->LINKCLSIGNORE=$this->__mapFilterString($this->LINKCLSIGNORE,',',"trim","strlen");
                             return true;
                         case 'LINKTTIME':
                         case 'LINKTIME':
-                            return (Validate::isInt($this->LINKTTIME))&&((int) $this->LINKTTIME>=0);
+                            if (isset($this->config_fields['LINKTIME'])) {
+                                $this->LINKTTIME=$this->config_fields['LINKTIME'];
+                                unset($this->config_fields['LINKTIME']);
+                            }
+                            return (Validate::isInt($this->LINKTTIME))&&((int)$this->LINKTTIME>=0);
                         case 'COOKIE_DOMAIN':/* db name */
                         case 'COOKIEDOMAIN':/* alias name */
                             /*
@@ -357,40 +360,40 @@ class PiwikAnalyticsjsConfiguration {
                             return true;
                         case 'COOKIEPATH':
                             if (!PKHelper::isNullOrEmpty($this->cookiepath))
-                                if (strpos($this->cookiepath, '/')!=0){
+                                if (strpos($this->cookiepath,'/')!=0) {
                                     $this->validate_output='/';
                                     return false;
                                 }
                             return true;
                         case 'RCOOKIE_TIMEOUT':
                         case 'RCOOKIETIMEOUT':
-                            if ((Validate::isInt($this->RCOOKIE_TIMEOUT))&&(int) $this->RCOOKIE_TIMEOUT>=0)
+                            if ((Validate::isInt($this->RCOOKIE_TIMEOUT))&&(int)$this->RCOOKIE_TIMEOUT>=0)
                                 $this->RCOOKIE_TIMEOUT=$this->RCOOKIE_TIMEOUT*60; //convert to seconds
                             else
                                 return false;
                         case 'COOKIE_TIMEOUT':
                         case 'COOKIETIMEOUT':
-                            if ((Validate::isInt($this->COOKIE_TIMEOUT))&&(int) $this->COOKIE_TIMEOUT>=0)
+                            if ((Validate::isInt($this->COOKIE_TIMEOUT))&&(int)$this->COOKIE_TIMEOUT>=0)
                                 $this->COOKIE_TIMEOUT=$this->COOKIE_TIMEOUT*60; //convert to seconds
                             else
                                 return false;
                         case 'SESSION_TIMEOUT':
                         case 'SESSIONTIMEOUT':
-                            if ((Validate::isInt($this->SESSION_TIMEOUT))&&(int) $this->SESSION_TIMEOUT>=0)
+                            if ((Validate::isInt($this->SESSION_TIMEOUT))&&(int)$this->SESSION_TIMEOUT>=0)
                                 $this->SESSION_TIMEOUT=$this->SESSION_TIMEOUT*60; //convert to seconds
                             else
                                 return false;
                             return true;
                         default:
-                            if (isset($this->config_fields[$section])){
-                                trigger_error("Config setting '{$section}' exists, but is not validated, something is wrong, maybe you've changed the code", E_USER_WARNING);
-                            } else{
-                                trigger_error("Config setting '{$section}' do not exists", E_USER_WARNING);
+                            if (isset($this->config_fields[$section])) {
+                                trigger_error("Config setting '{$section}' exists, but is not validated, something is wrong, maybe you've changed the code",E_USER_WARNING);
+                            } else {
+                                trigger_error("Config setting '{$section}' do not exists",E_USER_WARNING);
                             }
                             break;
                     }
-                } else{
-                    trigger_error("Unable to validate unkown section={$section}", E_USER_WARNING);
+                } else {
+                    trigger_error("Unable to validate unkown section={$section}",E_USER_WARNING);
                 }
                 break;
         }
@@ -399,20 +402,20 @@ class PiwikAnalyticsjsConfiguration {
 
     private function getInternalConfigName($s) {
         $aliases=array(
-            'token' => 'TOKEN_AUTH', 'site_id' => 'SITEID',
-            'use_https' => 'CRHTTPS', 'currency' => 'DEFAULT_CURRENCY',
-            'useproxy' => 'USE_PROXY', 'usehttps' => 'CRHTTPS',
-            'usecurl' => 'USE_CURL', 'proxytimeout' => 'PROXY_TIMEOUT',
-            'proxyscript' => 'PROXY_SCRIPT', 'producttplv1' => 'PRODID_V1',
-            'producttplv2' => 'PRODID_V2', 'producttplv3' => 'PRODID_V3',
-            'searchquery' => 'SEARCH_QUERY', 'setdomains' => 'SET_DOMAINS',
-            'apiurl' => 'APTURL', 'linktime' => 'LINKTTIME',
-            'cookiedomain' => 'COOKIE_DOMAIN', 'rcookietimeout' => 'RCOOKIE_TIMEOUT',
-            'cookietimeout' => 'COOKIE_TIMEOUT', 'sessiontimeout' => 'SESSION_TIMEOUT',
+            'token'=>'TOKEN_AUTH','site_id'=>'SITEID',
+            'use_https'=>'CRHTTPS','currency'=>'DEFAULT_CURRENCY',
+            'useproxy'=>'USE_PROXY','usehttps'=>'CRHTTPS',
+            'usecurl'=>'USE_CURL','proxytimeout'=>'PROXY_TIMEOUT',
+            'proxyscript'=>'PROXY_SCRIPT','producttplv1'=>'PRODID_V1',
+            'producttplv2'=>'PRODID_V2','producttplv3'=>'PRODID_V3',
+            'searchquery'=>'SEARCH_QUERY','setdomains'=>'SET_DOMAINS',
+            'apiurl'=>'APTURL','linktime'=>'LINKTTIME',
+            'cookiedomain'=>'COOKIE_DOMAIN','rcookietimeout'=>'RCOOKIE_TIMEOUT',
+            'cookietimeout'=>'COOKIE_TIMEOUT','sessiontimeout'=>'SESSION_TIMEOUT',
         );
         if (isset($aliases[strtolower($s)]))
             return $aliases[strtolower($s)];
-        return str_replace(self::PREFIX, '', strtoupper($s));
+        return str_replace(self::PREFIX,'',strtoupper($s));
     }
 
     /**
@@ -421,10 +424,10 @@ class PiwikAnalyticsjsConfiguration {
      */
     public function getHooks() {
         $hooks=array(
-            'defaults' => array(
+            'defaults'=>array(
             /* hooks with same name on all supported ps versions */
             ),
-            'PS15' => array(
+            'PS15'=>array(
                 /* 'header', */
                 'displayHeader',
                 /* 'footer', */
@@ -438,8 +441,8 @@ class PiwikAnalyticsjsConfiguration {
                 'actionCartSave',
             ),
         );
-        if (version_compare(substr(_PS_VERSION_, 0, 3), '1.5', '<=')){
-            return array_merge($hooks['defaults'], $hooks['PS15']);
+        if (version_compare(substr(_PS_VERSION_,0,3),'1.5','<=')) {
+            return array_merge($hooks['defaults'],$hooks['PS15']);
         }
         return $hooks['defaults'];
     }
@@ -451,12 +454,12 @@ class PiwikAnalyticsjsConfiguration {
      */
     public function getAll($prefix=true) {
         $return=array();
-        foreach ($this->config_fields as $key => $value){
+        foreach ($this->config_fields as $key=> $value) {
             $return[($prefix?self::PREFIX:'').$key]=$value;
         }
         return $return;
     }
-    
+
     /**
      * get url that points to piwik including http(s) based on the configuration
      * @param boolean $add_auth if true adds 'USER:PASSWORD@' to the returned url
@@ -481,17 +484,17 @@ class PiwikAnalyticsjsConfiguration {
      * @return boolean|mixed boolean false if configuration setting is not isset
      */
     public function __get($name) {
-        if (strtoupper($name)=='APTURL'){
-            trigger_error("The use of {$name} is deprecated please use 'APIURL', wrongly named", E_USER_DEPRECATED);
+        if (strtoupper($name)=='APTURL') {
+            trigger_error("The use of {$name} is deprecated please use 'APIURL', wrongly named",E_USER_DEPRECATED);
         }
-        if (strtoupper($name)=='LINKTTIME'){
-            trigger_error("The use of {$name} is deprecated please use 'LINKTIME', wrongly named", E_USER_DEPRECATED);
+        if (strtoupper($name)=='LINKTIME') {
+            trigger_error("The use of {$name} is deprecated please use 'LINKTTIME', wrongly named",E_USER_DEPRECATED);
         }
         $name=$this->getInternalConfigName($name);
         if (preg_match("/^fix/i",$name)) {
-            trigger_error("The use of fix variables are not allowed, use Configuration::get({$name})", E_USER_ERROR);
+            trigger_error("The use of fix variables are not allowed, use Configuration::get({$name})",E_USER_ERROR);
         }
-        if (isset($this->config_fields[$name])){
+        if (isset($this->config_fields[$name])) {
             return $this->config_fields[$name];
         }
         return FALSE;
@@ -502,16 +505,16 @@ class PiwikAnalyticsjsConfiguration {
      * @param string $name Key
      * @param mixed $value
      */
-    public function __set($name, $value) {
-        if (strtoupper($name)=='APTURL'){
-            trigger_error("The use of {$name} is deprecated please use 'APIURL', wrongly named", E_USER_DEPRECATED);
+    public function __set($name,$value) {
+        if (strtoupper($name)=='APTURL') {
+            trigger_error("The use of {$name} is deprecated please use 'APIURL', wrongly named",E_USER_DEPRECATED);
         }
-        if (strtoupper($name)=='LINKTTIME'){
-            trigger_error("The use of {$name} is deprecated please use 'LINKTIME', wrongly named", E_USER_DEPRECATED);
+        if (strtoupper($name)=='LINKTIME') {
+            trigger_error("The use of {$name} is deprecated please use 'LINKTTIME', wrongly named",E_USER_DEPRECATED);
         }
         $name=$this->getInternalConfigName($name);
         if (preg_match("/^fix/i",$name)) {
-            trigger_error("The use of fix variables are not allowed, use Configuration::updateValue({$name})", E_USER_ERROR);
+            trigger_error("The use of fix variables are not allowed, use Configuration::updateValue({$name})",E_USER_ERROR);
         }
         if (is_bool($value))
             $value=($value?1:0);
@@ -524,15 +527,15 @@ class PiwikAnalyticsjsConfiguration {
      * @param mixed $values $values is an array if the configuration is multilingual, a single string else.
      * @param boolean $html Specify if html is authorized in value
      */
-    public function update($key, $value, $html=false) {
+    public function update($key,$value,$html=false) {
         $key=$this->getInternalConfigName($key);
         if (preg_match("/^fix/i",$key)) {
-            trigger_error("The use of fix variables are not allowed, use Configuration::updateValue({$name})", E_USER_ERROR);
+            trigger_error("The use of fix variables are not allowed, use Configuration::updateValue({$name})",E_USER_ERROR);
         }
         if (is_bool($value))
             $value=($value?1:0);
         $this->config_fields[$key]=$value;
-        Configuration::updateValue(self::PREFIX.$key, $value, $html);
+        Configuration::updateValue(self::PREFIX.$key,$value,$html);
     }
 
     /**
@@ -542,29 +545,29 @@ class PiwikAnalyticsjsConfiguration {
      * @param mixed $arguments values for what ever function your are trying to call 
      * @return mixed
      */
-    public function __call($name, $arguments) {
-        $name=explode('_', strtolower($name));
+    public function __call($name,$arguments) {
+        $name=explode('_',strtolower($name));
         if (!isset($name[0]))
             return false;
-        switch ($name[0]){
+        switch ($name[0]) {
             case 'validate':
                 // START: 'validate' Overload method
                 if (!isset($name[1]))
                     return false;
-                switch ($name[1]){
+                switch ($name[1]) {
                     // START: 'validate_save_' Overload method
                     case 'save':
                         if (!isset($name[2]))
                             return false;
                         if (!isset($arguments[0])||is_null($arguments[0]))
                             return false;
-                        if ($name[2]=="isset"){
+                        if ($name[2]=="isset") {
                             // START: 'validate_save_isset_' Overload method
                             if (!isset($name[3])) // type, eg. boolean
                                 return false;
                             if (!isset($name[4])) // config name
                                 return false;
-                            switch ($name[3]){
+                            switch ($name[3]) {
                                 // START: 'validate_save_isset_boolean' Overload method
                                 case 'bool':
                                 case 'boolean':
@@ -580,39 +583,39 @@ class PiwikAnalyticsjsConfiguration {
                                     break;
                             }
                             // END: 'validate_save_isset_' Overload method
-                        } else if ($name[2]=="isint"){
+                        } else if ($name[2]=="isint") {
                             // START: 'validate_save_isint_' Overload method
                             if (!isset($name[3]))
                                 return false;
                             $is_error=false;
                             $validate_key=$this->getInternalConfigName($name[3]);
                             if (Tools::getIsset(self::PREFIX.$arguments[0]))
-                                $this->{$validate_key}=(int) Tools::getValue(self::PREFIX.$arguments[0], 0);
+                                $this->{$validate_key}=(int)Tools::getValue(self::PREFIX.$arguments[0],0);
                             else if (Tools::getIsset($arguments[0]))
-                                $this->{$validate_key}=(int) Tools::getValue(self::PREFIX.$arguments[0], 0);
-                            else{ /* defaults to $default_value ($arguments[2]) if isset else $minimum_value */
+                                $this->{$validate_key}=(int)Tools::getValue(self::PREFIX.$arguments[0],0);
+                            else { /* defaults to $default_value ($arguments[2]) if isset else $minimum_value */
                                 $is_error=true;
-                                $this->{$validate_key}=(isset($arguments[2])?(int) $arguments[2]:(isset($arguments[1])?(int) $arguments[1]:0));
+                                $this->{$validate_key}=(isset($arguments[2])?(int)$arguments[2]:(isset($arguments[1])?(int)$arguments[1]:0));
                             }
 
-                            if (isset($arguments[1])&&isset($arguments[2])&&($this->{$validate_key}<(int) $arguments[1])){
-                                $this->{$validate_key}=(int) $arguments[2];
+                            if (isset($arguments[1])&&isset($arguments[2])&&($this->{$validate_key}<(int)$arguments[1])) {
+                                $this->{$validate_key}=(int)$arguments[2];
                                 $is_error=true;
-                            } else if (isset($arguments[1])&&($this->{$validate_key}<(int) $arguments[1])){
-                                $this->{$validate_key}=(int) $arguments[1];
+                            } else if (isset($arguments[1])&&($this->{$validate_key}<(int)$arguments[1])) {
+                                $this->{$validate_key}=(int)$arguments[1];
                                 $is_error=true;
                             }
                             $validate_key_error=$this->validateSaveInternal($validate_key);
                             return (($is_error===false)?$validate_key_error:($is_error===false));
                             // END: 'validate_save_isint_' Overload method
-                        } else{
+                        } else {
                             $validate_key=$this->getInternalConfigName($name[2]);
                             if (Tools::getIsset(self::PREFIX.$arguments[0]))
-                                $this->{$validate_key}=Tools::getValue(self::PREFIX.$arguments[0], '');
+                                $this->{$validate_key}=Tools::getValue(self::PREFIX.$arguments[0],'');
                             else if (Tools::getIsset($arguments[0]))
-                                $this->{$validate_key}=Tools::getValue($arguments[0], '');
-                            else{
-                                trigger_error("{$name[2]} is not isset, so we cannot validate!", E_USER_NOTICE);
+                                $this->{$validate_key}=Tools::getValue($arguments[0],'');
+                            else {
+                                trigger_error("{$name[2]} is not isset, so we cannot validate!",E_USER_NOTICE);
                                 return false;
                             }
                             return $this->validateSaveInternal($validate_key);
@@ -627,19 +630,19 @@ class PiwikAnalyticsjsConfiguration {
     }
 
     private function validateSaveInternal($validate_key) {
-        if ($this->validate($validate_key)){
+        if ($this->validate($validate_key)) {
             $this->save($validate_key);
             return true;
-        } else{
+        } else {
             return false;
         }
     }
 
-    private function __mapFilterString($string, $delimiter, $map="trim", $filter="strlen") {
-        $result=explode($delimiter, $string);
-        $result=array_map($map, $result);
-        $result=array_filter($result, $filter);
-        return implode(',', $result);
+    private function __mapFilterString($string,$delimiter,$map="trim",$filter="strlen") {
+        $result=explode($delimiter,$string);
+        $result=array_map($map,$result);
+        $result=array_filter($result,$filter);
+        return implode(',',$result);
     }
 
 }

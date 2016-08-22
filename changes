@@ -1,7 +1,7 @@
 Version: ???
 
     * add PiwikTracker usage in hookActionCartSave(), to handle updates/creation 
-    - off shopping carts in piwik, this eliminates the need to reload the page
+    - of shopping carts in piwik, this eliminates the need to reload the page
     - **NOTE** PiwikTracker is not included in any release but have to be added 
     -          seperatly by you or your developer
 

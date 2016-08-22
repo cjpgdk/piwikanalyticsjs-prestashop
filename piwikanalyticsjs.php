@@ -64,7 +64,7 @@ class piwikanalyticsjs extends Module {
     public function __construct($name=null,$context=null) {
         $this->name='piwikanalyticsjs';
         $this->tab='analytics_stats';
-        $this->version='0.8.3';
+        $this->version='0.8.3.1';
         $this->author='Christian M. Jensen';
         $this->displayName='Piwik Analytics';
         $this->author_uri='https://cmjscripter.net';
@@ -112,7 +112,7 @@ class piwikanalyticsjs extends Module {
         $_html="";
         $this->setMedia();
         $this->processFormsUpdate();
-        $this->piwikVersion=PKHelper::getPiwikVersion(); // after settings update
+        $this->piwikVersion=PKHelper::getPiwikVersion();
         if (Tools::isSubmit('submitPiwikAnalyticsjsWizard')) {
             $this->processWizardFormUpdate();
         }
@@ -164,10 +164,7 @@ class piwikanalyticsjs extends Module {
                 "&configure={$this->name}&tab_module=analytics_stats&module_name={$this->name}&pkwizard=1";
 
         // Piwik image tracking
-        $image_tracking=array(
-            'default'=>false,
-            'proxy'=>false
-        );
+        $image_tracking=array('default'=>false,'proxy'=>false);
         if (version_compare($this->piwikVersion,'2.1','>')) {
             if ($this->config->token===false||!($image_tracking=PKHelper::getPiwikImageTrackingCode()))
                 $image_tracking=array('default'=>$this->l('I need Site ID and Auth Token before i can get your image tracking code'),
@@ -245,7 +242,7 @@ class piwikanalyticsjs extends Module {
             'pkfvPRODID_V3'=>$this->getProductIdTemplate(3),
             'pkfvSEARCH_QUERY'=>$this->config->SEARCH_QUERY,
             'pkfvSET_DOMAINS'=>$this->config->SET_DOMAINS,
-            'pkfvDHashTag'=>$this->config->DHashTag,
+            'pkfvDHASHTAG'=>$this->config->DHASHTAG,
             'pkfvAPTURL'=>$this->config->APTURL,
             /** tab|HTML * */
             'pkfvEXHTML'=>$this->config->EXHTML,
@@ -253,8 +250,8 @@ class piwikanalyticsjs extends Module {
             'pkfvEXHTML_ImageTrackerProxy'=>$image_tracking['proxy'],
             'pkfvEXHTML_Warning'=>(version_compare(_PS_VERSION_,'1.6.0.7','>=')?"<br><strong>{$this->l("Before you edit/add html code to this field make sure the HTMLPurifier library isn't in use if HTMLPurifier is enabled, all html code will be stripd from the field when saving, check the settings in 'Preferences=>General', you can enable HTMLPurifier again after you made your changes")}</strong>":""),
             'pkfvLINKTRACK'=>$this->config->LINKTRACK,
-            'pkfvLINKClS'=>$this->config->LINKClS,
-            'pkfvLINKClSIGNORE'=>$this->config->LINKClSIGNORE,
+            'pkfvLINKClS'=>$this->config->LINKCLS,
+            'pkfvLINKClSIGNORE'=>$this->config->LINKCLSIGNORE,
             'pkfvLINKTTIME'=>(int)$this->config->LINKTTIME,
             /** tab|Cookies * */
             'pkfvSESSION_TIMEOUT'=>($PIWIK_SESSION_TIMEOUT!=0?(int)($PIWIK_SESSION_TIMEOUT/60):(int)(self::PK_SC_TIMEOUT )),
@@ -535,8 +532,8 @@ class piwikanalyticsjs extends Module {
             // [PIWIK_SET_DOMAINS]
             if (!$this->config->validate_save_setdomains('SET_DOMAINS'))
                 $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'),$this->l("Hide known alias URLs")));
-            // [PIWIK_DHashTag] 
-            if (!$this->config->validate_save_isset_boolean_dhashtag("DHashTag"))
+            // [PIWIK_DHASHTAG] 
+            if (!$this->config->validate_save_isset_boolean_dhashtag("DHASHTAG"))
                 $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'),$this->l("Discard hash tag")));
             // [PIWIK_APTURL] 
             if (!$this->config->validate_save_isset_boolean_apiurl("APTURL"/* "APIURL */))
@@ -558,7 +555,7 @@ class piwikanalyticsjs extends Module {
             if (!$this->config->validate_save_linkclsignore('LINKClSIGNORE'))
                 $this->_errors[]=$this->displayError(sprintf($this->l('%s were not saved, internal unknown system error'),$this->l("Ignore link classes")));
             // [PIWIK_LINKTTIME] 
-            if (!$this->config->validate_save_isint_linktime("LINKTTIME",0,0))
+            if (!$this->config->validate_save_isint_linkttime("LINKTTIME",0,0))
                 $this->_errors[]=$this->displayError($this->l('Link tracking timer validation error, must be a positive integer, timeout has been set to 0 (zero) using piwik default value'));
         }
         // handle submission from cookies tab
@@ -685,13 +682,16 @@ class piwikanalyticsjs extends Module {
             } else {
                 $PKAdminKeepURLFragments=false;
             }
-            if ($result=PKHelper::updatePiwikSite(
-                            $PKAdminIdSite,$PKAdminSiteName,$PKAdminSiteUrls,$PKAdminEcommerce,$PKAdminSiteSearch,$PKAdminSearchKeywordParameters,$PKAdminSearchCategoryParameters,$PKAdminExcludedIps,$PKAdminExcludedQueryParameters,$PKAdminTimezone,$PKAdminCurrency,$PKAdminGroup,$PKAdminStartDate,$PKAdminExcludedUserAgents,$PKAdminKeepURLFragments,$PKAdminSiteType)) {
-                /*
-                 *  all is good 
-                 * @todo minimize after propper testing, "left over"
-                 */
-            } else {
+            $result=PKHelper::updatePiwikSite(
+                    $PKAdminIdSite,$PKAdminSiteName,$PKAdminSiteUrls,
+                    $PKAdminEcommerce,$PKAdminSiteSearch,
+                    $PKAdminSearchKeywordParameters,
+                    $PKAdminSearchCategoryParameters,$PKAdminExcludedIps,
+                    $PKAdminExcludedQueryParameters,$PKAdminTimezone,
+                    $PKAdminCurrency,$PKAdminGroup,$PKAdminStartDate,
+                    $PKAdminExcludedUserAgents,$PKAdminKeepURLFragments,
+                    $PKAdminSiteType);
+            if ($result === false) {
                 $this->displayErrors(PKHelper::$errors);
                 PKHelper::$errors=PKHelper::$error="";
             }
@@ -738,6 +738,7 @@ class piwikanalyticsjs extends Module {
      * @remarks always use the latest revision of PiwikTracker, not included you must download and upload it your self..
      * @link http://piwik.org/docs/tracking-api/ tracking docs
      * @link https://github.com/piwik/piwik-php-tracker Piwik PHP tracking client source code
+     * @since 0.8.4
      */
     public function hookActionCartSave() {
         if (!isset($this->context->cart))
@@ -866,8 +867,7 @@ class piwikanalyticsjs extends Module {
         if ((int)$this->config->siteid<=0)
             return "";
 
-        $order=$params['objOrder'];
-        if (Validate::isLoadedObject($order)) {
+        if (Validate::isLoadedObject($params['objOrder'])) {
 
             $this->__setConfigDefault();
 
@@ -1369,15 +1369,15 @@ class piwikanalyticsjs extends Module {
     private function __setConfigDefault() {
         $key_prefix=PACONF::PREFIX;
         $keys=array(
-            $key_prefix.'EXHTML',$key_prefix.'DHashTag',
+            $key_prefix.'EXHTML',$key_prefix.'DHASHTAG',
             $key_prefix.'SET_DOMAINS',$key_prefix.'COOKIE_DOMAIN',
             $key_prefix.'DNT',$key_prefix.'SESSION_TIMEOUT',
             $key_prefix.'RCOOKIE_TIMEOUT',$key_prefix.'COOKIE_TIMEOUT',
             $key_prefix.'SITEID',$key_prefix.'USE_PROXY',
             $key_prefix.'HOST',$key_prefix.'PROXY_SCRIPT',
-            $key_prefix.'LINKTRACK',$key_prefix.'LINKClS',
+            $key_prefix.'LINKTRACK',$key_prefix.'LINKCLS',
             $key_prefix.'LINKTTIME',$key_prefix.'COOKIEPREFIX',
-            $key_prefix.'COOKIEPATH',$key_prefix.'LINKClSIGNORE',
+            $key_prefix.'COOKIEPATH',$key_prefix.'LINKCLSIGNORE',
             $key_prefix.'APTURL',
         );
         $configuration=Configuration::getMultiple($keys);
@@ -1389,7 +1389,7 @@ class piwikanalyticsjs extends Module {
         $this->context->smarty->assign($key_prefix.'SITEID',$configuration["{$key_prefix}SITEID"]);
         $this->context->smarty->assign($key_prefix.'VER',$this->piwikVersion);
         $this->context->smarty->assign($key_prefix.'USE_PROXY',(bool)$configuration["{$key_prefix}USE_PROXY"]);
-        $this->context->smarty->assign($key_prefix.'DHashTag',(bool)$configuration[$key_prefix.'DHashTag']);
+        $this->context->smarty->assign($key_prefix.'DHASHTAG',(bool)$configuration[$key_prefix.'DHASHTAG']);
         $this->context->smarty->assign($key_prefix.'APTURL',(bool)$configuration[$key_prefix.'APTURL']);
         $this->context->smarty->assign($key_prefix.'HOSTAPI',$configuration["{$key_prefix}HOST"]);
         $this->context->smarty->assign($key_prefix.'LINKTRACK',(bool)$configuration[$key_prefix.'LINKTRACK']);
@@ -1431,29 +1431,29 @@ class piwikanalyticsjs extends Module {
         }
         unset($PIWIK_SET_DOMAINS);
         // link classes
-        if (!empty($configuration["{$key_prefix}LINKClS"])) {
-            $sdArr=explode(',',$configuration["{$key_prefix}LINKClS"]);
+        if (!empty($configuration["{$key_prefix}LINKCLS"])) {
+            $sdArr=explode(',',$configuration["{$key_prefix}LINKCLS"]);
             if (count($sdArr)>1)
                 $PIWIK_LINKClS="['".trim(implode("','",$sdArr),",'")."']";
             else
-                $PIWIK_LINKClS="'{$sdArr[0]}'";
-            $this->context->smarty->assign($key_prefix.'LINKClS',(!empty($PIWIK_LINKClS)?$PIWIK_LINKClS:FALSE));
+                $PIWIK_LINKClS="['{$sdArr[0]}']";
+            $this->context->smarty->assign($key_prefix.'LINKCLS',(!empty($PIWIK_LINKClS)?$PIWIK_LINKClS:FALSE));
             unset($sdArr);
         }else {
-            $this->context->smarty->assign($key_prefix.'LINKClS',FALSE);
+            $this->context->smarty->assign($key_prefix.'LINKCLS',FALSE);
         }
         unset($PIWIK_LINKClS);
         // link ignore classes
-        if (!empty($configuration["{$key_prefix}LINKClSIGNORE"])) {
-            $sdArr=explode(',',$configuration["{$key_prefix}LINKClSIGNORE"]);
+        if (!empty($configuration["{$key_prefix}LINKCLSIGNORE"])) {
+            $sdArr=explode(',',$configuration["{$key_prefix}LINKCLSIGNORE"]);
             if (count($sdArr)>1)
                 $PIWIK_LINKClSIGNORE="['".trim(implode("','",$sdArr),",'")."']";
             else
-                $PIWIK_LINKClSIGNORE="'{$sdArr[0]}'";
-            $this->context->smarty->assign($key_prefix.'LINKClSIGNORE',(!empty($PIWIK_LINKClSIGNORE)?$PIWIK_LINKClSIGNORE:FALSE));
+                $PIWIK_LINKClSIGNORE="['{$sdArr[0]}']";
+            $this->context->smarty->assign($key_prefix.'LINKCLSIGNORE',(!empty($PIWIK_LINKClSIGNORE)?$PIWIK_LINKClSIGNORE:FALSE));
             unset($sdArr);
         }else {
-            $this->context->smarty->assign($key_prefix.'LINKClSIGNORE',FALSE);
+            $this->context->smarty->assign($key_prefix.'LINKCLSIGNORE',FALSE);
         }
         unset($PIWIK_LINKClSIGNORE);
         // link track time

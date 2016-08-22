@@ -85,8 +85,8 @@
     <div style="float: left; display: block; width: 100%; margin-bottom: 8px;">
         <label class="switch" style="max-width: 150px; text-align: center; float: left ! important;">
             <span style="margin: 0px auto; float: none;">{l s='Discard hash tag' mod='piwikanalyticsjs'}</span>
-            <input id="{$pkCPREFIX}DHashTag" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $pkfvDHashTag==1} checked="checked"{/if} name="{$pkCPREFIX}DHashTag" onchange="tabContentChanged(true);" />
-            <label for="{$pkCPREFIX}DHashTag" data-on="Yes" data-off="No" style="clear: both; margin: 0px auto;"></label>
+            <input id="{$pkCPREFIX}DHASHTAG" class="pka-toggle pka-toggle-yes-no" type="checkbox"{if $pkfvDHASHTAG==1} checked="checked"{/if} name="{$pkCPREFIX}DHASHTAG" onchange="tabContentChanged(true);" />
+            <label for="{$pkCPREFIX}DHASHTAG" data-on="Yes" data-off="No" style="clear: both; margin: 0px auto;"></label>
             <small>{l s='Set to yes to not record the hash tag (anchor) portion of URLs' mod='piwikanalyticsjs'}</small>
         </label>
 

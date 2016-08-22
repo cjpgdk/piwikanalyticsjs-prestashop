@@ -73,7 +73,7 @@ enableHeartBeatTimer( delayInSeconds )
     _paq.push(["setSiteId",{$PIWIK_SITEID}]);
     {if $PIWIK_USE_PROXY eq true} _paq.push(['setTrackerUrl',u]);{else} _paq.push(['setTrackerUrl', u+'piwik.php']);{/if}
     {if $PIWIK_DNT eq true} _paq.push(["setDoNotTrack", true]);{/if}
-    {if $PIWIK_DHashTag eq true} _paq.push(["discardHashTag", true]);{/if}
+    {if $PIWIK_DHASHTAG eq true} _paq.push(["discardHashTag", true]);{/if}
     {* left out since this requires Piwik to be installed in the same domain as your shop
     if isset($PIWIK_REQUEST_METHOD) && $PIWIK_REQUEST_METHOD eq true}
         _paq.push(['setRequestMethod', 'POST']);
@@ -86,10 +86,11 @@ enableHeartBeatTimer( delayInSeconds )
     {if isset($PIWIK_COOKIE_TIMEOUT)} _paq.push(['setVisitorCookieTimeout', '{$PIWIK_COOKIE_TIMEOUT|intval}']);{/if}
     {if isset($PIWIK_SESSION_TIMEOUT)} _paq.push(['setSessionCookieTimeout', '{$PIWIK_SESSION_TIMEOUT|intval}']);{/if}
     {if isset($PIWIK_RCOOKIE_TIMEOUT)} _paq.push(['setReferralCookieTimeout', '{$PIWIK_RCOOKIE_TIMEOUT|intval}']);{/if}
-    {if $PIWIK_LINKTRACK eq true} _paq.push(['enableLinkTracking']);{/if}
-    {if isset($PIWIK_LINKClS) && $PIWIK_LINKClS eq true} _paq.push(['setLinkClasses', {$PIWIK_LINKClS}]);{/if}
-    {if isset($PIWIK_LINKClSIGNORE) && $PIWIK_LINKClSIGNORE eq true} _paq.push(['setIgnoreClasses', {$PIWIK_LINKClSIGNORE}]);{/if}
-    {if isset($PIWIK_LINKTTIME) && $PIWIK_LINKTTIME eq true} _paq.push(['setLinkTrackingTimer', {$PIWIK_LINKTTIME|intval}]);{/if}
+    {if $PIWIK_LINKTRACK eq true} _paq.push(['enableLinkTracking']);
+    {if isset($PIWIK_LINKCLS) && $PIWIK_LINKCLS eq true} _paq.push(['setLinkClasses', {$PIWIK_LINKCLS}]);{/if}
+    {if isset($PIWIK_LINKCLSIGNORE) && $PIWIK_LINKCLSIGNORE eq true} _paq.push(['setIgnoreClasses', {$PIWIK_LINKCLSIGNORE}]);{/if}
+    {if isset($PIWIK_LINKTTIME) && $PIWIK_LINKTTIME|intval > 0} _paq.push(['setLinkTrackingTimer', {$PIWIK_LINKTTIME|intval}]);{/if}
+    {/if}
     {if isset($PIWIK_UUID) && version_compare($PIWIK_VER|floatval,'2.7.0','>=')} _paq.push(['setUserId', '{$PIWIK_UUID}']);{/if}
     {if $PIWIK_APTURL eq true} _paq.push(['setApiUrl', (("https:" == document.location.protocol) ? "https://{$PIWIK_HOSTAPI}" : "http://{$PIWIK_HOSTAPI}")]);{/if}
     {if isset($PIWIK_PRODUCTS) && is_array($PIWIK_PRODUCTS)}
