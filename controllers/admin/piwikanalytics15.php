@@ -246,7 +246,7 @@ class PiwikAnalytics15Controller extends ModuleAdminController {
         }
 
 
-        $http = $this->module->config->CRHTTPS;
+        $http = (bool)$this->module->config->CRHTTPS ? "https://":"http://";
         $PIWIK_HOST = $this->module->config->HOST;
         $PIWIK_SITEID = (int)$this->module->config->SITEID;
 

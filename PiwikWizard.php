@@ -51,6 +51,10 @@ class PiwikWizardHelper {
              * @todo add seperated functions, or just take whats posted for this to avoid multiple overides.!
              */
             PiwikWizardHelper::getFormValuesInternal(true);
+            $pkToken=PKHelper::getTokenAuth(PiwikWizardHelper::$username,PiwikWizardHelper::$password);
+            if ($pkToken!==FALSE) {
+                self::getConf()->update('TOKEN', $pkToken);
+            }
             if (Tools::getIsset('PKNewSiteName'))
                 $siteName=Tools::getValue('PKNewSiteName');
             else{

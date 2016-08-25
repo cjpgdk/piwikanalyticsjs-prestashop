@@ -64,7 +64,7 @@ class piwikanalyticsjs extends Module {
     public function __construct($name=null,$context=null) {
         $this->name='piwikanalyticsjs';
         $this->tab='analytics_stats';
-        $this->version='0.8.3.1';
+        $this->version='0.8.3.d2'; //dX == dev number
         $this->author='Christian M. Jensen';
         $this->displayName='Piwik Analytics';
         $this->author_uri='https://cmjscripter.net';
@@ -112,7 +112,8 @@ class piwikanalyticsjs extends Module {
         $_html="";
         $this->setMedia();
         $this->processFormsUpdate();
-        $this->piwikVersion=PKHelper::getPiwikVersion();
+        if (!$this->isWizardRequest())
+            $this->piwikVersion=PKHelper::getPiwikVersion();
         if (Tools::isSubmit('submitPiwikAnalyticsjsWizard')) {
             $this->processWizardFormUpdate();
         }
@@ -159,7 +160,7 @@ class piwikanalyticsjs extends Module {
         if ($this->isWizardRequest()) {
             return $this->runWizard($_currentIndex,$_html,$currencies);
         }
-
+        
         $config_wizard_link=$this->context->link->getAdminLink('AdminModules').
                 "&configure={$this->name}&tab_module=analytics_stats&module_name={$this->name}&pkwizard=1";
 
@@ -837,7 +838,7 @@ class piwikanalyticsjs extends Module {
         if ((int)$this->config->siteid<=0)
             return "";
         $param['total']=intval($param['total']);
-        // $param['expr'] is not the searched word if lets say search is Snitmøntre then the $param['expr'] will be Snitmontre
+        // $param['expr'] is not the searched word if lets say search is SnitmÃ¸ntre then the $param['expr'] will be Snitmontre
         $expr=Tools::getIsset('search_query')?htmlentities(Tools::getValue('search_query')):$param['expr'];
         /* if multi pages in search add page number of current if set! */
         $search_tpl=$this->config->SEARCH_QUERY;
