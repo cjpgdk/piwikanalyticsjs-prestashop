@@ -38,10 +38,10 @@ if (!class_exists('PKHelper',false)) {
     require_once dirname(__FILE__).'/../../PKHelper.php';
 }
 
+/**
+ * @property piwikanalyticsjs $module
+ */
 class PiwikAnalytics15Controller extends ModuleAdminController {
-
-    /** @var piwikanalyticsjs */
-    private $module = null;
 
     public function __construct() {
         parent::__construct();
@@ -289,7 +289,7 @@ class PiwikAnalytics15Controller extends ModuleAdminController {
   }
 </script>   
 EOF;
-            $lng = new LanguageCore($this->context->cookie->id_lang);
+            $lng = new Language($this->context->cookie->id_lang);
 
             if (_PS_VERSION_ < '1.6')
                 $this->content .= '<h3><a target="_blank" href="'.$this->page_header_toolbar_btn['stats']['href'].'">'.$this->page_header_toolbar_btn['stats']['desc'].'</a> | <a target="_blank" href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki">'.$this->l('Help').'</a></h3>';

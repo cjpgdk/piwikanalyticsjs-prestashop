@@ -1,5 +1,3 @@
-
-
 <h2>{l s="Validation result" mod='piwikanalyticsjs'}</h2>
 
 <table class="table tableDnD" cellspacing="0" cellpadding="0" style="width: 100%; margin-bottom:10px;min-width: 400px;">

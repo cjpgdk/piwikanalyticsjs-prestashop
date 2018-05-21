@@ -1,0 +1,12 @@
+- Translations
+Translation on PrestaShop version 1.5 do not work propperly with this module.
+    it can be that this is just my setup using dev versions of PrestaShop.
+
+* 1.5.0.1 > 1.5.0.3:  not working at all
+* 1.5.0.5: works but not all translated strings are used, and 'validateconfiguration.tpl' is not translated
+
+
+
+- Statics page
+if piwik is installed on different host than your shop, browser and/or server configurations can prevent it from working
+if your are using ssl for your shop but not for piwik iframes are blocked by default since your are mixing secure pages with unsecure pages, this is a browser setting
